@@ -907,66 +907,51 @@
     }
 
     function initRealtime() { 
-        sb.removeAllChannels(); // Reset connection to be safe
+        sb.removeAllChannels(); 
 
-        sb.channel('cozy-updates')
-            // Listen for Feed/Story updates (Standard Reload)
+        const channel = sb.channel('cozy-updates');
+
+        channel
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, () => loadFeed())
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed())
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => loadStories())
             
-            // --- SMART MESSAGE LISTENER ---
+            // MESSAGES LOGIC
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+                console.log("📨 Message received via Realtime!", payload); // DEBUG LOG
+                
                 const newMsg = payload.new;
                 if (!newMsg) return;
 
-                // 1. Identify who the chat is with
                 const isMe = newMsg.from_id === state.user.id;
                 const partnerId = isMe ? newMsg.to_id : newMsg.from_id;
 
-                // 2. Find the thread in memory
+                // Find or Create Thread
                 let thread = state.threads.find(t => t.id === partnerId);
-
-                // 3. If it's a brand new person, fetch their name quickly
                 if (!thread) {
+                    // Fetch user info for new thread
                     let user = state.allUsers.find(u => u.id === partnerId);
                     if (!user) {
                         const { data } = await sb.from('profiles').select('*').eq('id', partnerId).single();
                         user = data || { username: 'Neighbor', seed: 1 };
                     }
-                    thread = { 
-                        id: partnerId, 
-                        user: user.username, 
-                        seed: user.seed, 
-                        last: '', 
-                        timestamp: Date.now(), 
-                        messages: [] 
-                    };
+                    thread = { id: partnerId, user: user.username, seed: user.seed, last: '', timestamp: Date.now(), messages: [] };
                     state.threads.push(thread);
                 }
 
-                // 4. Add the message to the thread
-                thread.messages.push({
-                    from: isMe ? 'me' : 'them',
-                    text: newMsg.content
-                });
+                // Add Data
+                thread.messages.push({ from: isMe ? 'me' : 'them', text: newMsg.content });
                 thread.last = newMsg.content;
                 thread.timestamp = new Date(newMsg.created_at).getTime();
 
-                // 5. Sort threads (Newest jumps to top immediately)
+                // Sort & Update Read Status
                 state.threads.sort((a, b) => b.timestamp - a.timestamp);
 
-                // 6. HANDLE ACTIVE VIEW
+                // UI Update
                 if (state.activeThreadId === partnerId) {
-                    // If I am looking at this chat right now:
-                    
-                    // A. Mark as read immediately
                     state.lastRead[partnerId] = Date.now();
-                    
-                    // B. Inject the bubble into the DOM (Instant!)
                     const container = $('#chatMessages');
-                    // Clear "empty" placeholder if it exists
                     if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
                     
                     container.innerHTML += `
@@ -977,14 +962,15 @@
                         </div>`;
                     container.scrollTop = container.scrollHeight;
                 } else if (!isMe) {
-                    // If I'm somewhere else in the app, show a toast
                     toast(`New note from ${thread.user}`);
                 }
-
-                // 7. Update the Sidebar (Highlights/Red dots update automatically)
+                
                 renderMessages();
             })
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') console.log("🔥 Realtime Connected!");
+                if (status === 'CHANNEL_ERROR') console.error("Realtime Error. Check Supabase RLS.");
+            });
     }
 
     function renderPosts() {
