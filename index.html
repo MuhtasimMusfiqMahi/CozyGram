@@ -456,6 +456,7 @@
         hiddenPosts: [], // DB-backed
         mutedUsers: [], // DB-backed
         savedPrompts: [], // DB-backed (Shelf)
+        lastRead: {},
         habits: JSON.parse(localStorage.getItem('dailyHabits') || '{}'),
         activePostOption: null, activePostUser: null,
         storyIndex: 0, storyPageIndex: 0, activeThreadId: null,
@@ -906,16 +907,24 @@
     }
 
     function initRealtime() { 
-        sb.channel('public:all')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, () => loadFeed())
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed())
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => loadStories())
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => { 
-              // Reload threads, which will auto-refresh the active chat window if open
-              loadThreads(); 
-          })
-          .subscribe();
+        // Remove any existing subscriptions first to prevent duplicates
+        sb.removeAllChannels();
+
+        const channel = sb.channel('cozy-updates');
+
+        channel
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, () => loadFeed())
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed())
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => loadStories())
+            // MESSAGES: When a new row is added, reload threads (which now auto-sorts and updates UI)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => { 
+                console.log("New message detected!"); // Debug log
+                loadThreads(); 
+            })
+            .subscribe((status) => {
+                if(status === 'SUBSCRIBED') console.log("Connected to Cozy Cloud");
+            });
     }
 
     function renderPosts() {
@@ -1107,11 +1116,17 @@
         
         threadList.innerHTML = state.threads.map(t => {
             const active = state.activeThreadId === t.id;
-            // Check if the last message was from "them" (to highlight)
             const lastMsg = t.messages[t.messages.length - 1];
-            const isUnread = lastMsg && lastMsg.from === 'them';
             
-            // Cozy Styles
+            // LOGIC: It is unread IF:
+            // 1. The last message is from 'them'
+            // 2. AND the message time is NEWER than when I last clicked this thread
+            // 3. AND I am not currently looking at it right now
+            const lastReadTime = state.lastRead[t.id] || 0;
+            const isNew = t.timestamp > lastReadTime;
+            const isUnread = (lastMsg && lastMsg.from === 'them' && isNew && !active);
+            
+            // Styles
             const activeClass = active ? 'bg-gradient-to-b from-[#f7c59f]/55 to-white/70 ring-2 ring-[#f4a37a]/20' : 'bg-white/70';
             const unreadClass = isUnread ? 'border-[#f4a37a] shadow-sm' : 'border-black/10';
             const textWeight = isUnread ? 'font-bold text-black/90' : 'text-black/60';
@@ -1119,12 +1134,8 @@
             return `
             <button class="w-full wobbly text-left mb-2" onclick="openThread('${t.id}')">
                 <div class="hand-card hand-outline ${activeClass} ${unreadClass} border p-3 flex items-center gap-3 relative transition-all duration-300">
-                    <!-- Cozy "New" Indicator -->
                     ${isUnread ? `<div class="absolute -top-1 -right-1 w-3 h-3 bg-[#f4a37a] rounded-full border-2 border-white shadow-sm"></div>` : ''}
-                    
-                    <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">
-                        ${avatarSVG(t.seed)}
-                    </div>
+                    <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarSVG(t.seed)}</div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-extrabold truncate text-sm">${html(t.user)}</div>
@@ -1150,32 +1161,35 @@
 
     function openThread(targetId) {
         state.activeThreadId = targetId;
-        const container = $('#chatMessages');
-        container.innerHTML = ''; // Clear previous view
-
-        // 1. Try to find existing chat history
-        let thread = state.threads.find(t => t.id === targetId);
         
-        // 2. Find user details (for the header)
+        // 1. Mark this thread as READ at the current time
+        state.lastRead[targetId] = Date.now();
+        
+        // 2. Refresh the sidebar immediately (to remove the red dot)
+        renderMessages();
+
+        const container = $('#chatMessages');
+        container.innerHTML = ''; 
+
+        // 3. Find data
+        let thread = state.threads.find(t => t.id === targetId);
         let user = state.allUsers.find(u => u.id === targetId);
         
-        // 3. Render Header
+        // 4. Header
         if(user) {
             $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(user.seed)}</div><div class="font-extrabold text-sm">${html(user.username)}</div></div>`;
         }
 
-        // 4. Render Messages or Empty State
+        // 5. Messages
         if(thread && thread.messages.length > 0) {
             renderChatMessages(thread);
         } else {
             container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic">This paper is blank.<br>Write a gentle note.</div>`;
         }
 
-        // 5. Show the UI
+        // 6. Reveal
         $('#chatInputArea').classList.remove('hidden');
         $('#newThreadModal').classList.add('hidden');
-        
-        // Scroll to bottom
         container.scrollTop = container.scrollHeight;
     }
 
