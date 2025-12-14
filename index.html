@@ -599,22 +599,108 @@
     }
 
     function openUserModal(userId) {
-        const user = state.allUsers.find(u => u.id === userId) || { username: 'Neighbor', seed: 5 };
+        const user = state.allUsers.find(u => u.id === userId) || { username: 'Neighbor', seed: 5, bio: '', pronouns: '', mood: 'sunset' };
         const modal = document.getElementById('userModal');
         const body = document.getElementById('userModalBody');
         
+        // 1. Get Context
+        const meId = state.user.id;
+        const isMe = userId === meId;
+        const isMuted = state.mutedUsers.includes(userId);
+        
+        // 2. Get Recent Posts (Mini Gallery)
+        const recent = state.posts.filter(p => p.user_id === userId).slice(0, 6);
+        
+        // 3. Render Rich UI
         body.innerHTML = `
-            <div class="text-center pt-2">
-                <div class="w-20 h-20 mx-auto rounded-[24px] overflow-hidden border border-black/10 mb-3 bg-white shadow-sm">
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-3">
+              <div class="flex items-start gap-3">
+                <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0">
                     ${avatarSVG(user.seed)}
                 </div>
-                <div class="font-[Fraunces] text-xl">${html(user.username)}</div>
-                <div class="text-sm opacity-50 mb-4">A cozy neighbor</div>
-                <button onclick="state.filter.search='${user.username}'; clearModal(); renderPosts();" class="wobbly px-6 py-3 bg-[#f4a37a] text-white rounded-[18px] font-bold shadow-sm">
-                    View Corner
-                </button>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="font-extrabold truncate text-lg">${html(user.username)}</div>
+                    <div class="text-xs text-black/45">${html(user.pronouns||'')}</div>
+                  </div>
+                  <div class="text-xs text-black/60 line-clamp-3 leading-snug mt-1">${html(user.bio||'A cozy corner.')}</div>
+                  <div class="text-[10px] text-black/40 mt-2 font-bold uppercase tracking-wider">Mood: ${html(user.mood||'sunset')}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              ${!isMe ? `
+              <button id="userMsgBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] font-extrabold text-white text-left shadow-sm">
+                Message
+                <div class="text-[10px] font-normal opacity-90">Send a note</div>
+              </button>
+              <button id="userMuteBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
+                ${isMuted ? 'Unmute' : 'Mute'}
+                <div class="text-[10px] font-normal text-black/50">${isMuted ? 'Allow posts' : 'Hide posts'}</div>
+              </button>
+              ` : `<div class="col-span-2 text-center text-xs text-black/40 py-2">This is your corner.</div>`}
+              
+              <button id="userFilterBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
+                Filter
+                <div class="text-[10px] font-normal text-black/50">Show only this</div>
+              </button>
+              <button id="userBioBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
+                Copy Bio
+                <div class="text-[10px] font-normal text-black/50">Save to clipboard</div>
+              </button>
+            </div>
+
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-xs font-extrabold opacity-50">RECENT SCRAPBOOK BITS</div>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                ${recent.map(p => `
+                  <div class="wobbly rounded-[12px] overflow-hidden border border-black/10 bg-white aspect-square" onclick="toast('Use the feed to see full post')">
+                    ${postMediaHTML(p)}
+                  </div>
+                `).join('') || `<div class="col-span-3 text-xs text-black/40 text-center py-4">No posts yet.</div>`}
+              </div>
             </div>
         `;
+        
+        // 4. Wire up the buttons
+        const msgBtn = document.getElementById('userMsgBtn');
+        if(msgBtn) msgBtn.onclick = () => {
+            modal.classList.add('hidden');
+            openThread(userId);
+        };
+
+        const filterBtn = document.getElementById('userFilterBtn');
+        if(filterBtn) filterBtn.onclick = () => {
+            state.filter.search = user.username;
+            document.getElementById('searchInput').value = user.username;
+            modal.classList.add('hidden');
+            renderPosts();
+            toast(`Filtering by ${user.username}`);
+        };
+
+        const bioBtn = document.getElementById('userBioBtn');
+        if(bioBtn) bioBtn.onclick = () => {
+            safeCopy(user.bio);
+            toast('Bio copied.');
+        };
+
+        const muteBtn = document.getElementById('userMuteBtn');
+        if(muteBtn) muteBtn.onclick = async () => {
+            modal.classList.add('hidden');
+            // Re-use existing mute logic
+            if (isMuted) {
+                await unmuteUser(userId);
+            } else {
+                state.mutedUsers.push(userId);
+                toast('User muted.');
+                await sb.from('mutes').insert({ user_id: meId, muted_user_id: userId });
+                renderPosts();
+            }
+        };
+
         modal.classList.remove('hidden');
     }
     
