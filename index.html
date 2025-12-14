@@ -456,7 +456,7 @@
         hiddenPosts: [], // DB-backed
         mutedUsers: [], // DB-backed
         savedPrompts: [], // DB-backed (Shelf)
-        lastRead: {},
+        lastRead: JSON.parse(localStorage.getItem('cozy_last_read') || '{}'),
         habits: JSON.parse(localStorage.getItem('dailyHabits') || '{}'),
         activePostOption: null, activePostUser: null,
         storyIndex: 0, storyPageIndex: 0, activeThreadId: null,
@@ -1215,16 +1215,17 @@
     function openThread(targetId) {
         state.activeThreadId = targetId;
         
-        // 1. Mark this thread as READ at the current time
+        // 1. Mark as READ and SAVE to localStorage
         state.lastRead[targetId] = Date.now();
+        localStorage.setItem('cozy_last_read', JSON.stringify(state.lastRead));
         
-        // 2. Refresh the sidebar immediately (to remove the red dot)
+        // 2. Refresh sidebar immediately (clears the red dot)
         renderMessages();
 
         const container = $('#chatMessages');
         container.innerHTML = ''; 
 
-        // 3. Find data
+        // 3. Find Data
         let thread = state.threads.find(t => t.id === targetId);
         let user = state.allUsers.find(u => u.id === targetId);
         
@@ -1240,7 +1241,7 @@
             container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic">This paper is blank.<br>Write a gentle note.</div>`;
         }
 
-        // 6. Reveal
+        // 6. Reveal UI
         $('#chatInputArea').classList.remove('hidden');
         $('#newThreadModal').classList.add('hidden');
         container.scrollTop = container.scrollHeight;
@@ -1849,15 +1850,14 @@
             
             if(!txt || !targetId) return; 
             
-            // 1. Clear input immediately for better UX
+            // 1. Clear input immediately
             $('#chatInput').value = ''; 
             
-            // 2. Optimistic Update (Show it immediately)
-            const container = $('#chatMessages');
-            container.innerHTML += `<div class="flex justify-end"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 bg-gradient-to-b from-[#86a68b]/35 to-white/75"><div class="text-sm text-black/80">${html(txt)}</div></div></div>`;
-            container.scrollTop = container.scrollHeight;
+            // NOTE: We removed the manual HTML append here.
+            // Since Realtime is fixed, the message will appear automatically 
+            // in a fraction of a second via initRealtime().
 
-            // 3. Send to Cloud
+            // 2. Send to Cloud
             try {
                 const { error } = await sb.from('messages').insert({ 
                     from_id: state.user.id, 
