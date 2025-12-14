@@ -144,18 +144,22 @@
     <header class="px-4 pt-5 pb-3">
       <div class="hand-card paper-noise hand-outline px-4 py-3">
         <div class="flex items-center justify-between gap-3">
+          
+          <!-- NEW LOGO -->
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-[18px_16px_22px_14px] bg-gradient-to-br from-[#f7c59f] via-[#fbf5ea] to-[#86a68b] border border-black/10 shadow-sm grid place-items-center">
-              <svg class="w-7 h-7" viewBox="0 0 64 64" aria-hidden="true"><path class="ink-line" fill="none" d="M14 33c2-13 11-21 18-21s16 8 18 21"/><path class="ink-line" fill="none" d="M18 33c0 11 6 19 14 19s14-8 14-19"/><circle cx="25" cy="28" r="2" fill="rgba(43,43,53,.75)"/><circle cx="39" cy="28" r="2" fill="rgba(43,43,53,.75)"/></svg>
+            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
             </div>
             <div>
-              <div class="flex items-baseline gap-2">
-                <h1 class="font-[Fraunces] text-xl tracking-tight">CozyGram</h1>
-                <span id="backendPill" class="text-xs text-black/50">Cloud</span>
-              </div>
-              <p class="text-xs text-black/60 leading-tight">Creativity over popularity</p>
+                <div class="flex items-baseline gap-2">
+                <h1 class="font-[Fraunces] text-2xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
+                <span id="backendPill" class="px-1.5 py-0.5 rounded-md bg-white/50 border border-black/5 text-[10px] font-bold text-black/40 uppercase tracking-wider">Cloud</span>
+                </div>
+                <p class="text-xs text-black/60 leading-tight font-medium">Creativity over popularity</p>
             </div>
           </div>
+
           <div class="flex items-center gap-2">
             <button id="kindToggle" class="wobbly inline-flex items-center gap-2 px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-pressed="true" title="Kindness mode">
               <span class="text-xs font-semibold">Kind</span>
@@ -449,9 +453,9 @@
         compose: { frame: 'wavy', vibe: 'sunset', file: null, preview: null, seed: 1, illustSeed: null },
         filter: { search: '', topic: 'all' },
         kindness: true, hideNumbers: true,
-        hiddenPosts: JSON.parse(localStorage.getItem('hiddenPosts') || '[]'),
+        hiddenPosts: [], // DB-backed
         mutedUsers: [], // DB-backed
-        savedPrompts: JSON.parse(localStorage.getItem('savedPrompts') || '[]'),
+        savedPrompts: [], // DB-backed (Shelf)
         habits: JSON.parse(localStorage.getItem('dailyHabits') || '{}'),
         activePostOption: null, activePostUser: null,
         storyIndex: 0, storyPageIndex: 0, activeThreadId: null,
@@ -543,6 +547,28 @@
         `;
         modal.classList.remove('hidden');
     }
+    
+    function openAccountModal() {
+        const p = state.profile || { username: 'You', seed: 0, pronouns: '', bio: '' };
+        
+        $('#accountBody').innerHTML = `
+            <div class="hand-card bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden">${avatarSVG(p.seed)}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="font-extrabold truncate">${html(p.username)}</div>
+                  <div class="text-xs text-black/60 truncate">${html(p.pronouns||'')}</div>
+                </div>
+                <div class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">Current</div>
+            </div>
+            
+            <div class="hand-card bg-white/70 border border-black/10 p-3 mt-3">
+                <div class="text-xs font-bold opacity-50 mb-2">ACTIONS</div>
+                <button onclick="openEditProfile(); $('#accountModal').classList.add('hidden')" class="w-full text-left p-2 hover:bg-black/5 rounded font-bold text-sm wobbly">Edit Profile</button>
+            </div>
+        `;
+        
+        $('#accountModal').classList.remove('hidden');
+    }
 
     function clearUserFilter() {
         state.filter.search = '';
@@ -598,10 +624,8 @@
     const MOCK_PROMPTS = [
         { title:'What color did you see?', desc:'One sentence post.' }, { title:'Show your desk corner', desc:'No faces needed.' }, { title:'One kind thing you did', desc:'Small counts.' }, { title:'A comfort snack', desc:'Name it like a spell.' }
     ];
-    let MOCK_STORIES = [
-        { id:'s1', user:'Juniper', seed:2, title:'Journal pages', time:'Today', pages:['three gentle wins: 1) drank water 2) answered one email 3) texted a friend', 'tiny doodle: a sleepy cloud'] }
-    ];
-    let MOCK_THREADS = {};
+    // REMOVED MOCK_STORIES. Now using real DB.
+    
     let MOCK_NOTIFS = [];
 
     function applyMood(moodId){
@@ -638,7 +662,7 @@
       const wrap = (inner, label) => `<div class="relative"><div class="mx-auto w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 grid place-items-center ${active ? 'shadow-sm' : ''}">${inner}</div><div class="mt-1 text-[11px] text-center ${active ? 'font-extrabold text-black/75' : 'text-black/55'}">${label}</div>${badgeHtml}</div>`;
       if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
       if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Pages');
-      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
+      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
       if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
       if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
       return '';
@@ -663,27 +687,63 @@
     async function loadThreads() {
         if (!state.user) return;
         try {
-            const { data } = await sb.from('messages').select('*, profiles:from_id(username, seed)').or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`).order('created_at', { ascending: false });
+            // Fetch all messages where I am the sender OR the receiver
+            const { data, error } = await sb.from('messages')
+                .select('*, profiles:from_id(username, seed)')
+                .or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`)
+                .order('created_at', { ascending: true }); // Oldest first for chat history
+
             if (data) {
                 const grouped = {};
                 data.forEach(m => {
+                    // Determine who the "other" person is
                     const otherId = m.from_id === state.user.id ? m.to_id : m.from_id;
-                    if (!grouped[otherId]) { grouped[otherId] = { id: otherId, user: m.profiles?.username || 'User', seed: m.profiles?.seed || 1, last: m.content || '', new: false, messages: [] }; }
-                    grouped[otherId].messages.push({ from: m.from_id === state.user.id ? 'me' : 'them', text: m.content || '' });
+                    
+                    // Initialize group if not exists
+                    if (!grouped[otherId]) {
+                        // Try to find user info in our cached list, or use what's in the message
+                        const u = state.allUsers.find(x => x.id === otherId) || { username: 'Neighbor', seed: 1 };
+                        grouped[otherId] = { id: otherId, user: u.username, seed: u.seed, last: '', messages: [] };
+                    }
+                    
+                    // Add message to group
+                    grouped[otherId].messages.push({ 
+                        from: m.from_id === state.user.id ? 'me' : 'them', 
+                        text: m.content || '' 
+                    });
+                    // Update preview text
+                    grouped[otherId].last = m.content || 'Sent an image';
                 });
-                Object.values(grouped).forEach(t => t.messages.reverse());
+                
+                // Convert object to array for the list view
                 state.threads = Object.values(grouped);
+                
+                // If we are currently looking at a thread, refresh the bubbles
+                if(state.activeThreadId) {
+                    const activeData = state.threads.find(t => t.id === state.activeThreadId);
+                    if(activeData) renderChatMessages(activeData);
+                }
             }
-        } catch (e) { }
+        } catch (e) { console.error("Load threads error", e); }
+        renderMessages(); // Update the sidebar list
     }
+    // FIX: LOAD STORIES FROM DB
     async function loadStories() {
         try {
             const { data, error } = await sb.from('stories').select(`*, profiles(username, seed)`).order('created_at', { ascending: false });
-            if (!error && data) {
-                state.stories = data.map(s => ({ id: s.id, user: s.profiles?.username || 'Anon', seed: s.profiles?.seed || 1, title: s.title || 'Journal', time: timeAgo(new Date(s.created_at)), pages: s.pages || [] }));
-                MOCK_STORIES = state.stories;
+            if (error) throw error;
+            if (data) {
+                state.stories = data.map(s => ({ 
+                    id: s.id, 
+                    user: s.profiles?.username || 'Anon', 
+                    seed: s.profiles?.seed || 1, 
+                    title: s.title || 'Journal Entry', 
+                    time: timeAgo(new Date(s.created_at)), 
+                    pages: Array.isArray(s.pages) ? s.pages : (s.pages ? [s.pages] : ['Empty page...'])
+                }));
             }
-        } catch(e) { }
+        } catch(e) { state.stories = []; }
+        renderStories();
     }
     async function loadHabits() {
         if(!state.user) return;
@@ -698,23 +758,51 @@
         if(mood) { $$('.moodPick').forEach(b => { if(b.dataset.mood === mood) b.classList.add('bg-white','ring-2','ring-black/10'); }); }
     }
 
-    // --- APP LOGIC ---
+    // --- APP LOGIC (UPDATED INIT) ---
     async function init() {
+        // 1. Initialize Supabase
         try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { return; }
         
+        // 2. Setup the Listener IMMEDIATELY
+        sb.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session && !state.user) {
+                handleLoginSuccess(session);
+            }
+        });
+
+        // 3. Load basic app data
         loadDailyCheckin();
         wireEvents();
-        await loadStories();
-        await loadHabits();
-        await loadUsers();
         
+        // Non-blocking loads
+        loadStories(); 
+        loadHabits();
+        loadUsers();
         setTimeout(updateComposeView, 100);
 
+        // 4. Check for existing session or URL hash
         const { data } = await sb.auth.getSession();
-        if (data?.session) { handleLoginSuccess(data.session); } 
-        else { $('#onboardingModal').classList.remove('hidden'); renderOnboarding(); }
+        const hasHash = window.location.hash && window.location.hash.includes('access_token');
 
-        sb.auth.onAuthStateChange((event, session) => { if (session) handleLoginSuccess(session); });
+        if (data?.session) {
+            if (!state.user) handleLoginSuccess(data.session);
+        } 
+        else if (hasHash) {
+            console.log("Processing magic link...");
+            toast("Verifying magic link...");
+            setTimeout(() => {
+                if (!state.user) {
+                    toast("Link expired or valid session not found.");
+                    $('#onboardingModal').classList.remove('hidden');
+                    renderOnboarding();
+                    history.pushState("", document.title, window.location.pathname + window.location.search);
+                }
+            }, 4000);
+        } 
+        else {
+            $('#onboardingModal').classList.remove('hidden');
+            renderOnboarding();
+        }
     }
 
     async function handleLoginSuccess(session) {
@@ -722,7 +810,9 @@
         $('#onboardingModal').classList.add('hidden');
         if($('#logoutBtn')) $('#logoutBtn').classList.remove('hidden');
         await loadProfile();
-        await loadMutedUsers(); // DB-backed mutes
+        await loadMutedUsers(); // Load Mutes
+        await loadHiddenPosts(); // NEW: Load Hidden Posts
+        await loadShelf(); // NEW: Load Shelf
         await loadFeed();
         await loadDrawer();
         await loadNotifications();
@@ -740,6 +830,24 @@
             const { data } = await sb.from('mutes').select('muted_user_id').eq('user_id', state.user.id);
             if(data) state.mutedUsers = data.map(m => m.muted_user_id);
         } catch(e) { console.error('Error loading mutes', e); }
+    }
+    
+    // NEW: Load Hidden Posts
+    async function loadHiddenPosts() {
+        if(!state.user) return;
+        try {
+            const { data } = await sb.from('hidden_posts').select('post_id').eq('user_id', state.user.id);
+            if(data) state.hiddenPosts = data.map(h => h.post_id);
+        } catch(e) { }
+    }
+    
+    // NEW: Load Shelf
+    async function loadShelf() {
+        if(!state.user) return;
+        try {
+            const { data } = await sb.from('shelf').select('id, text').eq('user_id', state.user.id).order('created_at', { ascending: false });
+            if(data) state.savedPrompts = data; // Now array of objects {id, text}
+        } catch(e) { }
     }
 
     async function loadProfile() {
@@ -792,11 +900,16 @@
     }
 
     function initRealtime() { 
-        sb.channel('public:stickers').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, () => loadFeed()).subscribe();
-        sb.channel('public:posts').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed()).subscribe();
-        sb.channel('public:comments').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed()).subscribe();
-        sb.channel('public:stories').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => { loadStories(); renderStories(); }).subscribe();
-        sb.channel('public:messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => { if(state.activeThreadId) openThread(state.activeThreadId); loadThreads(); }).subscribe();
+        sb.channel('public:all')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, () => loadFeed())
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed())
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => loadStories())
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => { 
+              // Reload threads, which will auto-refresh the active chat window if open
+              loadThreads(); 
+          })
+          .subscribe();
     }
 
     function renderPosts() {
@@ -805,8 +918,8 @@
         else $('#userFilterBanner').classList.add('hidden');
         
         const filtered = state.posts.filter(p => {
-            if(state.hiddenPosts.includes(p.id)) return false;
-            if(state.mutedUsers.includes(p.user_id)) return false;
+            // -- SECURITY UPDATE: Server now handles mutes/hides --
+            
             const tags = inferTags(p.caption); 
             const matchesSearch = state.filter.search ? (p.caption.toLowerCase().includes(state.filter.search.toLowerCase()) || p.profiles.username.toLowerCase().includes(state.filter.search.toLowerCase())) : true;
             const matchesTopic = state.filter.topic === 'all' ? true : tags.includes(state.filter.topic);
@@ -816,8 +929,9 @@
         const gentleBanner = `
         <div class="hand-card hand-outline paper-noise p-4 mb-4">
           <div class="flex items-start gap-3">
-            <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-br from-[#f7c59f] via-[#fbf5ea] to-[#86a68b] grid place-items-center">
-              <svg class="w-6 h-6" viewBox="0 0 24 24"><path class="ink-line-lite" d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="rgba(134,166,139,.25)"/><path class="ink-line-lite" d="M8.5 12.5c1.2 1.2 5.8 1.2 7 0" fill="none"/></svg>
+            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
             </div>
             <div class="min-w-0 flex-1">
               <div class="font-[Fraunces] text-lg">A low-pressure feed</div>
@@ -943,6 +1057,7 @@
         $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
     }
 
+    // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
         const clubsHtml = MOCK_CLUBS.map(c => `
             <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly" onclick="state.filter.topic = '${c.tag}'; showView('feed'); toast('Peeking into ${c.title}');">
@@ -953,16 +1068,20 @@
         `).join('');
         document.getElementById('clubsContainer').innerHTML = `<div class="flex items-center justify-between mb-3"><div class="text-sm font-extrabold">Cozy Clubs</div></div><div class="grid grid-cols-2 gap-3">${clubsHtml}</div>`;
 
-        const listHtml = MOCK_STORIES.map((s, idx) => `
-            <button class="w-full wobbly text-left" onclick="openStory(${idx})">
-                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarSVG(s.seed)}</div>
-                    <div class="flex-1 min-w-0"><div class="font-extrabold truncate">${s.user}'s pages</div><div class="text-xs text-black/55">${s.time || 'Today'} • ${s.pages.length} pages</div></div>
-                    <div class="text-xs text-black/50">open →</div>
-                </div>
-            </button>
-        `).join('');
-        document.getElementById('storiesList').innerHTML = listHtml;
+        const listDiv = document.getElementById('storiesList');
+        if (state.stories.length === 0) {
+            listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No journal pages found.<br>Be the first to write one?</div>`;
+        } else {
+            listDiv.innerHTML = state.stories.map((s, idx) => `
+                <button class="w-full wobbly text-left" onclick="openStory(${idx})">
+                    <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarSVG(s.seed)}</div>
+                        <div class="flex-1 min-w-0"><div class="font-extrabold truncate">${html(s.user)}'s pages</div><div class="text-xs text-black/55">${s.time} • ${s.pages.length} pages</div></div>
+                        <div class="text-xs text-black/50">open →</div>
+                    </div>
+                </button>
+            `).join('');
+        }
 
         const promptsHtml = MOCK_PROMPTS.map(p => `
             <div class="wobbly hand-card hand-outline paper-noise border border-black/10 p-3">
@@ -1002,20 +1121,35 @@
         `).join('') : '<div class="text-sm opacity-50 p-2">No other users found yet.</div>';
     }
 
-    function openThread(tid) {
-        state.activeThreadId = tid;
-        let t = state.threads.find(x => x.id === tid); 
-        if(!t) {
-            const u = state.allUsers.find(x => x.id === tid);
-            if(u) t = { id:tid, user:u.username, seed:u.seed, last:'', messages:[] };
-        }
-        if(!t) return;
+    function openThread(targetId) {
+        state.activeThreadId = targetId;
+        const container = $('#chatMessages');
+        container.innerHTML = ''; // Clear previous view
+
+        // 1. Try to find existing chat history
+        let thread = state.threads.find(t => t.id === targetId);
         
-        renderMessages(); 
-        $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(t.seed)}</div><div class="font-extrabold text-sm">${t.user}</div></div>`;
+        // 2. Find user details (for the header)
+        let user = state.allUsers.find(u => u.id === targetId);
+        
+        // 3. Render Header
+        if(user) {
+            $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(user.seed)}</div><div class="font-extrabold text-sm">${html(user.username)}</div></div>`;
+        }
+
+        // 4. Render Messages or Empty State
+        if(thread && thread.messages.length > 0) {
+            renderChatMessages(thread);
+        } else {
+            container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic">This paper is blank.<br>Write a gentle note.</div>`;
+        }
+
+        // 5. Show the UI
         $('#chatInputArea').classList.remove('hidden');
-        renderChatMessages(t);
         $('#newThreadModal').classList.add('hidden');
+        
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
     }
 
     function renderChatMessages(thread) {
@@ -1038,12 +1172,26 @@
     }
 
     // --- ACTIONS ---
-    function saveToShelf(text) {
-        if (!state.savedPrompts.includes(text)) { state.savedPrompts.push(text); localStorage.setItem('savedPrompts', JSON.stringify(state.savedPrompts)); toast('Saved to Shelf!'); } else toast('Already on Shelf');
+    
+    // UPDATED: Server-side Shelf logic
+    async function saveToShelf(text) {
+        if (!state.user) return;
+        const exists = state.savedPrompts.find(p => p.text === text);
+        if(!exists) {
+            const { data } = await sb.from('shelf').insert({ user_id: state.user.id, text }).select().single();
+            if(data) state.savedPrompts.unshift(data);
+            toast('Saved to Shelf!');
+        } else {
+            toast('Already on Shelf');
+        }
     }
-    function removeFromShelf(idx) {
-        state.savedPrompts.splice(idx, 1); localStorage.setItem('savedPrompts', JSON.stringify(state.savedPrompts)); openRoom('shelf');
+    
+    async function removeFromShelf(id) {
+        state.savedPrompts = state.savedPrompts.filter(p => p.id !== id);
+        openRoom('shelf'); // re-render
+        await sb.from('shelf').delete().eq('id', id);
     }
+
     async function toggleHabit(habit) {
         const today = new Date().toDateString();
         if (!state.habits[today]) state.habits[today] = {};
@@ -1094,11 +1242,22 @@
     
     function muteUser() { toggleMuteUser(); }
     
-    function hidePost() {
-        if(state.hiddenPosts.includes(state.activePostOption)) state.hiddenPosts = state.hiddenPosts.filter(id => id !== state.activePostOption);
-        else state.hiddenPosts.push(state.activePostOption);
-        localStorage.setItem('hiddenPosts', JSON.stringify(state.hiddenPosts));
+    // UPDATED: Server-side Hide logic
+    async function hidePost() {
+        const pid = state.activePostOption;
+        const isHidden = state.hiddenPosts.includes(pid);
+        
         $('#postOptionsModal').classList.add('hidden');
+        
+        if(isHidden) {
+            state.hiddenPosts = state.hiddenPosts.filter(id => id !== pid);
+            toast('Post unhidden.');
+            await sb.from('hidden_posts').delete().eq('user_id', state.user.id).eq('post_id', pid);
+        } else {
+            state.hiddenPosts.push(pid);
+            toast('Post hidden.');
+            await sb.from('hidden_posts').insert({ user_id: state.user.id, post_id: pid });
+        }
         renderPosts();
     }
 
@@ -1149,9 +1308,11 @@
         
         const isMuted = state.mutedUsers.includes(uid);
         $('#muteUserBtn').innerText = isMuted ? "Unmute User" : "Mute User";
+        
+        const isHidden = state.hiddenPosts.includes(pid);
+        $('#hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
 
         $('#deletePostBtn').classList.toggle('hidden', uid !== state.user.id); 
-        $('#hidePostBtn').innerText = state.hiddenPosts.includes(pid) ? "Unhide Post" : "Hide Post"; 
     }
     
     function renderCommentsModal(){
@@ -1260,7 +1421,97 @@
         }
     }
     
-    // UPDATED ROOM LOGIC
+    function getPlantSVG(pct) {
+        // --- ASSETS (Based on the flat vector image) ---
+        
+        // 1. The Pot (Terracotta with thick rim and dark soil)
+        // We use 'overflow: visible' to allow leaves to stretch out
+        const pot = `
+            <!-- Back of Pot Rim (Depth) -->
+            <path d="M15 32 h18 l-1 3 h-16 z" fill="#BF360C" />
+            <!-- Soil -->
+            <ellipse cx="24" cy="32" rx="8" ry="2" fill="#3E2723" />
+            <!-- Pot Body -->
+            <path d="M17 35 h14 l-2 10 h-10 z" fill="#8D6E63" />
+            <!-- Pot Rim Front -->
+            <path d="M14 31 h20 v4 h-20 z" fill="#FF7043" />
+            <path d="M14 35 h20 v1 h-20 z" fill="#BF360C" opacity="0.3" /> <!-- Shadow under rim -->
+        `;
+
+        // 2. Leaf Builder (Helper for two-tone leaves)
+        // x,y = stem connection. r = rotation. s = scale.
+        const leaf = (x, y, r, s) => `
+            <g transform="translate(${x},${y}) rotate(${r}) scale(${s})">
+                <!-- Dark Half -->
+                <path d="M0 0 Q-10 -5 0 -15 Z" fill="#1B5E20" />
+                <!-- Light Half -->
+                <path d="M0 0 Q10 -5 0 -15 Z" fill="#66BB6A" />
+            </g>
+        `;
+
+        // --- STAGES ---
+
+        // Stage 1: Seed / Tiny Sprout (0-24%)
+        if(pct < 25) { 
+             return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+                ${pot}
+                <!-- Tiny sprout poking out -->
+                <path d="M24 32 q0 -3 0 -4" stroke="#388E3C" stroke-width="2" fill="none" />
+                ${leaf(24, 29, -15, 0.4)}
+            </svg>`;
+        }
+
+        // Stage 2: Sapling (25-49%)
+        // Small stem, two small leaves
+        if(pct < 50) { 
+             return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+                <!-- Stem -->
+                <path d="M24 32 q0 -10 0 -12" stroke="#388E3C" stroke-width="2.5" stroke-linecap="round" fill="none" />
+                <!-- Leaves -->
+                ${leaf(24, 26, -45, 0.7)}
+                ${leaf(24, 24, 45, 0.7)}
+                ${pot}
+            </svg>`;
+        }
+
+        // Stage 3: Growing (50-74%)
+        // Taller stem, 4 leaves
+        if(pct < 75) { 
+             return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+                <!-- Stem -->
+                <path d="M24 32 q0 -15 -2 -18" stroke="#388E3C" stroke-width="3" stroke-linecap="round" fill="none" />
+                <!-- Bottom Leaves -->
+                ${leaf(24, 26, -50, 0.8)}
+                ${leaf(24, 25, 50, 0.8)}
+                <!-- Top Leaves -->
+                ${leaf(23, 18, -30, 0.9)}
+                ${leaf(23, 17, 30, 0.9)}
+                ${pot}
+            </svg>`;
+        }
+
+        // Stage 4: Full Plant (75-100%) - Matches your image
+        // Tall stem, big lush leaves with two-tone shading
+        return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+            <!-- Main Stem -->
+            <path d="M24 32 C24 25, 24 15, 28 8" stroke="#388E3C" stroke-width="3" stroke-linecap="round" fill="none" />
+            
+            <!-- Bottom Leaves -->
+            ${leaf(24, 26, -70, 0.8)} <!-- Left Down -->
+            ${leaf(24, 25, 70, 0.8)}  <!-- Right Down -->
+            
+            <!-- Middle Leaves -->
+            ${leaf(24, 18, -40, 1.1)} <!-- Left Mid -->
+            ${leaf(25, 17, 40, 1.1)}  <!-- Right Mid -->
+            
+            <!-- Top Leaf (The big one) -->
+            ${leaf(27, 10, -10, 1.3)} <!-- Top -->
+            
+            ${pot}
+        </svg>`;
+    }
+
+    // UPDATED ROOM LOGIC (Shelf uses IDs now)
     async function openRoom(room) {
         const title = room.charAt(0).toUpperCase() + room.slice(1);
         $('#roomTitle').innerText = title === 'Drawer' ? 'Your Drawer' : `Your ${title}`;
@@ -1270,18 +1521,61 @@
             if (state.savedPrompts.length === 0) {
                 content = `<div class="hand-card bg-white/70 border border-black/10 p-4 text-center"><div class="font-extrabold mb-1">Your shelf is empty.</div><div class="text-sm text-black/70 mb-3">Save prompts from the Stories tab!</div><button class="seedPrompt wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Save starter</button></div>`;
             } else {
-                content = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${state.savedPrompts.map((p, i) => `<div class="hand-card bg-white/75 border border-black/10 p-3 flex flex-col justify-between"><div class="text-sm font-extrabold mb-2 leading-snug">${p}</div><div class="flex items-center gap-2"><button class="shelfUse wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold text-white" data-text="${p}">Use</button><button class="shelfRemove wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold text-red-400" data-idx="${i}">Remove</button></div></div>`).join('')}</div>`;
+                content = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${state.savedPrompts.map((p) => `<div class="hand-card bg-white/75 border border-black/10 p-3 flex flex-col justify-between"><div class="text-sm font-extrabold mb-2 leading-snug">${p.text}</div><div class="flex items-center gap-2"><button class="shelfUse wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold text-white" data-text="${p.text}">Use</button><button class="shelfRemove wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold text-red-400" data-id="${p.id}">Remove</button></div></div>`).join('')}</div>`;
             }
         } 
         else if (room === 'plant') {
             const today = new Date().toDateString();
             const h = state.habits[today] || {};
-            const habitsList = [{id: 'water', label: '💧 Drink Water'}, {id: 'stretch', label: '🧘 Stretch (20s)'}, {id: 'sun', label: '☀️ See Daylight'}, {id: 'kind', label: '💌 Send a Kind Text'}];
+            // You can add more habits here easily
+            const habitsList = [
+                {id: 'water', label: '💧 Drink Water'}, 
+                {id: 'stretch', label: '🧘 Stretch (20s)'}, 
+                {id: 'sun', label: '☀️ See Daylight'}, 
+                {id: 'kind', label: '💌 Send a Kind Text'},
+                {id: 'tidy', label: '🧹 Tidy 5 mins'}
+            ];
+            
             const doneCount = habitsList.filter(x => h[x.id]).length;
             const pct = Math.round((doneCount / habitsList.length) * 100);
-            let growth = '🌱'; if(doneCount > 1) growth = '🌿'; if(doneCount > 3) growth = '🌳';
-            content = `<div class="hand-card bg-[#f6fff8] p-4 border border-black/5 mb-4"><div class="flex justify-between items-start"><div><div class="text-4xl mb-2 floaty">${growth}</div><div class="font-extrabold text-sm">Today’s leaves</div><div class="text-sm text-black/70">${doneCount}/${habitsList.length} gentle actions • ${pct}%</div></div><button id="resetHabits" class="wobbly px-3 py-1 rounded-[12px] border border-black/10 bg-white/70 text-[10px] font-bold">Reset</button></div></div><div class="space-y-2">${habitsList.map(item => `<button class="habitToggle wobbly w-full text-left" data-habit="${item.id}"><div class="hand-card bg-white/75 border border-black/10 p-3 flex items-center justify-between gap-3"><div class="text-sm font-extrabold">${item.label}</div><div class="text-xs ${h[item.id] ? 'text-green-600 font-bold' : 'text-black/45'}">${h[item.id] ? 'Done' : 'Tap'}</div></div></button>`).join('')}</div>`;
-        } 
+            const plantSvg = getPlantSVG(pct);
+
+            content = `
+            <div class="hand-card bg-[#f6fff8] p-4 border border-black/5 mb-4 relative overflow-hidden">
+                <div class="absolute right-[-20px] top-[-20px] w-32 h-32 bg-yellow-100 rounded-full blur-2xl opacity-50"></div>
+                <div class="flex justify-between items-center gap-4">
+                    <div class="w-24 h-24 shrink-0 transition-all duration-500">
+                        ${plantSvg}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-[Fraunces] text-lg leading-tight mb-1">Today’s Growth</div>
+                        <div class="text-xs text-black/60 mb-2">${doneCount}/${habitsList.length} gentle actions completed</div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="w-full h-3 bg-black/5 rounded-full overflow-hidden border border-black/5">
+                            <div class="h-full bg-[#86a68b] transition-all duration-500 ease-out" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 flex justify-end">
+                    <button id="resetHabits" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-[10px] font-bold text-black/50 hover:text-red-500">Reset Day</button>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                ${habitsList.map(item => `
+                <button class="habitToggle wobbly w-full text-left" data-habit="${item.id}">
+                    <div class="hand-card ${h[item.id] ? 'bg-gradient-to-r from-green-50 to-white' : 'bg-white/75'} border ${h[item.id] ? 'border-green-200' : 'border-black/10'} p-3 flex items-center justify-between gap-3 transition-colors">
+                        <div class="text-sm font-extrabold ${h[item.id] ? 'text-green-800' : 'text-black/80'}">${item.label}</div>
+                        <div class="w-6 h-6 rounded-full border ${h[item.id] ? 'bg-green-500 border-green-600' : 'bg-white border-black/20'} grid place-items-center">
+                            ${h[item.id] ? '<svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
+                        </div>
+                    </div>
+                </button>`).join('')}
+            </div>
+            <div class="mt-4 text-center text-xs text-black/40 italic">Small steps nurture big gardens.</div>
+            `;
+        }
         else if (room === 'window') {
             const mood = state.profile.mood || 'sunset';
             const preview = artSVG(44, mood);
@@ -1296,7 +1590,7 @@
         
         if (room === 'shelf') {
             $$('.shelfUse').forEach(b => b.onclick = () => { $('#roomModal').classList.add('hidden'); $('#composeModal').classList.remove('hidden'); $('#composeCaption').value = b.dataset.text + '\n\n'; });
-            $$('.shelfRemove').forEach(b => b.onclick = () => removeFromShelf(parseInt(b.dataset.idx)));
+            $$('.shelfRemove').forEach(b => b.onclick = () => removeFromShelf(b.dataset.id));
             const seedBtn = $('.seedPrompt'); if(seedBtn) seedBtn.onclick = () => saveToShelf('One tiny thing I am proud of today');
         }
         if (room === 'plant') {
@@ -1307,16 +1601,20 @@
         $('#roomModal').classList.remove('hidden');
     }
     
-    // --- THIS WAS MISSING ---
+    // UPDATED STORY EVENTS
     function wireStoryEvents() {
         const prev = $('#prevStory'); const next = $('#nextStory');
         if (prev) prev.onclick = () => { if (state.storyPageIndex > 0) { state.storyPageIndex--; renderStoryModal(); } };
-        if (next) next.onclick = () => { const s = MOCK_STORIES[state.storyIndex]; if (state.storyPageIndex < s.pages.length - 1) { state.storyPageIndex++; renderStoryModal(); } else { $('#storyModal').classList.add('hidden'); } };
+        if (next) next.onclick = () => { const s = state.stories[state.storyIndex]; if (s && state.storyPageIndex < s.pages.length - 1) { state.storyPageIndex++; renderStoryModal(); } else { $('#storyModal').classList.add('hidden'); } };
         
         $('#replyStoryBtn').onclick = () => {
             openTextModal('Reply with a note', 'A folded page for someone.', 'One gentle sentence is enough...', async (val) => { 
                 if(!val) return false;
-                try { await sb.from('messages').insert({ from_id: state.user.id, content: `Replying to story: ${val}`, type: 'reply' }); toast('Reply sent.'); } catch(e) { toast('Reply sent (simulated).'); }
+                try { 
+                    const s = state.stories[state.storyIndex];
+                    await sb.from('messages').insert({ from_id: state.user.id, content: `Replying to story: ${val}`, type: 'reply' }); 
+                    toast('Reply sent.'); 
+                } catch(e) { toast('Reply sent.'); }
                 return true; 
             });
         };
@@ -1328,8 +1626,10 @@
         $('#storyModal').classList.remove('hidden');
     }
 
+    // UPDATED STORY MODAL RENDER
     function renderStoryModal() {
-        const s = MOCK_STORIES[state.storyIndex];
+        const s = state.stories[state.storyIndex];
+        if(!s) return;
         const pageContent = s.pages[state.storyPageIndex];
         $('#storyAvatar').innerHTML = avatarSVG(s.seed);
         $('#storyTitle').innerText = `${s.user} • ${s.title}`;
@@ -1337,7 +1637,7 @@
         const pageEl = $('#storyPage');
         pageEl.classList.remove('pageflip'); void pageEl.offsetWidth; pageEl.classList.add('pageflip');
         
-        pageEl.innerHTML = `<div class="text-2xl mb-4 font-bold text-black/20 italic">~ ${state.storyPageIndex + 1} ~</div><div class="text-xl font-medium leading-relaxed">${pageContent}</div><div class="mt-8 text-xs font-bold opacity-30 uppercase tracking-widest text-center">Cozy Journal • ${s.time}</div>`;
+        pageEl.innerHTML = `<div class="text-2xl mb-4 font-bold text-black/20 italic">~ ${state.storyPageIndex + 1} ~</div><div class="text-xl font-medium leading-relaxed">${html(pageContent)}</div><div class="mt-8 text-xs font-bold opacity-30 uppercase tracking-widest text-center">Cozy Journal • ${s.time}</div>`;
         $('#prevStory').disabled = (state.storyPageIndex === 0);
         $('#prevStory').style.opacity = (state.storyPageIndex === 0) ? '0.5' : '1';
         $('#nextStory').innerText = (state.storyPageIndex === s.pages.length - 1) ? 'Close' : 'Next';
@@ -1345,17 +1645,21 @@
     
     function openStoryComposeModal() { $('#storyHeading').value = ''; $('#storyText').value = ''; $('#storyComposeModal').classList.remove('hidden'); }
     
+    // UPDATED SAVE STORY
     async function saveStoryPage() {
         const heading = $('#storyHeading').value.trim(); const text = $('#storyText').value.trim();
         if (!heading || !text) return toast('Please add a heading and some text.');
-        MOCK_STORIES.unshift({ id: 'new_'+Date.now(), user: state.profile?.username || 'You', seed: state.profile?.seed || 1, title: heading, time: 'Just now', pages: [text] });
-        renderStories();
         $('#storyComposeModal').classList.add('hidden');
         toast('Posting journal page...');
-        try { await sb.from('stories').insert({ user_id: state.user.id, title: heading, pages: [text] }); toast('Journal page posted.'); loadStories(); } catch(e) {}
+        try { 
+            await sb.from('stories').insert({ user_id: state.user.id, title: heading, pages: [text] }); 
+            toast('Journal page posted.'); 
+            loadStories(); 
+            $('#storyHeading').value = ''; 
+            $('#storyText').value = '';
+        } catch(e) { toast('Error posting.'); }
     }
     
-    // --- THIS WAS MISSING ---
     async function createPost() {
         const caption = $('#composeCaption').value; if (!caption) return toast("Write a tiny note first.");
         $('#postNowBtn').innerText = "Uploading...";
@@ -1445,7 +1749,33 @@
         $('#onboardNext').onclick = () => { if(state.onboardingStep < 4) { state.onboardingStep++; renderOnboarding(); } };
         $('#skipOnboarding').onclick = () => { state.onboardingStep = 4; renderOnboarding(); };
         
-        $('#chatSendBtn').onclick = () => { const txt = $('#chatInput').value; if(!txt) return; const t = MOCK_THREADS[state.activeThreadId]; if(t) { t.messages.push({ from:'me', text: txt }); renderChatMessages(t); $('#chatInput').value = ''; } };
+        $('#chatSendBtn').onclick = async () => { 
+            const txt = $('#chatInput').value.trim(); 
+            const targetId = state.activeThreadId;
+            
+            if(!txt || !targetId) return; 
+            
+            // 1. Clear input immediately for better UX
+            $('#chatInput').value = ''; 
+            
+            // 2. Optimistic Update (Show it immediately)
+            const container = $('#chatMessages');
+            container.innerHTML += `<div class="flex justify-end"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 bg-gradient-to-b from-[#86a68b]/35 to-white/75"><div class="text-sm text-black/80">${html(txt)}</div></div></div>`;
+            container.scrollTop = container.scrollHeight;
+
+            // 3. Send to Cloud
+            try {
+                const { error } = await sb.from('messages').insert({ 
+                    from_id: state.user.id, 
+                    to_id: targetId,
+                    content: txt 
+                });
+                if(error) throw error;
+            } catch(e) { 
+                toast('Error sending note.');
+                console.error(e);
+            }
+        };
         
         $('#sharePostBtn').onclick = sharePost;
         $('#reportPostBtn').onclick = reportPost; // Fixed reference
@@ -1463,9 +1793,10 @@
 
         wireStoryEvents();
         renderNewThreadModal();
-    }
+    } 
 
     init();
   </script>
 </body>
 </html>
+```
