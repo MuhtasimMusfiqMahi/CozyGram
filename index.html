@@ -688,16 +688,28 @@
     async function loadThreads() {
         if (!state.user) return;
         try {
-            const { data } = await sb.from('messages')
+            // 1. Fetch Messages
+            const { data: msgs } = await sb.from('messages')
                 .select('*, profiles:from_id(username, seed)')
                 .or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`)
-                .order('created_at', { ascending: true }); // Keep this ASC to build history correctly
+                .order('created_at', { ascending: true });
 
-            if (data) {
+            // 2. NEW: Fetch Read History from Cloud
+            const { data: reads } = await sb.from('thread_reads')
+                .select('other_user_id, last_read_at')
+                .eq('user_id', state.user.id);
+
+            // 3. Map Read History to State
+            if(reads) {
+                reads.forEach(r => {
+                    state.lastRead[r.other_user_id] = new Date(r.last_read_at).getTime();
+                });
+            }
+
+            if (msgs) {
                 const grouped = {};
-                data.forEach(m => {
+                msgs.forEach(m => {
                     const otherId = m.from_id === state.user.id ? m.to_id : m.from_id;
-                    
                     if (!grouped[otherId]) {
                         const u = state.allUsers.find(x => x.id === otherId) || { username: 'Neighbor', seed: 1 };
                         grouped[otherId] = { 
@@ -705,34 +717,24 @@
                             user: u.username, 
                             seed: u.seed, 
                             last: '', 
-                            timestamp: 0, // NEW: Track time for sorting
+                            timestamp: 0, 
                             messages: [] 
                         };
                     }
-                    
-                    // Add message
-                    grouped[otherId].messages.push({ 
-                        from: m.from_id === state.user.id ? 'me' : 'them', 
-                        text: m.content || '' 
-                    });
-                    
-                    // Update preview and time
+                    grouped[otherId].messages.push({ from: m.from_id === state.user.id ? 'me' : 'them', text: m.content || '' });
                     grouped[otherId].last = m.content || 'Sent a note';
-                    grouped[otherId].timestamp = new Date(m.created_at).getTime(); // Store time
+                    grouped[otherId].timestamp = new Date(m.created_at).getTime();
                 });
                 
-                // NEW: Sort threads by newest timestamp first
                 state.threads = Object.values(grouped).sort((a, b) => b.timestamp - a.timestamp);
                 
-                // Refresh active chat if open
                 if(state.activeThreadId) {
                     const activeData = state.threads.find(t => t.id === state.activeThreadId);
                     if(activeData) renderChatMessages(activeData);
                 }
             }
-        } catch (e) { console.error("Load threads error", e); }
-        
-        renderMessages(); // This updates the list immediately
+        } catch (e) { console.error("Load error", e); }
+        renderMessages();
     }
     // FIX: LOAD STORIES FROM DB
     async function loadStories() {
@@ -1212,36 +1214,57 @@
         `).join('') : '<div class="text-sm opacity-50 p-2">No other users found yet.</div>';
     }
 
-    function openThread(targetId) {
+    async function openThread(targetId) {
+        // --- 1. TOGGLE LOGIC (Clicking same user closes chat) ---
+        if (state.activeThreadId === targetId) {
+            state.activeThreadId = null; // Deselect
+            
+            // Reset UI to "Empty" state
+            $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
+            $('#chatMessages').innerHTML = '';
+            $('#chatInputArea').classList.add('hidden'); // Hide input
+            
+            renderMessages(); // Re-render sidebar to remove orange highlight
+            return; // Stop here
+        }
+
+        // --- 2. OPEN LOGIC ---
         state.activeThreadId = targetId;
         
-        // 1. Mark as READ and SAVE to localStorage
-        state.lastRead[targetId] = Date.now();
-        localStorage.setItem('cozy_last_read', JSON.stringify(state.lastRead));
+        // Mark as READ in State (Instant UI update)
+        const now = Date.now();
+        state.lastRead[targetId] = now;
         
-        // 2. Refresh sidebar immediately (clears the red dot)
-        renderMessages();
+        // Mark as READ in Cloud (Persist across devices)
+        // We use 'upsert' to either insert a new record or update the existing one
+        sb.from('thread_reads').upsert({ 
+            user_id: state.user.id, 
+            other_user_id: targetId, 
+            last_read_at: new Date().toISOString() 
+        }).then(() => {}); // Fire and forget (don't await, keep UI snappy)
+
+        renderMessages(); // Refresh sidebar to remove red dot
 
         const container = $('#chatMessages');
         container.innerHTML = ''; 
 
-        // 3. Find Data
+        // Find Data
         let thread = state.threads.find(t => t.id === targetId);
         let user = state.allUsers.find(u => u.id === targetId);
         
-        // 4. Header
+        // Header
         if(user) {
             $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(user.seed)}</div><div class="font-extrabold text-sm">${html(user.username)}</div></div>`;
         }
 
-        // 5. Messages
+        // Messages
         if(thread && thread.messages.length > 0) {
             renderChatMessages(thread);
         } else {
             container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic">This paper is blank.<br>Write a gentle note.</div>`;
         }
 
-        // 6. Reveal UI
+        // Reveal
         $('#chatInputArea').classList.remove('hidden');
         $('#newThreadModal').classList.add('hidden');
         container.scrollTop = container.scrollHeight;
