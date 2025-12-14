@@ -906,9 +906,15 @@
         } catch(e) {}
     }
 
-    function initRealtime() { 
-        sb.removeAllChannels(); 
+    async function initRealtime() { 
+        // 1. Safe Cleanup: Try to clear old channels, but ignore errors if the socket is busy
+        try {
+            await sb.removeAllChannels(); 
+        } catch (e) {
+            console.warn("Realtime cleanup skipped (connection busy).");
+        }
 
+        // 2. Create the Channel
         const channel = sb.channel('cozy-updates');
 
         channel
@@ -917,9 +923,9 @@
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed())
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => loadStories())
             
-            // MESSAGES LOGIC
+            // 3. MESSAGES LOGIC (Direct Update)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
-                console.log("📨 Message received via Realtime!", payload); // DEBUG LOG
+                console.log("📨 Message received!", payload); 
                 
                 const newMsg = payload.new;
                 if (!newMsg) return;
@@ -927,12 +933,12 @@
                 const isMe = newMsg.from_id === state.user.id;
                 const partnerId = isMe ? newMsg.to_id : newMsg.from_id;
 
-                // Find or Create Thread
+                // A. Find or Create Thread
                 let thread = state.threads.find(t => t.id === partnerId);
                 if (!thread) {
-                    // Fetch user info for new thread
                     let user = state.allUsers.find(u => u.id === partnerId);
                     if (!user) {
+                        // Rapid fetch if user missing from cache
                         const { data } = await sb.from('profiles').select('*').eq('id', partnerId).single();
                         user = data || { username: 'Neighbor', seed: 1 };
                     }
@@ -940,27 +946,29 @@
                     state.threads.push(thread);
                 }
 
-                // Add Data
+                // B. Add Data
                 thread.messages.push({ from: isMe ? 'me' : 'them', text: newMsg.content });
                 thread.last = newMsg.content;
                 thread.timestamp = new Date(newMsg.created_at).getTime();
 
-                // Sort & Update Read Status
+                // C. Sort (Newest to Top)
                 state.threads.sort((a, b) => b.timestamp - a.timestamp);
 
-                // UI Update
+                // D. UI Update (If active)
                 if (state.activeThreadId === partnerId) {
                     state.lastRead[partnerId] = Date.now();
                     const container = $('#chatMessages');
-                    if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
-                    
-                    container.innerHTML += `
-                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'} pop-in">
-                            <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/35 to-white/75' : 'bg-white/75'}">
-                                <div class="text-sm text-black/80">${html(newMsg.content)}</div>
-                            </div>
-                        </div>`;
-                    container.scrollTop = container.scrollHeight;
+                    if(container) {
+                        if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
+                        
+                        container.innerHTML += `
+                            <div class="flex ${isMe ? 'justify-end' : 'justify-start'} pop-in">
+                                <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/35 to-white/75' : 'bg-white/75'}">
+                                    <div class="text-sm text-black/80">${html(newMsg.content)}</div>
+                                </div>
+                            </div>`;
+                        container.scrollTop = container.scrollHeight;
+                    }
                 } else if (!isMe) {
                     toast(`New note from ${thread.user}`);
                 }
@@ -969,7 +977,6 @@
             })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') console.log("🔥 Realtime Connected!");
-                if (status === 'CHANNEL_ERROR') console.error("Realtime Error. Check Supabase RLS.");
             });
     }
 
