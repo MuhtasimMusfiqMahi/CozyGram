@@ -447,10 +447,59 @@
         return "now";
     }
 
+    // --- MEDIA COMPRESSION HELPER ---
+    async function compressImageToBlob(file, maxDim=1600, quality=0.86){
+      // If it's a video or not an image, return original
+      if (!file || !file.type.startsWith('image/')) return file;
+      
+      const imgUrl = URL.createObjectURL(file);
+      try{
+        const img = await new Promise((resolve, reject)=>{
+          const i = new Image();
+          i.onload = ()=> resolve(i);
+          i.onerror = ()=> reject(new Error('Image load failed'));
+          i.src = imgUrl;
+        });
+
+        // Calculate new dimensions (max 1600px)
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        const scale = Math.min(1, maxDim / Math.max(w, h));
+        const cw = Math.max(1, Math.round(w * scale));
+        const ch = Math.max(1, Math.round(h * scale));
+
+        // Draw to canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0,0,cw,ch); // Fill transparent backgrounds (PNG) with white
+        ctx.drawImage(img, 0,0,cw,ch);
+
+        // Convert back to file/blob
+        const mime = (file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+        const blob = await new Promise(resolve=> canvas.toBlob(resolve, mime, quality));
+        return blob || file;
+      } catch(e) {
+        console.error("Compression failed, using original", e);
+        return file;
+      } finally {
+        try{ URL.revokeObjectURL(imgUrl); }catch{}
+      }
+    }
+
     const state = { 
         user: null, profile: null, posts: [], savedPostIds: [], stories: [],
         allUsers: [], notifications: [], threads: [],
-        compose: { frame: 'wavy', vibe: 'sunset', file: null, preview: null, seed: 1, illustSeed: null },
+        compose: { 
+            frame: 'wavy', 
+            vibe: 'sunset', 
+            file: null, 
+            mediaKind: null,      // 'image' or 'video'
+            mediaPreviewUrl: null, // The blob:url for the preview
+            seed: Math.floor(Math.random()*100), 
+            illustSeed: null 
+        },
         filter: { search: '', topic: 'all' },
         kindness: true, hideNumbers: true,
         hiddenPosts: [], // DB-backed
@@ -1496,37 +1545,38 @@
 
     // --- PART 6: DYNAMIC COMPOSER VIEW ---
     function updateComposeView() {
-        const p = $('#composePreviewContainer');
+        const container = $('#composePreviewContainer');
         const content = $('#composePreview');
         const artPicker = $('#artPicker');
         
-        if(!p || !content) return; 
+        if(!container || !content) return; 
         
-        // Frame Logic
-        p.className = 'bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-[4/3] overflow-hidden relative transition-all duration-300';
+        // 1. Frame Logic (Visual Styles)
+        container.className = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-[4/3] overflow-hidden relative transition-all duration-300';
         
+        // Remove old tape if exists
+        const oldTape = container.querySelector('.tape-deco');
+        if(oldTape) oldTape.remove();
+
         if (state.compose.frame === 'polaroid') {
-            p.classList.add('bg-white', 'p-4', 'pb-10', 'shadow-sm');
+            container.classList.add('bg-white', 'p-4', 'pb-10', 'shadow-sm');
         } else if (state.compose.frame === 'tape') {
-            p.classList.add('bg-white/80', 'p-2');
-            if (!p.querySelector('.tape-deco')) {
-                const tape = document.createElement('div');
-                tape.className = 'tape-deco absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f7c59f]/80 rotate-[-2deg] border border-black/5 z-20 shadow-sm';
-                p.appendChild(tape);
-            }
+            container.classList.add('bg-white/80', 'p-2');
+            // Inject Tape
+            const tape = document.createElement('div');
+            tape.className = 'tape-deco absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f7c59f]/80 rotate-[-2deg] border border-black/5 z-20 shadow-sm';
+            container.appendChild(tape);
         } else {
              // Wavy / Default
-             p.classList.add('bg-white/40');
-             const tape = p.querySelector('.tape-deco');
-             if(tape) tape.remove();
+             container.classList.add('bg-white/40');
         }
 
-        // Step 6: Render Art Picker with Previews
+        // 2. Art Picker Rendering (Disable if media is uploaded)
         if (artPicker) {
+            const isDisabled = !!state.compose.file;
             artPicker.innerHTML = illustChoices.map(ch => {
                 const isSelected = (ch.seed == null && state.compose.illustSeed == null) || (state.compose.illustSeed === ch.seed);
                 const previewSeed = ch.seed != null ? ch.seed : state.compose.seed;
-                const isDisabled = !!state.compose.file;
                 
                 return `
                 <button type="button" class="artBtn wobbly px-2.5 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${isSelected ? 'bg-white/85 ring-2 ring-black/10' : 'bg-white/70'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}" data-seed="${ch.seed || ''}">
@@ -1537,26 +1587,61 @@
                 </button>`;
             }).join('');
             
-            // Re-attach listeners every render since we replaced innerHTML
+            // Re-attach listeners
             $$('.artBtn').forEach(b => {
                 b.onclick = () => {
                     if (state.compose.file) { toast('Remove photo to use art.'); return; }
                     const seedAttr = b.dataset.seed;
                     state.compose.illustSeed = seedAttr ? parseInt(seedAttr) : null;
-                    updateComposeView(); // Re-render to update selection UI and preview
+                    updateComposeView();
                 };
             });
         }
 
-        // Content Logic
-        if (state.compose.file) {
-             const url = URL.createObjectURL(state.compose.file);
-             content.innerHTML = `<img src="${url}" class="w-full h-full object-cover rounded-[12px]">`;
+        
+
+        // 3. Content Rendering (Image vs Video vs Illustration)
+        content.innerHTML = ''; // Clear previous
+        
+        if (state.compose.file && state.compose.mediaPreviewUrl) {
+             // --- SHOW MEDIA ---
+             if(state.compose.mediaKind === 'video') {
+                 content.innerHTML = `<video src="${state.compose.mediaPreviewUrl}" class="w-full h-full object-cover rounded-[12px]" playsinline controls></video>`;
+             } else {
+                 content.innerHTML = `<img src="${state.compose.mediaPreviewUrl}" class="w-full h-full object-cover rounded-[12px]" />`;
+             }
+             
+             // Update the overlay label
+             const overlay = container.querySelector('.absolute.bottom-2');
+             if(overlay) {
+                 overlay.innerHTML = `<button id="removeMediaBtn" class="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold shadow-sm border border-red-200">Remove Media</button>`;
+                 document.getElementById('removeMediaBtn').onclick = (e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     removeComposeMedia();
+                 }
+             }
         } else {
-             // Show selected illustration or current random seed if "Surprise"
+             // --- SHOW ART ---
              const currentSeed = state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed;
              content.innerHTML = artSVG(currentSeed, state.compose.vibe);
+             
+             // Reset overlay label
+             const overlay = container.querySelector('.absolute.bottom-2');
+             if(overlay) overlay.innerHTML = `Tap to upload`;
         }
+    }
+
+    function removeComposeMedia() {
+        if(state.compose.mediaPreviewUrl) {
+            try { URL.revokeObjectURL(state.compose.mediaPreviewUrl); } catch(e) {}
+        }
+        state.compose.file = null;
+        state.compose.mediaPreviewUrl = null;
+        state.compose.mediaKind = null;
+        $('#mediaInput').value = ''; // Reset input
+        updateComposeView();
+        toast("Media removed.");
     }
     
     function getPlantSVG(pct) {
@@ -1799,16 +1884,63 @@
     }
     
     async function createPost() {
-        const caption = $('#composeCaption').value; if (!caption) return toast("Write a tiny note first.");
-        $('#postNowBtn').innerText = "Uploading...";
+        const caption = $('#composeCaption').value; 
+        if (!caption) return toast("Write a tiny note first.");
+        
+        $('#postNowBtn').innerText = "Compressing..."; // Visual feedback
+        
         let imageUrl = null;
-        if (state.compose.file) {
-            const name = `${state.user.id}/${Date.now()}`;
-            const { error } = await sb.storage.from('cozy-media').upload(name, state.compose.file);
-            if (!error) { const { data } = sb.storage.from('cozy-media').getPublicUrl(name); imageUrl = data.publicUrl; }
+        let mediaType = null; // Track if it is image or video
+
+        try {
+            if (state.compose.file) {
+                const file = state.compose.file;
+                const isVideo = file.type.startsWith('video/');
+                mediaType = isVideo ? 'video' : 'image';
+
+                // 1. Compress (if it's an image)
+                const fileToUpload = await compressImageToBlob(file);
+                
+                $('#postNowBtn').innerText = "Uploading...";
+
+                // 2. Upload to Supabase
+                const ext = isVideo ? 'mp4' : 'jpg';
+                const name = `${state.user.id}/${Date.now()}.${ext}`;
+                
+                const { error } = await sb.storage.from('cozy-media').upload(name, fileToUpload);
+                
+                if (error) throw error;
+                
+                // 3. Get Public URL
+                const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
+                imageUrl = data.publicUrl;
+            }
+
+            // 4. Save Post Record
+            await sb.from('posts').insert({ 
+                user_id: state.user.id, 
+                caption, 
+                image_url: imageUrl, 
+                // Store metadata so we know how to render it later
+                media: imageUrl ? { type: mediaType, mediaId: imageUrl } : null,
+                frame: state.compose.frame, 
+                palette: state.compose.vibe, 
+                seed: state.compose.seed 
+            });
+
+            toast("Posted to Cloud!"); 
+            $('#composeModal').classList.add('hidden'); 
+            $('#composeCaption').value = ''; 
+            state.compose.file = null; 
+            $('#mediaInput').value = ''; // Reset file input
+            loadFeed(); 
+            
+        } catch(e) {
+            console.error(e);
+            toast("Upload failed. Try a smaller file?");
+        } finally {
+            $('#postNowBtn').innerText = "Post to Cloud";
         }
-        await sb.from('posts').insert({ user_id: state.user.id, caption, image_url: imageUrl, frame: state.compose.frame, palette: state.compose.vibe, seed: state.compose.seed });
-        toast("Posted to Cloud!"); $('#composeModal').classList.add('hidden'); $('#composeCaption').value = ''; state.compose.file = null; loadFeed(); $('#postNowBtn').innerText = "Post to Cloud";
     }
 
     async function sendSticker(pid, type, el) {
@@ -1840,7 +1972,25 @@
         // This is where openAccountModal is used
         $('#openAccount').onclick = openAccountModal;
         
-        $('#mediaInput').onchange = (e) => { if(e.target.files[0]) { state.compose.file = e.target.files[0]; updateComposeView(); } };
+        $('#mediaInput').onchange = (e) => { 
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            // Clean up old URL if exists
+            if(state.compose.mediaPreviewUrl) URL.revokeObjectURL(state.compose.mediaPreviewUrl);
+            
+            state.compose.file = file;
+            state.compose.mediaPreviewUrl = URL.createObjectURL(file);
+            
+            // Detect type
+            if(file.type.startsWith('video/')) {
+                state.compose.mediaKind = 'video';
+            } else {
+                state.compose.mediaKind = 'image';
+            }
+            
+            updateComposeView(); 
+        };
         $$('.frameBtn').forEach(b => b.onclick = () => { state.compose.frame = b.dataset.f; updateComposeView(); });
         $$('.vibeBtn').forEach(b => b.onclick = () => { state.compose.vibe = b.dataset.v; updateComposeView(); });
         $('#composeCaption').oninput = (e) => { const tags = inferTags(e.target.value); $('#composeTags').innerHTML = tags.map(t => `<span class="text-[10px] bg-black/5 px-2 py-1 rounded-full text-black/50">#${t}</span>`).join(''); };
