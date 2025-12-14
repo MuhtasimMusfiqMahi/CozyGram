@@ -480,6 +480,26 @@
 
     function showView(viewId) {
         state.tab = viewId;
+
+        // --- NEW LOGIC: Close chat if leaving the messages tab ---
+        if (viewId !== 'messages' && state.activeThreadId) {
+            state.activeThreadId = null; // 1. Stop tracking the thread
+            
+            // 2. Visually reset the chat area (so it looks closed when you come back)
+            const chatHeader = document.getElementById('chatHeader');
+            if(chatHeader) chatHeader.innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
+            
+            const chatMessages = document.getElementById('chatMessages');
+            if(chatMessages) chatMessages.innerHTML = '';
+            
+            const chatInputArea = document.getElementById('chatInputArea');
+            if(chatInputArea) chatInputArea.classList.add('hidden');
+            
+            // 3. Update sidebar to remove the "Active" highlight
+            renderMessages();
+        }
+        // ---------------------------------------------------------
+
         ['feed', 'stories', 'messages', 'notifs', 'profile'].forEach(id => {
             const el = document.getElementById(`view-${id}`);
             if (el) el.classList.add('hidden');
