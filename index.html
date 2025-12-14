@@ -54,6 +54,15 @@
       border: 2px solid rgba(43,43,53,.10); transform: rotate(-0.35deg); pointer-events:none;
     }
 
+    /* --- NEW ANIMATIONS --- */
+    .wiggle { animation: wiggle .7s ease; }
+    @keyframes wiggle { 
+      0% { transform: rotate(0);} 
+      30% { transform: rotate(-3deg);} 
+      70% { transform: rotate(2deg);} 
+      100% { transform: rotate(0);} 
+    }
+
     .wobbly { transition: transform .18s ease, filter .18s ease; }
     .wobbly:hover { transform: translateY(-2px) rotate(-0.25deg); filter: saturate(1.02); }
     .wobbly:active { transform: translateY(0px) scale(.99); }
@@ -530,25 +539,19 @@
     function showView(viewId) {
         state.tab = viewId;
 
-        // --- NEW LOGIC: Close chat if leaving the messages tab ---
+        // Auto-close chat if leaving messages tab
         if (viewId !== 'messages' && state.activeThreadId) {
-            state.activeThreadId = null; // 1. Stop tracking the thread
-            
-            // 2. Visually reset the chat area (so it looks closed when you come back)
+            state.activeThreadId = null; 
             const chatHeader = document.getElementById('chatHeader');
             if(chatHeader) chatHeader.innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
-            
             const chatMessages = document.getElementById('chatMessages');
             if(chatMessages) chatMessages.innerHTML = '';
-            
             const chatInputArea = document.getElementById('chatInputArea');
             if(chatInputArea) chatInputArea.classList.add('hidden');
-            
-            // 3. Update sidebar to remove the "Active" highlight
             renderMessages();
         }
-        // ---------------------------------------------------------
 
+        // Hide/Show sections
         ['feed', 'stories', 'messages', 'notifs', 'profile'].forEach(id => {
             const el = document.getElementById(`view-${id}`);
             if (el) el.classList.add('hidden');
@@ -556,10 +559,25 @@
         const current = document.getElementById(`view-${viewId}`);
         if (current) current.classList.remove('hidden');
         
-        ['feed', 'stories', 'messages', 'notifs', 'profile'].forEach(id => {
-            const container = document.getElementById(`nav-${id}`);
-            if (container) container.innerHTML = svgIcon(id, id === viewId);
+        // --- BADGE LOGIC ---
+        // Check if there are any unread messages
+        const hasUnreadNotes = state.threads.some(t => {
+            const lastReadTime = state.lastRead[t.id] || 0;
+            // A thread is unread if it has messages AND the newest one is newer than my last read time
+            // AND the last message wasn't sent by me
+            const lastMsg = t.messages[t.messages.length-1];
+            return lastMsg && lastMsg.from === 'them' && t.timestamp > lastReadTime;
         });
+
+        // Check if there are notifications
+        const hasNotifs = state.notifications.length > 0;
+
+        // Update Nav Icons
+        $('#nav-feed').innerHTML = svgIcon('feed', viewId === 'feed');
+        $('#nav-stories').innerHTML = svgIcon('stories', viewId === 'stories');
+        $('#nav-messages').innerHTML = svgIcon('messages', viewId === 'messages', hasUnreadNotes);
+        $('#nav-notifs').innerHTML = svgIcon('notifs', viewId === 'notifs', hasNotifs);
+        $('#nav-profile').innerHTML = svgIcon('profile', viewId === 'profile');
         
         const fab = document.getElementById('fab');
         if(fab) {
@@ -814,13 +832,26 @@
     function svgIcon(kind, active=false, badge=false){
       const tint = active ? 'rgba(244,163,122,.85)' : 'rgba(43,43,53,.68)';
       const fill = active ? 'rgba(247,197,159,.45)' : 'rgba(134,166,139,.18)';
+      // The Red Dot logic
       const badgeHtml = badge ? `<div class="absolute -top-1 -right-1 badge-dot"></div>` : '';
-      const wrap = (inner, label) => `<div class="relative"><div class="mx-auto w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 grid place-items-center ${active ? 'shadow-sm' : ''}">${inner}</div><div class="mt-1 text-[11px] text-center ${active ? 'font-extrabold text-black/75' : 'text-black/55'}">${label}</div>${badgeHtml}</div>`;
+      
+      const wrap = (inner, label) => `
+        <div class="relative">
+            <div class="mx-auto w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 grid place-items-center ${active ? 'shadow-sm' : ''}">${inner}</div>
+            <div class="mt-1 text-[11px] text-center ${active ? 'font-extrabold text-black/75' : 'text-black/55'}">${label}</div>
+            ${badgeHtml}
+        </div>`;
+
       if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
+      
       if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Pages');
+      
       if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
+      
       if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
+      
       if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
+      
       return '';
     }
 
@@ -2077,7 +2108,15 @@
         $('#magicLinkBtn').onclick = async () => { const email = $('#emailInput').value; if(!email) return toast("Enter your email."); $('#magicLinkBtn').innerText = "Sending..."; const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } }); if(error) { toast("Error sending."); $('#magicLinkBtn').innerText = "Try Again"; } else { $('#loginMsg').innerText = "Check your inbox for the link!"; $('#magicLinkBtn').innerText = "Sent!"; } };
         $('#logoutBtn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
         
-        $$('.navBtn').forEach(b => b.onclick = () => showView(b.dataset.tab));
+        $$('.navBtn').forEach(b => b.onclick = () => {
+            // 1. Add Wiggle Class
+            b.classList.add('wiggle');
+            // 2. Remove it after animation finishes so it can wiggle again later
+            setTimeout(() => b.classList.remove('wiggle'), 700);
+            
+            // 3. Navigate
+            showView(b.dataset.tab);
+        });
         
         $('#fab').onclick = () => { $('#composeModal').classList.remove('hidden'); state.compose.seed = Math.floor(Math.random()*100); updateComposeView(); };
         $('#closeCompose').onclick = () => $('#composeModal').classList.add('hidden');
