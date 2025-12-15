@@ -113,6 +113,55 @@
     
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-thumb { background: rgba(43,43,53,.12); border-radius: 999px; }
+    /* --- MOBILE BOTTOM SHEET SYSTEM --- */
+    
+    /* The Drag Handle (Hidden on Desktop) */
+    .sheet-handle {
+        width: 36px; height: 5px; 
+        background-color: rgba(43, 43, 53, 0.15); 
+        border-radius: 99px; 
+        margin: 0 auto 12px auto;
+        display: none; /* Default hidden */
+    }
+
+    /* Mobile Only Overrides (< 640px) */
+    @media (max-width: 640px) {
+        
+        /* Reveal the handle */
+        .sheet-handle { display: block; }
+
+        /* Force Modal to be a Bottom Sheet */
+        .modal-card {
+            border-radius: 28px 28px 0 0 !important; /* Top corners only */
+            margin: 0 !important; /* Remove floating margins */
+            width: 100% !important;
+            max-width: 100% !important;
+            border-bottom: none !important; /* Connects to bottom of screen */
+            padding-bottom: calc(1.5rem + var(--safe-bottom)) !important; /* Safe area for swipe bar */
+            
+            /* Animation Change: Slide Up */
+            animation: slideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+            transform-origin: bottom center;
+        }
+
+        /* Adjust the "Hand Outline" border for the sheet shape */
+        .modal-card.hand-card { box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
+        .modal-card.hand-outline:before {
+            border-radius: 28px 28px 0 0 !important;
+            border-bottom: none !important;
+            inset: -2px -2px 0 -2px !important; /* Hide bottom border */
+        }
+        
+        /* Ensure close buttons are easy to reach or hidden if redundant */
+        .modal-close-top { display: none; } /* Optional: Hide top-right X if we rely on swipe (advanced) or just keep it */
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+
   </style>
 </head>
 <body>
@@ -881,6 +930,7 @@
 
         // 3. Load basic app data
         loadDailyCheckin();
+        upgradeModalsForMobile();
         wireEvents();
         
         // Non-blocking loads
@@ -2329,6 +2379,20 @@
         } catch(e) {}
         
         if(state.kindness) toast("Sticker sent with love.");
+    }
+
+    function upgradeModalsForMobile() {
+        // Find all elements that look like modal cards
+        const cards = document.querySelectorAll('.modal-card');
+        cards.forEach(card => {
+            // Check if handle already exists to avoid duplicates
+            if(!card.querySelector('.sheet-handle')) {
+                const handle = document.createElement('div');
+                handle.className = 'sheet-handle';
+                // Insert as the very first child
+                card.prepend(handle);
+            }
+        });
     }
 
     // RESTORED: Wire Events Function
