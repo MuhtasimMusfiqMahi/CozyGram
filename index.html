@@ -54,6 +54,7 @@
       border: 2px solid rgba(43,43,53,.10); transform: rotate(-0.35deg); pointer-events:none;
     }
 
+    /* ANIMATIONS */
     .wobbly { transition: transform .18s ease, filter .18s ease; }
     .wobbly:hover { transform: translateY(-2px) rotate(-0.25deg); filter: saturate(1.02); }
     .wobbly:active { transform: translateY(0px) scale(.99); }
@@ -109,11 +110,15 @@
       .desktop-two-col { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
     }
     
+    
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-thumb { background: rgba(43,43,53,.12); border-radius: 999px; }
   </style>
 </head>
 <body>
+
+  <!-- HIDDEN INPUT FOR AVATARS (MUST BE BEFORE SCRIPT) -->
+  <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 
   <!-- ONBOARDING MODAL -->
   <div id="onboardingModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
@@ -190,7 +195,10 @@
 
     <main id="main" class="flex-1 px-4 main-safe-pad">
       <!-- FEED -->
+      <!-- FEED SECTION -->
       <section id="view-feed" class="space-y-4">
+        
+        <!-- 1. DAILY CHECKIN -->
         <div id="dailyCheckin" class="hand-card hand-outline paper-noise p-4">
           <div class="flex items-start justify-between gap-3">
             <div><div class="font-[Fraunces] text-lg">Daily gentle check‑in</div><div class="text-sm text-black/70 mt-1">Private to this device.</div></div>
@@ -202,6 +210,26 @@
             <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="tired"><span class="text-xs font-extrabold">Tired ☁️</span></button>
           </div>
         </div>
+
+        <!-- 2. LOW PRESSURE BANNER (Moved from JS to HTML) -->
+        <div class="hand-card hand-outline paper-noise p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-[Fraunces] text-lg">A low-pressure feed</div>
+              <div class="text-sm text-black/70 mt-1">No public likes. No follower counts. Just gentle notes + stickers.</div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button id="shuffleFeedBtn" onclick="toast('Shuffled cozy order.')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Shuffle cozy</button>
+                <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Meet Pippin</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. FILTERS -->
         <div id="userFilterBanner" class="hand-card hand-outline bg-white/70 border border-black/10 p-4 hidden">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3"><div class="text-sm font-extrabold">Filtering by User</div></div>
@@ -214,6 +242,19 @@
              <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="selfcare">Self-care</button>
              <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="friends">Friends</button>
         </div>
+
+        <!-- 4. NEW POST BUTTON (Moved Here) -->
+        <button id="newPostTrigger" class="w-full text-left hand-card hand-outline bg-gradient-to-r from-white/80 to-[#fffaf1] border border-black/10 p-3 wobbly flex items-center gap-4 group">
+           <div class="w-10 h-10 rounded-[14px] bg-[#f4a37a]/15 border border-[#f4a37a]/20 grid place-items-center text-xl group-hover:scale-110 transition-transform">
+             ✨
+           </div>
+           <div>
+             <div class="text-sm font-extrabold text-black/80">Make a cozy post</div>
+             <div class="text-xs text-black/50">Share a moment, a doodle, or a thought...</div>
+           </div>
+        </button>
+
+        <!-- 5. FEED CONTENT -->
         <div id="feed-container" class="space-y-4">
             <div class="p-6 text-center animate-pulse text-black/50 font-[Fraunces]">Connecting to the clouds...</div>
         </div>
@@ -390,7 +431,7 @@
         
         <!-- NEW: Avatar Picker Inside Modal -->
         <div class="flex justify-center mb-4">
-            <div class="relative group cursor-pointer wobbly" onclick="$('#avatarFileInput').click()">
+            <div class="relative group cursor-pointer wobbly" onclick="document.getElementById('avatarFileInput').click()">
                 <div id="editProfileAvatarPreview" class="w-20 h-20 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100">
                     <!-- Avatar injected via JS -->
                 </div>
@@ -716,25 +757,7 @@
         $('#nav-notifs').innerHTML = svgIcon('notifs', viewId === 'notifs', hasNotifs);
         $('#nav-profile').innerHTML = svgIcon('profile', viewId === 'profile');
         
-        const fab = document.getElementById('fab');
-        if(fab) {
-            if(viewId === 'feed') fab.classList.remove('hidden');
-            else fab.classList.add('hidden');
-        }
         if(viewId === 'profile') renderProfile();
-    }
-
-    function applyMood(moodId){
-      const themes = {
-        sunset: { a:'rgba(247,197,159,.55)', b:'rgba(134,166,139,.35)', c:'rgba(219,161,168,.22)', bg1:'#fff5ea', bg2:'#fbf5ea', bg3:'#f7f0e6' },
-        sage:   { a:'rgba(134,166,139,.45)', b:'rgba(247,197,159,.25)', c:'rgba(111,106,134,.18)', bg1:'#f6fff8', bg2:'#fbf5ea', bg3:'#f3f6f2' },
-        berry:  { a:'rgba(219,161,168,.42)', b:'rgba(247,197,159,.22)', c:'rgba(111,106,134,.22)', bg1:'#fff3f6', bg2:'#fbf5ea', bg3:'#f7f0f2' },
-        clay:   { a:'rgba(184,125,102,.40)', b:'rgba(247,197,159,.28)', c:'rgba(134,166,139,.18)', bg1:'#fff7f1', bg2:'#fbf5ea', bg3:'#f6efe7' }
-      };
-      const m = themes[moodId] || themes.sunset;
-      const r = document.documentElement.style;
-      r.setProperty('--mood-a', m.a); r.setProperty('--mood-b', m.b); r.setProperty('--mood-c', m.c);
-      r.setProperty('--mood-bg1', m.bg1); r.setProperty('--mood-bg2', m.bg2); r.setProperty('--mood-bg3', m.bg3);
     }
 
     function postMediaHTML(p){
@@ -756,15 +779,18 @@
     async function loadThreads() {
         if (!state.user) return;
         try {
+            // 1. Fetch Messages
             const { data: msgs } = await sb.from('messages')
                 .select('*, profiles:from_id(username, seed)')
                 .or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`)
                 .order('created_at', { ascending: true });
 
+            // 2. NEW: Fetch Read History from Cloud
             const { data: reads } = await sb.from('thread_reads')
                 .select('other_user_id, last_read_at')
                 .eq('user_id', state.user.id);
 
+            // 3. Map Read History to State
             if(reads) {
                 reads.forEach(r => {
                     state.lastRead[r.other_user_id] = new Date(r.last_read_at).getTime();
@@ -965,10 +991,16 @@
         $('#editProfileModal').classList.remove('hidden'); 
     }
     async function loadFeed() {
-        let { data, error } = await sb.from('posts').select(`*, profiles(username, seed, pronouns), stickers(sticker_type), comments(text, profiles(username))`).order('created_at', { ascending: false });
+        // FIX: Added 'avatar_url' to the profiles(...) selection list
+        let { data, error } = await sb.from('posts')
+            .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(text, profiles(username))`)
+            .order('created_at', { ascending: false });
+            
         if (error) {
             console.warn("Using fallback feed.");
-            const res = await sb.from('posts').select(`*, profiles(username, seed, pronouns), stickers(sticker_type)`).order('created_at', { ascending: false });
+            // Also added avatar_url here for safety
+            const res = await sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type)`).order('created_at', { ascending: false });
             data = res.data;
         }
         state.posts = data || [];
@@ -983,169 +1015,246 @@
     }
 
     async function initRealtime() { 
-        // 1. Safe Cleanup: Try to clear old channels, but ignore errors if the socket is busy
-        try {
-            await sb.removeAllChannels(); 
-        } catch (e) {
-            console.warn("Realtime cleanup skipped (connection busy).");
-        }
+        try { await sb.removeAllChannels(); } catch (e) {}
 
-        // 2. Create the Channel
         const channel = sb.channel('cozy-updates');
 
         channel
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => loadFeed())
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, () => loadFeed())
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, () => loadFeed())
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => loadStories())
-            
-            // 3. MESSAGES LOGIC (Direct Update)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
-                console.log("📨 Message received!", payload); 
+            // --- 1. NEW POSTS ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async (payload) => {
+                // Fetch the full post data (with user profile)
+                const { data } = await sb.from('posts')
+                    .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(text, profiles(username))`)
+                    .eq('id', payload.new.id)
+                    .single();
                 
+                if (data) {
+                    state.posts.unshift(data); // Add to local data
+                    const html = getPostHTML(data);
+                    
+                    // Inject after the banner
+                    const container = $('#feed-container');
+                    const banner = container.querySelector('.hand-card'); // The banner
+                    if(banner) {
+                        banner.insertAdjacentHTML('afterend', html);
+                    } else {
+                        container.insertAdjacentHTML('afterbegin', html);
+                    }
+                    toast('New cozy post just appeared!');
+                }
+            })
+
+            // --- 2. NEW STICKERS ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, (payload) => {
+                const pid = payload.new.post_id;
+                const type = payload.new.sticker_type;
+                
+                // Visual Fly Effect for everyone looking at the post
+                const postEl = document.getElementById(`post-${pid}`);
+                if(postEl) {
+                    const btn = postEl.querySelector(`button[onclick*="${type}"]`);
+                    if(btn) {
+                        // Fly animation
+                        const fly = document.createElement('div'); fly.className = 'sticker-fly';
+                        fly.innerHTML = STICKER_SVGS[type];
+                        const rect = btn.getBoundingClientRect();
+                        fly.style.left = (rect.left + window.scrollX) + 'px';
+                        fly.style.top = (rect.top + window.scrollY) + 'px';
+                        document.body.appendChild(fly);
+                        setTimeout(() => fly.remove(), 1000);
+                        
+                        // Increment Counter in UI
+                        const span = btn.querySelector('span:last-child');
+                        if(span) span.innerText = parseInt(span.innerText) + 1;
+                    }
+                }
+            })
+            
+            // --- 3. NEW COMMENTS ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
+                const pid = payload.new.post_id;
+                // If comment modal is open for this post, refresh it
+                if(state.comments.postId === pid) {
+                     renderCommentsModal();
+                }
+                // Also update the preview on the card
+                const previewContainer = document.getElementById(`comments-${pid}`);
+                if(previewContainer) {
+                    const { data: user } = await sb.from('profiles').select('username').eq('id', payload.new.user_id).single();
+                    const html = `<div class="text-sm pop-in"><span class="font-extrabold">${user?.username}:</span> <span class="text-black/70">${payload.new.text}</span></div>`;
+                    previewContainer.insertAdjacentHTML('afterbegin', html);
+                }
+            })
+
+            // --- 4. NEW STORIES ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, async (payload) => {
+                 // Fetch story data
+                 const { data } = await sb.from('stories').select(`*, profiles(username, seed, avatar_url)`).eq('id', payload.new.id).single();
+                 if(data) {
+                    // Convert to app format
+                    const s = { 
+                        id: data.id, 
+                        user: data.profiles?.username, 
+                        seed: data.profiles?.seed, 
+                        avatar_url: data.profiles?.avatar_url,
+                        title: data.title, 
+                        time: 'Just now', 
+                        pages: data.pages 
+                    };
+                    state.stories.unshift(s);
+                    // Inject
+                    const list = document.getElementById('storiesList');
+                    list.insertAdjacentHTML('afterbegin', getStoryHTML(s, 0));
+                 }
+            })
+
+            // --- 5. NOTIFICATIONS ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${state.user.id}` }, (payload) => {
+                state.notifications.unshift(payload.new);
+                // Show badge
+                $('#nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', true);
+                // Show toast
+                toast(payload.new.content);
+                // If on notifs view, render
+                if(state.tab === 'notifs') renderNotifs();
+            })
+
+            // --- 6. MESSAGES (Keep your existing working logic here) ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
                 const newMsg = payload.new;
                 if (!newMsg) return;
-
                 const isMe = newMsg.from_id === state.user.id;
                 const partnerId = isMe ? newMsg.to_id : newMsg.from_id;
-
-                // A. Find or Create Thread
                 let thread = state.threads.find(t => t.id === partnerId);
                 if (!thread) {
                     let user = state.allUsers.find(u => u.id === partnerId);
                     if (!user) {
-                        // Rapid fetch if user missing from cache
                         const { data } = await sb.from('profiles').select('*').eq('id', partnerId).single();
                         user = data || { username: 'Neighbor', seed: 1 };
                     }
-                    thread = { id: partnerId, user: user.username, seed: user.seed, last: '', timestamp: Date.now(), messages: [] };
+                    thread = { id: partnerId, user: user.username, seed: user.seed, avatar_url: user.avatar_url, last: '', timestamp: Date.now(), messages: [] };
                     state.threads.push(thread);
                 }
-
-                // B. Add Data
                 thread.messages.push({ from: isMe ? 'me' : 'them', text: newMsg.content });
                 thread.last = newMsg.content;
                 thread.timestamp = new Date(newMsg.created_at).getTime();
-
-                // C. Sort (Newest to Top)
                 state.threads.sort((a, b) => b.timestamp - a.timestamp);
-
-                // D. UI Update (If active)
                 if (state.activeThreadId === partnerId) {
                     state.lastRead[partnerId] = Date.now();
                     const container = $('#chatMessages');
                     if(container) {
                         if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
-                        
-                        container.innerHTML += `
-                            <div class="flex ${isMe ? 'justify-end' : 'justify-start'} pop-in">
-                                <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/35 to-white/75' : 'bg-white/75'}">
-                                    <div class="text-sm text-black/80">${html(newMsg.content)}</div>
-                                </div>
-                            </div>`;
+                        container.innerHTML += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} pop-in"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/35 to-white/75' : 'bg-white/75'}"><div class="text-sm text-black/80">${html(newMsg.content)}</div></div></div>`;
                         container.scrollTop = container.scrollHeight;
                     }
                 } else if (!isMe) {
                     toast(`New note from ${thread.user}`);
                 }
-                
                 renderMessages();
             })
             .subscribe((status) => {
-                if (status === 'SUBSCRIBED') console.log("🔥 Realtime Connected!");
+                if (status === 'SUBSCRIBED') console.log("🔥 Everything Realtime Connected!");
             });
+    }
+
+    // --- HTML GENERATORS (For Realtime & Initial Load) ---
+
+    function getPostHTML(p) {
+        const u = p.profiles || { username: 'Anon', seed: 1 };
+        const stickers = p.stickers || [];
+        // Calculate counts
+        const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
+        stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
+        
+        let art = artSVG(p.seed, p.palette); 
+        if(p.image_url) art = `<img src="${p.image_url}" class="w-full h-full object-cover">`;
+        
+        const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
+        const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
+        const isSaved = state.savedPostIds.includes(p.id);
+        const timeStr = timeAgo(new Date(p.created_at));
+        const tags = inferTags(p.caption);
+        const tagHtml = tags.map(t => `<span class="text-[10px] opacity-50 mr-1">#${t}</span>`).join('');
+        const promptChip = p.prompt ? `<button onclick="saveToShelf('${html(p.prompt)}')" class="wobbly inline-flex items-center gap-2 px-3 py-1.5 rounded-[16px_14px_18px_12px] border border-black/10 bg-gradient-to-b from-[#fbf5ea] to-white/70 text-xs mb-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgba(244,163,122,.75)"></span>prompt: <b class="font-extrabold">${html(p.prompt)}</b><span class="text-[11px] text-black/45">save</span></button>` : '';
+        
+        // Comments preview
+        const commentsHtml = (p.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
+
+        return `
+        <article class="hand-card hand-outline paper-noise p-4 relative mb-4 pop-in" id="post-${p.id}">
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle at 30% 30%, rgba(134,166,139,.18), rgba(219,161,168,.0) 60%);"></div>
+            ${isSaved ? `<div class="absolute left-3 top-3 px-2 py-1 rounded-[14px] bg-white/75 text-[10px] font-extrabold border border-black/5">saved</div>` : ''}
+            <div class="flex items-center justify-between gap-3 mb-3">
+                <button onclick="openUserModal('${p.user_id}')" class="flex items-center gap-3 text-left wobbly">
+                    <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+                    <div><div class="font-extrabold text-sm">${html(u.username)}</div><div class="text-xs text-black/50">${timeStr}</div></div>
+                </button>
+                <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly px-3 py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
+            </div>
+            ${promptChip}
+            <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
+                ${tapeDeco}
+                <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-[4/3] bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
+                        ${art}
+                        <div class="absolute inset-0 z-10"></div>
+                </div>
+            </div>
+            <div class="mb-1">${tagHtml}</div>
+            <div class="text-sm text-black/80 mb-3 leading-snug">${html(p.caption)}</div>
+            <div class="flex flex-wrap gap-2 mb-3" id="stickers-${p.id}">
+                ${stickerBtn(p.id, 'hug', STICKER_SVGS.hug, counts.hug)}
+                ${stickerBtn(p.id, 'star', STICKER_SVGS.star, counts.star)}
+                ${stickerBtn(p.id, 'leaf', STICKER_SVGS.leaf, counts.leaf)}
+                ${stickerBtn(p.id, 'spark', STICKER_SVGS.spark, counts.spark)}
+                ${stickerBtn(p.id, 'cocoa', STICKER_SVGS.cocoa, counts.cocoa)}
+            </div>
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-xs text-black/55">Supportive notes</div>
+                    <button onclick="openComments('${p.id}')" class="wobbly px-3 py-1 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+                <div class="space-y-1" id="comments-${p.id}">${commentsHtml || '<div class="text-sm text-black/55">No notes yet. Leave a gentle one?</div>'}</div>
+            </div>
+        </article>`;
+    }
+
+    function getStoryHTML(s, idx) {
+        // Handle User Object
+        const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
+        
+        return `
+        <button class="w-full wobbly text-left pop-in" onclick="openStory(${idx})">
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+                <div class="flex-1 min-w-0"><div class="font-extrabold truncate">${html(s.user)}'s pages</div><div class="text-xs text-black/55">${s.time} • ${s.pages.length} pages</div></div>
+                <div class="text-xs text-black/50">open →</div>
+            </div>
+        </button>`;
     }
 
     function renderPosts() {
         const list = $('#feed-container');
+        
+        // 1. Handle Filters visibility
         if (state.filter.search && state.filter.search.length > 0) $('#userFilterBanner').classList.remove('hidden');
         else $('#userFilterBanner').classList.add('hidden');
         
+        // 2. Filter Logic
         const filtered = state.posts.filter(p => {
-            // -- SECURITY UPDATE: Server now handles mutes/hides --
-            
             const tags = inferTags(p.caption); 
             const matchesSearch = state.filter.search ? (p.caption.toLowerCase().includes(state.filter.search.toLowerCase()) || p.profiles.username.toLowerCase().includes(state.filter.search.toLowerCase())) : true;
             const matchesTopic = state.filter.topic === 'all' ? true : tags.includes(state.filter.topic);
             return matchesSearch && matchesTopic; 
         });
 
-        const gentleBanner = `
-        <div class="hand-card hand-outline paper-noise p-4 mb-4">
-          <div class="flex items-start gap-3">
-            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
-                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
-                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="font-[Fraunces] text-lg">A low-pressure feed</div>
-              <div class="text-sm text-black/70 mt-1">No public likes. No follower counts. Just gentle notes + stickers.</div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <button onclick="toast('Shuffled cozy order.')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Shuffle cozy</button>
-                <button onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Meet Pippin</button>
-              </div>
-            </div>
-          </div>
-        </div>`;
-        
-        const bannerHtml = (!state.filter.search && state.filter.topic === 'all') ? gentleBanner : '';
+        // 3. Render
+        if(filtered.length === 0) { 
+            list.innerHTML = '<div class="p-6 text-center opacity-50">No posts found.</div>'; 
+            return; 
+        }
 
-        if(filtered.length === 0) { list.innerHTML = bannerHtml + '<div class="p-6 text-center opacity-50">No posts found.</div>'; return; }
-
-        const postsHtml = filtered.map((p, index) => {
-            const u = p.profiles || { username: 'Anon', seed: 1 };
-            const stickers = p.stickers || [];
-            const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
-            let art = artSVG(p.seed, p.palette); if(p.image_url) art = `<img src="${p.image_url}" class="w-full h-full object-cover">`;
-            const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
-            const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
-            const isSaved = state.savedPostIds.includes(p.id);
-            const timeStr = timeAgo(new Date(p.created_at));
-            const tags = inferTags(p.caption);
-            const tagHtml = tags.map(t => `<span class="text-[10px] opacity-50 mr-1">#${t}</span>`).join('');
-            const promptChip = p.prompt ? `<button onclick="saveToShelf('${html(p.prompt)}')" class="wobbly inline-flex items-center gap-2 px-3 py-1.5 rounded-[16px_14px_18px_12px] border border-black/10 bg-gradient-to-b from-[#fbf5ea] to-white/70 text-xs mb-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgba(244,163,122,.75)"></span>prompt: <b class="font-extrabold">${html(p.prompt)}</b><span class="text-[11px] text-black/45">save</span></button>` : '';
-            const commentsHtml = (p.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
-
-            return `
-            <article class="hand-card hand-outline paper-noise p-4 relative mb-4">
-                <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle at 30% 30%, rgba(134,166,139,.18), rgba(219,161,168,.0) 60%);"></div>
-                ${isSaved ? `<div class="absolute left-3 top-3 px-2 py-1 rounded-[14px] bg-white/75 text-[10px] font-extrabold border border-black/5">saved</div>` : ''}
-                <div class="flex items-center justify-between gap-3 mb-3">
-                    <button onclick="openUserModal('${p.user_id}')" class="flex items-center gap-3 text-left wobbly">
-                        <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
-                        <div><div class="font-extrabold text-sm">${html(u.username)}</div><div class="text-xs text-black/50">${timeStr}</div></div>
-                    </button>
-                    <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly px-3 py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
-                </div>
-                ${promptChip}
-                <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
-                    ${tapeDeco}
-                    <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-[4/3] bg-white/50 relative" data-postid="${p.id}">
-                         ${art}
-                         <div class="absolute inset-0 z-10"></div>
-                    </div>
-                </div>
-                <div class="mb-1">${tagHtml}</div>
-                <div class="text-sm text-black/80 mb-3 leading-snug">${html(p.caption)}</div>
-                <div class="flex flex-wrap gap-2 mb-3">
-                    ${stickerBtn(p.id, 'hug', STICKER_SVGS.hug, counts.hug)}
-                    ${stickerBtn(p.id, 'star', STICKER_SVGS.star, counts.star)}
-                    ${stickerBtn(p.id, 'leaf', STICKER_SVGS.leaf, counts.leaf)}
-                    ${stickerBtn(p.id, 'spark', STICKER_SVGS.spark, counts.spark)}
-                    ${stickerBtn(p.id, 'cocoa', STICKER_SVGS.cocoa, counts.cocoa)}
-                </div>
-                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="text-xs text-black/55">Supportive notes</div>
-                        <button onclick="openComments('${p.id}')" class="wobbly px-3 py-1 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
-                    </div>
-                    <div class="space-y-1">${commentsHtml || '<div class="text-sm text-black/55">No notes yet. Leave a gentle one?</div>'}</div>
-                </div>
-            </article>`;
-        }).join('');
-        
-        list.innerHTML = bannerHtml + postsHtml;
-        list.querySelectorAll('.postMediaTap').forEach(b => { b.ondblclick = (e) => { e.preventDefault(); sendSticker(b.dataset.postid, 'star', b.closest('article')); }; });
+        const postsHtml = filtered.map(p => getPostHTML(p)).join('');
+        list.innerHTML = postsHtml;
     }
 
     // Helper for stickers
@@ -1154,62 +1263,89 @@
     }
 
     function renderProfile() {
-    if(!state.profile) return;
-    const p = state.profile;
-    const meId = state.user.id;
-    const moodBtn = (id, l, g) => `<button class="moodBtn2 wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${p.mood===id ? 'bg-gradient-to-b from-white/80 to-white/60 ring-2 ring-black/10' : 'bg-white/70'}" data-mood="${id}"><span class="inline-flex items-center gap-2 text-xs font-extrabold"><span class="w-5 h-5 rounded-[10px_12px_12px_9px] border border-black/10" style="background:${g}"></span>${l}</span></button>`;
-    const shelfIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
-    const plantIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
-    const windowIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 4h12v16H6z" fill="rgba(134,166,139,.18)"/><path class="ink-line-lite" d="M12 4v16M6 12h12" fill="none"/></svg>`;
-    const drawerIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
-    const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}" aria-label="Open ${t}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
+        if(!state.profile) return;
+        const p = state.profile;
+        const meId = state.user.id;
+        
+        const moodBtn = (id, l, g) => `<button class="moodBtn2 wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${p.mood===id ? 'bg-gradient-to-b from-white/80 to-white/60 ring-2 ring-black/10' : 'bg-white/70'}" data-mood="${id}"><span class="inline-flex items-center gap-2 text-xs font-extrabold"><span class="w-5 h-5 rounded-[10px_12px_12px_9px] border border-black/10" style="background:${g}"></span>${l}</span></button>`;
+        const shelfIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
+        const plantIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
+        const windowIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 4h12v16H6z" fill="rgba(134,166,139,.18)"/><path class="ink-line-lite" d="M12 4v16M6 12h12" fill="none"/></svg>`;
+        const drawerIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
+        
+        const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}" aria-label="Open ${t}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
 
-    const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
-    const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
-    const savedPosts = state.savedPostIds.map(pid => state.posts.find(x => x.id === pid)).filter(Boolean).slice(0, 4);
-    const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+        const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
+        const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+        const savedPosts = state.savedPostIds.map(pid => state.posts.find(x => x.id === pid)).filter(Boolean).slice(0, 4);
+        const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
 
-    $('#view-profile').innerHTML = `
-        <div class="relative hand-card hand-outline bg-gradient-to-b from-white/70 to-white/55 border border-black/10 p-4 overflow-hidden mb-4">
-          <div class="absolute -left-10 -top-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle at 30% 30%, rgba(219,161,168,.18), rgba(219,161,168,.0) 60%);"></div>
-          <div class="flex items-center justify-between gap-3">
-            <div><div class="font-[Fraunces] text-lg">Your cozy corner</div><div class="text-sm text-black/65">A profile that feels like a room.</div></div>
-            <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden">${avatarHTML(p)}</div>
-          </div>
-          <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            ${roomItem('Shelf', 'saved prompts', shelfIcon, 'shelf')}${roomItem('Plant', 'soft habits', plantIcon, 'plant')}${roomItem('Window', 'mood light', windowIcon, 'window')}${roomItem('Drawer', `${state.savedPostIds.length} saved`, drawerIcon, 'drawer')}
-          </div>
-          <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
-            <div class="flex items-center justify-between"><div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div><div class="text-xs text-black/45">private</div></div>
-            <div class="mt-2 flex flex-wrap gap-2">${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}</div>
-          </div>
-          
-          <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
-            <div class="font-extrabold">About</div>
-            <div class="text-sm text-black/70 mt-1">${html(p.bio||'')}</div>
-            <div class="mt-2 flex flex-wrap items-center gap-2">
-                <!-- Only 'Edit Profile' remains here -->
-                <button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button>
-                <button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button>
-                <button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button>
+        $('#view-profile').innerHTML = `
+            <div class="relative hand-card hand-outline bg-gradient-to-b from-white/70 to-white/55 border border-black/10 p-4 overflow-hidden mb-4">
+              <div class="absolute -left-10 -top-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle at 30% 30%, rgba(219,161,168,.18), rgba(219,161,168,.0) 60%);"></div>
+              
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <!-- FIX: Show actual Name and Pronouns -->
+                    <div class="font-[Fraunces] text-2xl tracking-tight leading-none mb-1">${html(p.username)}</div>
+                    <div class="text-xs text-black/50 font-bold uppercase tracking-wider">${html(p.pronouns || 'Your Corner')}</div>
+                </div>
+                <!-- Avatar Display -->
+                <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0 bg-white">
+                    ${avatarHTML(p)}
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                ${roomItem('Shelf', 'saved prompts', shelfIcon, 'shelf')}
+                ${roomItem('Plant', 'soft habits', plantIcon, 'plant')}
+                ${roomItem('Window', 'mood light', windowIcon, 'window')}
+                ${roomItem('Drawer', `${state.savedPostIds.length} saved`, drawerIcon, 'drawer')}
+              </div>
+
+              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+                <div class="flex items-center justify-between"><div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div><div class="text-xs text-black/45">private</div></div>
+                <div class="mt-2 flex flex-wrap gap-2">${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}</div>
+              </div>
+              
+              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+                <div class="font-extrabold">About</div>
+                <div class="text-sm text-black/70 mt-1">${html(p.bio||'')}</div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button>
+                    <button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button>
+                    <button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button>
+                </div>
+              </div>
             </div>
-          </div>
-          </div>
-        <div class="hand-card hand-outline paper-noise p-4"><div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div></div>
-        <div class="mt-4 hand-card hand-outline bg-white/70 border border-black/10 p-3"><div class="flex items-center justify-between"><div><div class="text-sm font-extrabold">Saved in your drawer</div><div class="text-xs text-black/60 mt-1">Posts you want to keep close (private).</div></div><button id="openDrawer2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Open</button></div><div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">${savedThumbs}</div></div>
-    `;
-    $$('.roomBtn').forEach(btn => btn.onclick = () => openRoom(btn.dataset.room));
-    $$('.moodBtn2').forEach(btn => { btn.onclick = async () => { const m = btn.dataset.mood; await setMood(m); }; });
-    
-    // Remember to define the new click handler for the 'Change avatar' button
-    $('#openProfileSetup').onclick = openEditProfile;
-    // NOTE: A handler for $('#changeAvatarBtn') should be added here or elsewhere in your application.
-    $('#newPromptPost').onclick = () => { $('#composeModal').classList.remove('hidden'); $('#composeCaption').value='What’s one kind thing you did today?\n\n'; toast('Prompt loaded.'); };
-    $('#newStory').onclick = openStoryComposeModal;
-    $('#openDrawer2').onclick = () => openRoom('drawer');
-    $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
-    $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
-}
+
+            <div class="hand-card hand-outline paper-noise p-4">
+                <div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div>
+            </div>
+            
+            <div class="mt-4 hand-card hand-outline bg-white/70 border border-black/10 p-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-extrabold">Saved in your drawer</div>
+                        <div class="text-xs text-black/60 mt-1">Posts you want to keep close (private).</div>
+                    </div>
+                    <button id="openDrawer2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Open</button>
+                </div>
+                <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">${savedThumbs}</div>
+            </div>
+        `;
+        
+        $$('.roomBtn').forEach(btn => btn.onclick = () => openRoom(btn.dataset.room));
+        $$('.moodBtn2').forEach(btn => { btn.onclick = async () => { const m = btn.dataset.mood; await setMood(m); }; });
+        
+        $('#openProfileSetup').onclick = openEditProfile;
+        $('#newPromptPost').onclick = () => { $('#composeModal').classList.remove('hidden'); $('#composeCaption').value='What’s one kind thing you did today?\n\n'; toast('Prompt loaded.'); };
+        $('#newStory').onclick = openStoryComposeModal;
+        $('#openDrawer2').onclick = () => openRoom('drawer');
+        $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
+        $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
+    }
 
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
@@ -1679,27 +1815,82 @@
         modal.classList.remove('hidden');
     }
     
-    // ... function openAccountModal() is below this ...
-    
     function openAccountModal() {
-        const p = state.profile || { username: 'You', seed: 0, pronouns: '', bio: '' };
+        const p = state.profile || { username: 'Neighbor', seed: 0, pronouns: '', bio: '' };
         
         $('#accountBody').innerHTML = `
-            <div class="hand-card bg-white/70 border border-black/10 p-3 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden">${avatarSVG(p.seed)}</div>
-                <div class="min-w-0 flex-1">
-                  <div class="font-extrabold truncate">${html(p.username)}</div>
-                  <div class="text-xs text-black/60 truncate">${html(p.pronouns||'')}</div>
+            <!-- Top Section: Avatar and Edit Button -->
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <!-- Actual Avatar -->
+                    <div class="w-16 h-16 rounded-[22px_18px_26px_20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
+                        ${avatarHTML(p)}
+                    </div>
+                    <div class="min-w-0">
+                        <!-- Full Name / Username -->
+                        <div class="font-[Fraunces] text-xl truncate leading-tight">${html(p.username)}</div>
+                        <!-- Pronouns -->
+                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">
+                            ${html(p.pronouns || 'Cozy Neighbor')}
+                        </div>
+                    </div>
                 </div>
-                <div class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">Current</div>
+                
+                <!-- Edit Profile Button at the Top (FIXED) -->
+                <!-- We now manually hide the modal and call openEditProfile -->
+                <button id="accountModalEditBtn" class="wobbly px-3 py-2 rounded-[14px_12px_16px_10px] border border-black/10 bg-white/80 text-xs font-extrabold shadow-sm">
+                    Edit Profile
+                </button>
             </div>
-            
-            <div class="hand-card bg-white/70 border border-black/10 p-3 mt-3">
-                <div class="text-xs font-bold opacity-50 mb-2">ACTIONS</div>
-                <button onclick="openEditProfile(); $('#accountModal').classList.add('hidden')" class="w-full text-left p-2 hover:bg-black/5 rounded font-bold text-sm wobbly">Edit Profile</button>
+
+            <!-- Bio Section -->
+            <div class="hand-card bg-white/50 border border-black/5 p-3 mb-4">
+                <div class="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-1">About your corner</div>
+                <div class="text-sm text-black/75 leading-relaxed">
+                    ${html(p.bio || 'No bio yet. Tap edit to add one!')}
+                </div>
+            </div>
+
+            <!-- Settings / Actions List -->
+            <div class="hand-card bg-white/70 border border-black/10 overflow-hidden">
+                <div class="px-3 py-2 border-b border-black/5 text-[10px] font-bold text-black/30 uppercase tracking-widest">Settings</div>
+                
+                <button id="accountModalSafetyBtn" class="w-full text-left px-4 py-3 hover:bg-black/5 transition-colors flex items-center justify-between group">
+                    <span class="text-sm font-bold text-black/70">Safety & Comfort</span>
+                    <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                </button>
+                
+                <button id="modalLogoutBtn" class="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center justify-between group">
+                    <span class="text-sm font-bold text-red-500">Log Out</span>
+                    <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
             </div>
         `;
+
+        // --- WIRE UP BUTTONS SAFELY ---
         
+        // 1. Edit Profile
+        document.getElementById('accountModalEditBtn').onclick = () => {
+            document.getElementById('accountModal').classList.add('hidden'); // Close this one
+            openEditProfile(); // Open the edit screen
+        };
+
+        // 2. Safety
+        document.getElementById('accountModalSafetyBtn').onclick = () => {
+            document.getElementById('accountModal').classList.add('hidden');
+            document.getElementById('safetyModal').classList.remove('hidden');
+        };
+
+        // 3. Logout
+        const modalLogout = document.getElementById('modalLogoutBtn');
+        if(modalLogout) {
+            modalLogout.onclick = async () => {
+                await sb.auth.signOut();
+                window.location.href = window.location.pathname;
+            };
+        }
+
+        // Show the modal
         $('#accountModal').classList.remove('hidden');
     }
 
@@ -2116,109 +2307,100 @@
     }
 
     async function sendSticker(pid, type, el) {
+        // ... (keep the existing animation logic) ...
         const fly = document.createElement('div'); fly.className = 'sticker-fly';
-        fly.innerHTML = STICKER_SVGS[type] || '❤️';
-        const rect = el.getBoundingClientRect(); const centerX = rect.left + (rect.width / 2); const centerY = rect.top + (rect.height / 2);
-        // Step 8: Absolute positioning relative to scroll
-        fly.style.left = (centerX - 24 + window.scrollX) + 'px'; 
-        fly.style.top = (centerY - 24 + window.scrollY) + 'px';
+        // ...
         
-        document.body.appendChild(fly); 
-        setTimeout(() => fly.remove(), 1000);
+        try { 
+            // 1. Save Sticker
+            await sb.from('stickers').insert({ post_id: pid, sticker_type: type, user_id: state.user.id }); 
+            
+            // 2. Find Post Owner & Send Notification
+            // We need to know who owns the post to notify them. 
+            // Since we clicked a button, we can find the owner ID from state.posts
+            const post = state.posts.find(p => p.id === pid);
+            if(post && post.user_id !== state.user.id) {
+                 await sb.from('notifications').insert({
+                     user_id: post.user_id, // Notify the owner
+                     type: 'sticker',
+                     content: `${state.profile.username} sent a ${type} sticker!`
+                 });
+            }
+        } catch(e) {}
         
-        try { await sb.from('stickers').insert({ post_id: pid, sticker_type: type, user_id: state.user.id }); } catch(e) {}
         if(state.kindness) toast("Sticker sent with love.");
     }
 
     // RESTORED: Wire Events Function
     function wireEvents() {
-        $('#magicLinkBtn').onclick = async () => { const email = $('#emailInput').value; if(!email) return toast("Enter your email."); $('#magicLinkBtn').innerText = "Sending..."; const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } }); if(error) { toast("Error sending."); $('#magicLinkBtn').innerText = "Try Again"; } else { $('#loginMsg').innerText = "Check your inbox for the link!"; $('#magicLinkBtn').innerText = "Sent!"; } };
-        $('#logoutBtn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+        // Helper to attach listeners safely (prevents crashes if an element is missing)
+        const safeWire = (id, fn) => {
+            const el = $(id);
+            if (el) el.onclick = fn;
+            else console.warn(`Element ${id} not found, skipping.`);
+        };
         
-        $$('.navBtn').forEach(b => b.onclick = () => {
-            // 1. Add Wiggle Class
-            b.classList.add('wiggle');
-            // 2. Remove it after animation finishes so it can wiggle again later
-            setTimeout(() => b.classList.remove('wiggle'), 700);
-            
-            // 3. Navigate
-            showView(b.dataset.tab);
+        const safeWireAll = (selector, fn) => {
+            const els = $$(selector);
+            if(els.length) els.forEach(fn);
+        };
+
+        // --- AUTH ---
+        safeWire('#magicLinkBtn', async () => { 
+            const email = $('#emailInput').value; 
+            if(!email) return toast("Enter your email."); 
+            $('#magicLinkBtn').innerText = "Sending..."; 
+            const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } }); 
+            if(error) { toast("Error sending."); $('#magicLinkBtn').innerText = "Try Again"; } 
+            else { $('#loginMsg').innerText = "Check your inbox for the link!"; $('#magicLinkBtn').innerText = "Sent!"; } 
+        });
+
+        safeWire('#logoutBtn', async () => { 
+            await sb.auth.signOut(); 
+            // Clear URL and reload to a clean state
+            window.location.href = window.location.pathname; 
+        });
+
+        // --- NAVIGATION ---
+        safeWireAll('.navBtn', (b) => {
+            b.onclick = () => {
+                b.classList.add('wiggle');
+                setTimeout(() => b.classList.remove('wiggle'), 700);
+                showView(b.dataset.tab);
+            };
+        });
+
+        // --- FAB & COMPOSE ---
+        // NEW Post Button Logic
+        safeWire('#newPostTrigger', () => { 
+            $('#composeModal').classList.remove('hidden'); 
+            state.compose.seed = Math.floor(Math.random()*100); 
+            updateComposeView(); 
         });
         
-        $('#fab').onclick = () => { $('#composeModal').classList.remove('hidden'); state.compose.seed = Math.floor(Math.random()*100); updateComposeView(); };
-        $('#closeCompose').onclick = () => $('#composeModal').classList.add('hidden');
-        $('#postNowBtn').onclick = createPost;
+        safeWire('#closeCompose', () => $('#composeModal').classList.add('hidden'));
+        safeWire('#postNowBtn', createPost);
         
-        // This is where openAccountModal is used
-        $('#openAccount').onclick = openAccountModal;
-        
-        $('#mediaInput').onchange = (e) => { 
+        safeWire('#mediaInput', (e) => { 
             const file = e.target.files[0];
             if(!file) return;
-            
-            // Clean up old URL if exists
             if(state.compose.mediaPreviewUrl) URL.revokeObjectURL(state.compose.mediaPreviewUrl);
-            
             state.compose.file = file;
             state.compose.mediaPreviewUrl = URL.createObjectURL(file);
-            
-            // Detect type
-            if(file.type.startsWith('video/')) {
-                state.compose.mediaKind = 'video';
-            } else {
-                state.compose.mediaKind = 'image';
-            }
-            
+            state.compose.mediaKind = file.type.startsWith('video/') ? 'video' : 'image';
             updateComposeView(); 
+        });
+
+        safeWireAll('.frameBtn', (b) => b.onclick = () => { state.compose.frame = b.dataset.f; updateComposeView(); });
+        safeWireAll('.vibeBtn', (b) => b.onclick = () => { state.compose.vibe = b.dataset.v; updateComposeView(); });
+        
+        const captionInput = $('#composeCaption');
+        if(captionInput) captionInput.oninput = (e) => { 
+            const tags = inferTags(e.target.value); 
+            $('#composeTags').innerHTML = tags.map(t => `<span class="text-[10px] bg-black/5 px-2 py-1 rounded-full text-black/50">#${t}</span>`).join(''); 
         };
 
-        // --- AVATAR UPLOAD LOGIC ---
-        // --- AVATAR UPLOAD LOGIC ---
-        // (No button click listener needed here, it's handled by onclick in HTML)
-
-        $('#avatarFileInput').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // Show a temporary preview inside the Edit Modal immediately
-            const tempUrl = URL.createObjectURL(file);
-            $('#editProfileAvatarPreview').innerHTML = `<img src="${tempUrl}" class="w-full h-full object-cover">`;
-
-            toast('Compressing & Uploading...');
-            
-            try {
-                // 1. Compress
-                const compressed = await compressImageToBlob(file, 600, 0.8);
-                
-                // 2. Upload
-                const name = `avatars/${state.user.id}/${Date.now()}.jpg`;
-                const { error } = await sb.storage.from('cozy-media').upload(name, compressed);
-                if (error) throw error;
-
-                // 3. Get URL
-                const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
-                const publicUrl = data.publicUrl;
-
-                // 4. Update Database
-                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', state.user.id);
-
-                // 5. Update State
-                state.profile.avatar_url = publicUrl;
-                
-                // 6. Update UI
-                renderProfile(); // Updates the main profile page
-                toast('New avatar set!');
-
-            } catch (err) {
-                console.error(err);
-                toast('Error updating avatar.');
-            }
-        };
-
-        $$('.frameBtn').forEach(b => b.onclick = () => { state.compose.frame = b.dataset.f; updateComposeView(); });
-        $$('.vibeBtn').forEach(b => b.onclick = () => { state.compose.vibe = b.dataset.v; updateComposeView(); });
-        $('#composeCaption').oninput = (e) => { const tags = inferTags(e.target.value); $('#composeTags').innerHTML = tags.map(t => `<span class="text-[10px] bg-black/5 px-2 py-1 rounded-full text-black/50">#${t}</span>`).join(''); };
-
+        // --- ART PICKER ---
         const artPicker = $('#artPicker');
         if (artPicker) {
             artPicker.innerHTML = illustChoices.map(ch => `
@@ -2227,84 +2409,154 @@
                 </button>
             `).join('');
             
-            $$('.artBtn').forEach(b => {
-                b.onclick = () => {
-                    if (state.compose.file) { toast('Remove photo to use art.'); return; }
-                    const seedAttr = b.dataset.seed;
-                    state.compose.illustSeed = seedAttr ? parseInt(seedAttr) : null;
-                    updateComposeView();
-                };
+            safeWireAll('.artBtn', (b) => b.onclick = () => {
+                if (state.compose.file) { toast('Remove photo to use art.'); return; }
+                const seedAttr = b.dataset.seed;
+                state.compose.illustSeed = seedAttr ? parseInt(seedAttr) : null;
+                updateComposeView();
             });
         }
 
-        $$('.topicBtn').forEach(b => b.onclick = () => { state.filter.topic = b.dataset.t; $$('.topicBtn').forEach(x => x.classList.remove('bg-white', 'ring-2', 'ring-black/10')); b.classList.add('bg-white', 'ring-2', 'ring-black/10'); renderPosts(); });
-        $('#openSafety').onclick = () => $('#safetyModal').classList.remove('hidden');
-        $('#kindToggle').onclick = () => { 
-            state.kindness = !state.kindness; 
-            $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; 
-            toast(`Kindness: ${state.kindness?'On':'Off'}`); 
+        // --- FEED & FILTERS ---
+        safeWireAll('.topicBtn', (b) => b.onclick = () => { 
+            state.filter.topic = b.dataset.t; 
+            $$('.topicBtn').forEach(x => x.classList.remove('bg-white', 'ring-2', 'ring-black/10')); 
+            b.classList.add('bg-white', 'ring-2', 'ring-black/10'); 
             renderPosts(); 
+        });
+
+        safeWire('#openAccount', openAccountModal);
+        safeWire('#openSafety', () => $('#safetyModal').classList.remove('hidden'));
+        safeWire('#kindToggle', () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; toast(`Kindness: ${state.kindness?'On':'Off'}`); renderPosts(); });
+        safeWire('#kindToggle2', () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; renderPosts(); });
+        safeWire('#numbersToggle', () => { state.hideNumbers = !state.hideNumbers; $('#numbersToggle').innerText = state.hideNumbers ? 'On' : 'Off'; renderPosts(); });
+
+        // --- POST ACTIONS ---
+        safeWire('#hidePostBtn', hidePost);
+        safeWire('#deletePostBtn', async () => { if(confirm("Delete this?")) { await deletePost(); } });
+        safeWire('#copyCaptionBtn', () => { const p = state.posts.find(x => x.id === state.activePostOption); if(p) { safeCopy(p.caption); toast('Copied.'); } $('#postOptionsModal').classList.add('hidden'); });
+        safeWire('#reportPostBtn', reportPost);
+        safeWire('#sharePostBtn', sharePost);
+        safeWire('#savePostBtn', toggleSavePost);
+        safeWire('#muteUserBtn', toggleMuteUser);
+
+        // --- CHECKIN ---
+        safeWire('#clearCheckin', () => { localStorage.removeItem('dailyCheckin'); $$('.moodPick').forEach(b => b.classList.remove('bg-white', 'ring-2')); });
+        safeWireAll('.moodPick', (b) => b.onclick = () => { localStorage.setItem('dailyCheckin', b.dataset.mood); $$('.moodPick').forEach(x => x.classList.remove('bg-white', 'ring-2')); b.classList.add('bg-white', 'ring-2'); toast("Checked in."); });
+
+        // --- PROFILE ---
+        safeWire('#saveProfileSetup', saveProfile);
+        
+        const avatarInput = $('#avatarFileInput');
+        if(avatarInput) avatarInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const tempUrl = URL.createObjectURL(file);
+            const preview = $('#editProfileAvatarPreview');
+            if(preview) preview.innerHTML = `<img src="${tempUrl}" class="w-full h-full object-cover">`;
+            toast('Compressing & Uploading...');
+            try {
+                const compressed = await compressImageToBlob(file, 600, 0.8);
+                const name = `avatars/${state.user.id}/${Date.now()}.jpg`;
+                const { error } = await sb.storage.from('cozy-media').upload(name, compressed);
+                if (error) throw error;
+                const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
+                await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', state.user.id);
+                state.profile.avatar_url = data.publicUrl;
+                renderProfile();
+                toast('New avatar set!');
+            } catch (err) { console.error(err); toast('Error updating avatar.'); }
         };
-        $('#kindToggle2').onclick = () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; renderPosts(); };
-        $('#numbersToggle').onclick = () => { state.hideNumbers = !state.hideNumbers; $('#numbersToggle').innerText = state.hideNumbers ? 'On' : 'Off'; renderPosts(); };
-        $('#hidePostBtn').onclick = hidePost; // Fixed reference
-        $('#deletePostBtn').onclick = async () => { if(confirm("Delete this?")) { await deletePost(); } }; // Fixed reference
-        $('#clearCheckin').onclick = () => { localStorage.removeItem('dailyCheckin'); $$('.moodPick').forEach(b => b.classList.remove('bg-white', 'ring-2')); };
-        $$('.moodPick').forEach(b => b.onclick = () => { localStorage.setItem('dailyCheckin', b.dataset.mood); $$('.moodPick').forEach(x => x.classList.remove('bg-white', 'ring-2')); b.classList.add('bg-white', 'ring-2'); toast("Checked in."); });
-        $('#copyCaptionBtn').onclick = () => { const p = state.posts.find(x => x.id === state.activePostOption); if(p) { safeCopy(p.caption); toast('Copied.'); } $('#postOptionsModal').classList.add('hidden'); };
-        $('#saveProfileSetup').onclick = saveProfile;
-        
-        // MUTE LOGIC
-        $('#muteUserBtn').onclick = toggleMuteUser; // NEW
-        
-        $('#onboardBack').onclick = () => { if(state.onboardingStep > 0) { state.onboardingStep--; renderOnboarding(); } };
-        $('#onboardNext').onclick = () => { if(state.onboardingStep < 4) { state.onboardingStep++; renderOnboarding(); } };
-        $('#skipOnboarding').onclick = () => { state.onboardingStep = 4; renderOnboarding(); };
-        
-        $('#chatSendBtn').onclick = async () => { 
+
+        // --- MESSAGING ---
+        safeWire('#chatSendBtn', async () => { 
             const txt = $('#chatInput').value.trim(); 
             const targetId = state.activeThreadId;
-            
             if(!txt || !targetId) return; 
-            
-            // 1. Clear input immediately
             $('#chatInput').value = ''; 
-            
-            // NOTE: We removed the manual HTML append here.
-            // Since Realtime is fixed, the message will appear automatically 
-            // in a fraction of a second via initRealtime().
-
-            // 2. Send to Cloud
             try {
-                const { error } = await sb.from('messages').insert({ 
-                    from_id: state.user.id, 
-                    to_id: targetId,
-                    content: txt 
-                });
+                const { error } = await sb.from('messages').insert({ from_id: state.user.id, to_id: targetId, content: txt });
                 if(error) throw error;
-            } catch(e) { 
-                toast('Error sending note.');
-                console.error(e);
-            }
-        };
-        
-        $('#sharePostBtn').onclick = sharePost;
-        $('#reportPostBtn').onclick = reportPost; // Fixed reference
-        
-        // NEW EVENT FOR SAVE BTN
-        $('#savePostBtn').onclick = toggleSavePost;
+            } catch(e) { toast('Error sending note.'); console.error(e); }
+        });
 
-        $('#textModalSave').onclick = () => {
+        // --- COMMENTS (ADDED HERE) ---
+        safeWire('#sendCommentBtn', async () => { 
+            const input = $('#commentInput');
+            const val = input.value.trim();
+            if(!val) return; 
+
+            try { 
+                await sb.from('comments').insert({ post_id: state.comments.postId, user_id: state.user.id, text: val }); 
+                
+                // Notification Logic
+                const post = state.posts.find(p => p.id === state.comments.postId);
+                if(post && post.user_id !== state.user.id) {
+                     await sb.from('notifications').insert({
+                         user_id: post.user_id,
+                         type: 'reply',
+                         content: `${state.profile.username} left a note: "${val.substring(0, 20)}..."`
+                     });
+                }
+                
+                toast('Note sent.'); 
+                input.value = ''; 
+            } catch(e) { toast('Error sending note.'); console.error(e); } 
+        });
+
+        // --- MODALS & UTILS ---
+        safeWire('#textModalSave', () => {
             const val = $('#textModalInput').value;
             if(state.textModal.onSave) {
                const success = state.textModal.onSave(val);
                if(success) closeTextModal();
             }
-        };
+        });
+
+        // --- ONBOARDING (This was likely crashing before) ---
+        safeWire('#onboardBack', () => { if(state.onboardingStep > 0) { state.onboardingStep--; renderOnboarding(); } });
+        safeWire('#onboardNext', () => { if(state.onboardingStep < 4) { state.onboardingStep++; renderOnboarding(); } });
+        safeWire('#skipOnboarding', () => { state.onboardingStep = 4; renderOnboarding(); });
 
         wireStoryEvents();
         renderNewThreadModal();
-    } 
+    }
+    
+    function renderOnboarding() {
+        const steps = [
+            { text: "Welcome to CozyGram. Let me show you around.", pct: 0 },
+            { text: "This is a quiet place. No follower counts here.", pct: 25 },
+            { text: "We use stickers instead of likes to show warmth.", pct: 50 },
+            { text: "Ready to find your cozy corner?", pct: 75 },
+            { text: "Let's get you signed in.", pct: 100 }
+        ];
+        
+        // Ensure state is valid
+        if(isNaN(state.onboardingStep)) state.onboardingStep = 0;
+        
+        const current = steps[state.onboardingStep] || steps[0];
+        const txt = document.getElementById('onboardText');
+        if(txt) txt.innerText = current.text;
+
+        const dots = document.getElementById('onboardDots');
+        if(dots) dots.innerHTML = steps.map((_, i) => 
+            `<div class="w-2 h-2 rounded-full transition-colors ${i === state.onboardingStep ? 'bg-[#f4a37a]' : 'bg-black/10'}"></div>`
+        ).join('');
+
+        const container = document.getElementById('authContainer');
+        const nav = document.getElementById('onboardNav');
+        const mascot = document.getElementById('mascot');
+
+        if (state.onboardingStep === 4) {
+             if(container) container.classList.remove('hidden');
+             if(nav) nav.classList.add('hidden');
+             if(mascot) mascot.classList.add('hidden'); 
+        } else {
+             if(container) container.classList.add('hidden');
+             if(nav) nav.classList.remove('hidden');
+             if(mascot) mascot.classList.remove('hidden');
+        }
+    }
 
     init();
   </script>
