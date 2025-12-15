@@ -255,43 +255,61 @@
 
   <div id="app" class="mx-auto w-full max-w-md lg:max-w-none min-h-screen flex flex-col">
     <!-- HEADER -->
-    <header class="px-4 pt-5 pb-3">
-      <div class="hand-card paper-noise hand-outline px-4 py-3">
-        <div class="flex items-center justify-between gap-3">
-          
-          <!-- NEW LOGO -->
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
-                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
-                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
-            </div>
-            <div>
-                <div class="flex items-baseline gap-2">
-                    <h1 class="font-[Fraunces] text-2xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
-                </div>
-                <p class="text-xs text-black/60 leading-tight font-medium">Creativity over popularity</p>
-            </div>
+<!-- HEADER -->
+<header class="px-4 pt-5 pb-3">
+    <div class="hand-card paper-noise hand-outline px-4 py-3">
+      <div class="flex items-center justify-between gap-3">
+        
+        <!-- LOGO SECTION -->
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+              <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+              <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
           </div>
-
-          <div class="flex items-center gap-2">
-            <button id="kindToggle" class="wobbly inline-flex items-center gap-2 px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-pressed="true" title="Kindness mode">
-              <span class="text-xs font-semibold">Kind</span>
-              <span id="kindPetal" class="inline-block w-5 h-5"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 11c4-6 13-3 12 5-1 10-12 15-12 15S13 26 12 16c-1-8 8-11 12-5Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg></span>
-            </button>
-            <button id="openSearch" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Search"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><circle class="ink-line-lite" cx="11" cy="11" r="6" fill="none"></circle><path class="ink-line-lite" d="M16 16l5 5" fill="none"></path></svg></button>
-            <button id="openAccount" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Account"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><path class="ink-line-lite" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="rgba(134,166,139,.22)"></path><path class="ink-line-lite" d="M4 22c1.5-5 6-7 8-7s6.5 2 8 7" fill="none"></path></svg></button>
-            <button id="logoutBtn" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 hidden" aria-label="Log out"><svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline class="ink-line-lite" points="16 17 21 12 16 7"/><line class="ink-line-lite" x1="21" y1="12" x2="9" y2="12"/></svg></button>
+          <div>
+              <div class="flex items-baseline gap-2">
+              <h1 class="font-[Fraunces] text-2xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
+              </div>
+              <p class="text-xs text-black/60 leading-tight font-medium">Creativity over popularity</p>
           </div>
         </div>
-        <div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
-          <div class="flex-1 relative">
-            <input id="searchInput" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder="Search cozy corners..." />
-            <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/40">Cmd K</div>
-          </div>
-          <button id="openSafety" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-white/80 to-white/65" aria-label="Safety"><svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="rgba(134,166,139,.22)"/><path class="ink-line-lite" d="M9 12l2 2 4-5" fill="none"/></svg></button>
+
+        <!-- TOP ACTIONS (Kind, Safety, Account) -->
+        <div class="flex items-center gap-2">
+          <!-- Kind Mode -->
+          <button id="kindToggle" class="wobbly inline-flex items-center gap-2 px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-pressed="true" title="Kindness mode">
+            <span class="text-xs font-semibold">Kind</span>
+            <span id="kindPetal" class="inline-block w-5 h-5"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 11c4-6 13-3 12 5-1 10-12 15-12 15S13 26 12 16c-1-8 8-11 12-5Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg></span>
+          </button>
+          
+          <!-- Safety (Moved Here) -->
+          <button id="openSafety" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Safety">
+              <svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="rgba(134,166,139,.22)"/><path class="ink-line-lite" d="M9 12l2 2 4-5" fill="none"/></svg>
+          </button>
+          
+          <!-- Account -->
+          <button id="openAccount" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Account"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><path class="ink-line-lite" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="rgba(134,166,139,.22)"></path><path class="ink-line-lite" d="M4 22c1.5-5 6-7 8-7s6.5 2 8 7" fill="none"></path></svg></button>
+          
+          <!-- Logout (Hidden by default) -->
+          <button id="logoutBtn" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 hidden" aria-label="Log out"><svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline class="ink-line-lite" points="16 17 21 12 16 7"/><line class="ink-line-lite" x1="21" y1="12" x2="9" y2="12"/></svg></button>
         </div>
       </div>
-    </header>
+
+      <!-- SEARCH BAR (Now Full Width) -->
+      <div class="mt-3 relative">
+        <!-- Added pr-12 to make room for the button so text doesn't type over it -->
+        <input id="searchInput" class="w-full pl-4 pr-12 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder="Search cozy corners..." />
+        
+        <!-- Search Icon Button -->
+        <button id="searchSubmitBtn" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-[12px] bg-white/50 border border-black/5 text-black/40 flex items-center justify-center hover:bg-white hover:text-black/70 transition-colors wobbly" aria-label="Search">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </button>
+    </div>
+    </div>
+  </header>
 
     <main id="main" class="flex-1 px-4 main-safe-pad">
       <!-- FEED -->
