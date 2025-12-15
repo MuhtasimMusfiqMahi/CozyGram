@@ -2038,12 +2038,12 @@
         content.innerHTML = ''; 
         const hasMedia = !!(state.compose.file && state.compose.mediaPreviewUrl);
         
-        // Overlay Helper (Create once, update later)
+        // Ensure Overlay Exists
         let overlay = container.querySelector('.overlay-ctrl');
         if(!overlay) {
             overlay = document.createElement('div');
-            // Added z-50 to ensure it's always on top of the image
-            overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-[10px] font-bold transition-opacity z-50';
+            // z-50 ensures it is physically above the image
+            overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/90 px-2 py-1.5 rounded-[8px] text-[10px] font-bold transition-opacity z-50 shadow-sm border border-black/5';
             container.appendChild(overlay);
         }
 
@@ -2054,91 +2054,117 @@
              // Create Image/Video Element
              let mediaEl;
              const posStyle = `object-position: ${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
+             const mediaClasses = "w-full h-full object-cover rounded-[12px] cursor-move select-none touch-none"; // 'touch-none' STOPS SCROLLING
              
              if(state.compose.mediaKind === 'video') {
                  mediaEl = document.createElement('video');
                  mediaEl.src = state.compose.mediaPreviewUrl;
-                 mediaEl.className = "w-full h-full object-cover rounded-[12px] cursor-move";
+                 mediaEl.className = mediaClasses;
                  mediaEl.style.cssText = posStyle;
                  mediaEl.playsInline = true;
                  mediaEl.controls = false; 
              } else {
                  mediaEl = document.createElement('img');
                  mediaEl.src = state.compose.mediaPreviewUrl;
-                 mediaEl.className = "w-full h-full object-cover rounded-[12px] cursor-move select-none";
+                 mediaEl.className = mediaClasses;
                  mediaEl.style.cssText = posStyle;
                  mediaEl.draggable = false; 
              }
+             
+             // CRITICAL: Prevent iOS text selection/magnifying glass
+             mediaEl.style.webkitUserSelect = "none";
+             mediaEl.style.touchAction = "none"; 
+             
              content.appendChild(mediaEl);
 
-             // === DRAG LOGIC ===
+             // === DRAG LOGIC (MOBILE OPTIMIZED) ===
              let isDown = false;
              let startX = 0;
              let startY = 0;
              
-             const startDrag = (x, y) => {
-                 isDown = true;
-                 startX = x;
-                 startY = y;
-                 mediaEl.style.transition = 'none'; 
-                 overlay.innerHTML = "Dragging...";
-                 overlay.classList.remove('opacity-0');
-             };
-             
-             const moveDrag = (x, y) => {
+             // Common Move Handler
+             const handleMove = (clientX, clientY) => {
                  if(!isDown) return;
-                 const deltaX = (startX - x) * 0.4; 
-                 const deltaY = (startY - y) * 0.4;
+                 const deltaX = (startX - clientX) * 0.4; 
+                 const deltaY = (startY - clientY) * 0.4;
                  
                  state.compose.mediaPos.x = Math.max(0, Math.min(100, state.compose.mediaPos.x + deltaX));
                  state.compose.mediaPos.y = Math.max(0, Math.min(100, state.compose.mediaPos.y + deltaY));
                  
                  mediaEl.style.objectPosition = `${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
+                 startX = clientX; 
+                 startY = clientY;
+             };
+
+             // Mouse
+             mediaEl.onmousedown = (e) => {
+                 isDown = true; startX = e.clientX; startY = e.clientY;
+                 mediaEl.style.transition = 'none';
+                 overlay.innerText = "Dragging...";
+                 window.addEventListener('mousemove', onMouseMove);
+                 window.addEventListener('mouseup', onMouseUp);
+             };
+             const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
+             const onMouseUp = () => {
+                 isDown = false; mediaEl.style.transition = 'object-position 0.2s ease';
+                 renderOverlayButtons();
+                 window.removeEventListener('mousemove', onMouseMove);
+                 window.removeEventListener('mouseup', onMouseUp);
+             };
+
+             // Touch (The tricky part)
+             mediaEl.ontouchstart = (e) => {
+                 // Prevent browser from treating this as a scroll start
+                 if(e.cancelable) e.preventDefault(); 
                  
-                 startX = x; 
-                 startY = y;
+                 isDown = true; 
+                 startX = e.touches[0].clientX; 
+                 startY = e.touches[0].clientY;
+                 
+                 mediaEl.style.transition = 'none';
+                 overlay.innerText = "Dragging...";
+                 
+                 window.addEventListener('touchmove', onTouchMove, { passive: false });
+                 window.addEventListener('touchend', onTouchEnd);
              };
-             
-             const endDrag = () => {
-                 if(!isDown) return;
-                 isDown = false;
-                 mediaEl.style.transition = 'object-position 0.2s ease'; 
-                 renderOverlayButtons(); 
+             const onTouchMove = (e) => {
+                 if(e.cancelable) e.preventDefault(); // Stop scrolling!
+                 handleMove(e.touches[0].clientX, e.touches[0].clientY);
+             };
+             const onTouchEnd = () => {
+                 isDown = false; mediaEl.style.transition = 'object-position 0.2s ease';
+                 renderOverlayButtons();
+                 window.removeEventListener('touchmove', onTouchMove);
+                 window.removeEventListener('touchend', onTouchEnd);
              };
 
-             // Attach Drag Events
-             mediaEl.onmousedown = (e) => startDrag(e.clientX, e.clientY);
-             window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
-             window.addEventListener('mouseup', endDrag);
-
-             mediaEl.ontouchstart = (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY);
-             window.addEventListener('touchmove', (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY));
-             window.addEventListener('touchend', endDrag);
-
-             // Helper to render buttons and BLOCK drag on them
+             // === BUTTON RENDERER ===
              function renderOverlayButtons() {
-                 // Ensure pointer events are ON and it's visible
                  overlay.classList.remove('pointer-events-none');
                  overlay.classList.remove('opacity-0');
                  
                  overlay.innerHTML = `
                     <div class="flex gap-2 items-center">
                         <span class="text-[9px] opacity-50 select-none">Drag to adjust</span>
-                        <button id="removeMediaBtn" class="bg-red-100 text-red-600 px-3 py-1.5 rounded-[6px] text-[10px] font-bold shadow-sm border border-red-200 cursor-pointer active:scale-95 transition-transform">Remove</button>
+                        <button id="removeMediaBtn" class="bg-red-50 text-red-600 px-3 py-2 rounded-[8px] text-[10px] font-extrabold shadow-sm border border-red-100 cursor-pointer active:scale-95 transition-transform">Remove</button>
                     </div>`;
                  
                  const btn = document.getElementById('removeMediaBtn');
                  if(btn) {
-                     // CRITICAL: Stop propagation so clicking button doesn't start drag or hit hidden inputs
-                     const stop = (e) => { e.stopPropagation(); };
-                     
-                     btn.addEventListener('mousedown', stop);
-                     btn.addEventListener('touchstart', stop);
-                     btn.addEventListener('click', (e) => {
+                     // We use 'touchend' for mobile responsiveness and 'click' for desktop
+                     // We stop propagation to ensure the image below doesn't get the event
+                     const handleRemove = (e) => {
                          e.preventDefault();
                          e.stopPropagation();
                          removeComposeMedia();
-                     });
+                     };
+                     
+                     btn.addEventListener('click', handleRemove);
+                     btn.addEventListener('touchend', handleRemove);
+                     
+                     // Stop dragging if we touch the button
+                     btn.addEventListener('touchstart', (e) => e.stopPropagation());
+                     btn.addEventListener('mousedown', (e) => e.stopPropagation());
                  }
              }
              renderOverlayButtons();
@@ -2158,6 +2184,7 @@
         
         // 3. Art Picker UI
         if (artPicker) {
+            // (Same logic as before, just kept for completeness)
             artPicker.innerHTML = illustChoices.map(ch => {
                 const isSelected = (ch.seed == null && state.compose.illustSeed == null) || (state.compose.illustSeed === ch.seed);
                 const seed = ch.seed != null ? ch.seed : state.compose.seed;
