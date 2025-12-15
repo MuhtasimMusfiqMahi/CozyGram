@@ -865,19 +865,22 @@
     function postMediaHTML(p){
       const m = p.media;
       
-      // Handle Image with Custom Position
+      // 1. Handle Image with Custom Position (Saved from your drag)
       if(m?.type === 'image' && m.mediaId) {
-          const posX = m.position?.x ?? 50; // Default to 50%
+          // Default to center (50%) if no position was saved
+          const posX = m.position?.x ?? 50; 
           const posY = m.position?.y ?? 50;
+          
+          // Apply object-position style to match the composer view
           return `<img src="${m.mediaId}" class="w-full h-full object-cover" style="object-position: ${posX}% ${posY}%" alt="Post photo" />`;
       }
       
-      // Handle Video
+      // 2. Handle Video
       if(m?.type === 'video' && m.mediaId) {
           return `<video src="${m.mediaId}" class="w-full h-full object-cover" playsinline controls preload="metadata"></video>`;
       }
       
-      // Handle Art
+      // 3. Handle Generated Art (Fallback)
       const seed = m?.seed || Number(String(p.id||'').replace(/\D/g,'')) || 12;
       const pal = m?.palette || p.palette || 'sunset';
       return artSVG(seed, pal);
@@ -1276,12 +1279,11 @@
     function getPostHTML(p) {
         const u = p.profiles || { username: 'Anon', seed: 1 };
         const stickers = p.stickers || [];
-        // Calculate counts
         const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
         stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
         
-        let art = artSVG(p.seed, p.palette); 
-        if(p.image_url) art = `<img src="${p.image_url}" class="w-full h-full object-cover">`;
+        // Render the Media using the helper above
+        let art = postMediaHTML(p);
         
         const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
         const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
@@ -1308,6 +1310,7 @@
             ${promptChip}
             <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
                 ${tapeDeco}
+                <!-- FIX: Ensure Aspect Ratio matches Composer EXACTLY (Square on Mobile, 4/3 on Desktop) -->
                 <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square lg:aspect-[4/3] bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
                         ${art}
                         <div class="absolute inset-0 z-10"></div>
@@ -1786,20 +1789,35 @@
     }
     
     function renderCommentsModal(){
-      const p = state.posts.find(x=>x.id===state.comments.postId);
-      const listDiv = $('#commentsList');
-      if(!p){ listDiv.innerHTML = ''; return; }
+      const p = state.posts.find(x => x.id === state.comments.postId);
+      const listDiv = document.getElementById('commentsList');
+      if(!p || !listDiv){ if(listDiv) listDiv.innerHTML = ''; return; }
       
       const comments = p.comments || [];
+      
       if(comments.length === 0) {
-          listDiv.innerHTML = `<div class="hand-card p-3 bg-[#fff9c4] border border-black/5 rotate-[-1deg] wobbly"><b class="font-hand text-lg block mb-1 text-[#2b2b35]">Juniper</b><span class="font-hand text-lg">"This feels so calm 🌿"</span></div><div class="text-xs text-black/40 text-center mt-2">(Example note)</div>`;
+          // FIXED: Removed the "Juniper" demo note. Now shows a simple empty state.
+          listDiv.innerHTML = `<div class="p-8 text-center text-sm text-black/40 italic">It's quiet here.<br>Leave the first gentle note.</div>`;
       } else {
-          listDiv.innerHTML = comments.map(c => `<div class="hand-card hand-outline bg-white/70 border border-black/10 p-3"><div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div></div>`).join('');
+          listDiv.innerHTML = comments.map(c => `
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-2">
+                <div class="text-sm">
+                    <span class="font-extrabold">${html(c.profiles?.username || 'Neighbor')}:</span> 
+                    <span class="text-black/70">${html(c.text)}</span>
+                </div>
+            </div>`).join('');
       }
     }
     
-    function openComments(postId){ state.comments.postId = postId; openModal('commentsModal'); renderCommentsModal(); }
-    $('#sendCommentBtn').onclick = async ()=>{ const val = $('#commentInput').value.trim(); if(!val) return; try { await sb.from('comments').insert({ post_id: state.comments.postId, user_id: state.user.id, text: val }); toast('Note sent.'); $('#commentInput').value = ''; } catch(e) { toast('Error sending note.'); } };
+    function openComments(postId) { 
+        state.comments.postId = postId; 
+        
+        // FIX: Manually show the modal (openModal helper didn't exist)
+        const modal = document.getElementById('commentsModal');
+        if(modal) modal.classList.remove('hidden');
+        
+        renderCommentsModal(); 
+    }
     
     function openEditProfile() { 
         $('#setupName').value = state.profile.username || ''; 
@@ -2017,8 +2035,10 @@
         
         if(!container || !content) return; 
         
-        // --- 1. Frame Logic ---
-        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square sm:aspect-[4/3] overflow-hidden relative transition-all duration-300 ';
+        // --- 1. Frame Logic & Aspect Ratio ---
+        // FIX: Changed 'sm:aspect-[4/3]' to 'lg:aspect-[4/3]' to match the Feed exactly.
+        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square lg:aspect-[4/3] overflow-hidden relative transition-all duration-300 ';
+        
         const oldTape = container.querySelector('.tape-deco');
         if(oldTape) oldTape.remove();
 
@@ -2042,7 +2062,6 @@
         let overlay = container.querySelector('.overlay-ctrl');
         if(!overlay) {
             overlay = document.createElement('div');
-            // z-50 ensures it is physically above the image
             overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/90 px-2 py-1.5 rounded-[8px] text-[10px] font-bold transition-opacity z-50 shadow-sm border border-black/5';
             container.appendChild(overlay);
         }
@@ -2054,7 +2073,7 @@
              // Create Image/Video Element
              let mediaEl;
              const posStyle = `object-position: ${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
-             const mediaClasses = "w-full h-full object-cover rounded-[12px] cursor-move select-none touch-none"; // 'touch-none' STOPS SCROLLING
+             const mediaClasses = "w-full h-full object-cover rounded-[12px] cursor-move select-none touch-none"; 
              
              if(state.compose.mediaKind === 'video') {
                  mediaEl = document.createElement('video');
@@ -2071,18 +2090,16 @@
                  mediaEl.draggable = false; 
              }
              
-             // CRITICAL: Prevent iOS text selection/magnifying glass
              mediaEl.style.webkitUserSelect = "none";
              mediaEl.style.touchAction = "none"; 
              
              content.appendChild(mediaEl);
 
-             // === DRAG LOGIC (MOBILE OPTIMIZED) ===
+             // === DRAG LOGIC ===
              let isDown = false;
              let startX = 0;
              let startY = 0;
              
-             // Common Move Handler
              const handleMove = (clientX, clientY) => {
                  if(!isDown) return;
                  const deltaX = (startX - clientX) * 0.4; 
@@ -2112,23 +2129,19 @@
                  window.removeEventListener('mouseup', onMouseUp);
              };
 
-             // Touch (The tricky part)
+             // Touch
              mediaEl.ontouchstart = (e) => {
-                 // Prevent browser from treating this as a scroll start
                  if(e.cancelable) e.preventDefault(); 
-                 
                  isDown = true; 
                  startX = e.touches[0].clientX; 
                  startY = e.touches[0].clientY;
-                 
                  mediaEl.style.transition = 'none';
                  overlay.innerText = "Dragging...";
-                 
                  window.addEventListener('touchmove', onTouchMove, { passive: false });
                  window.addEventListener('touchend', onTouchEnd);
              };
              const onTouchMove = (e) => {
-                 if(e.cancelable) e.preventDefault(); // Stop scrolling!
+                 if(e.cancelable) e.preventDefault(); 
                  handleMove(e.touches[0].clientX, e.touches[0].clientY);
              };
              const onTouchEnd = () => {
@@ -2142,7 +2155,6 @@
              function renderOverlayButtons() {
                  overlay.classList.remove('pointer-events-none');
                  overlay.classList.remove('opacity-0');
-                 
                  overlay.innerHTML = `
                     <div class="flex gap-2 items-center">
                         <span class="text-[9px] opacity-50 select-none">Drag to adjust</span>
@@ -2151,18 +2163,13 @@
                  
                  const btn = document.getElementById('removeMediaBtn');
                  if(btn) {
-                     // We use 'touchend' for mobile responsiveness and 'click' for desktop
-                     // We stop propagation to ensure the image below doesn't get the event
                      const handleRemove = (e) => {
                          e.preventDefault();
                          e.stopPropagation();
                          removeComposeMedia();
                      };
-                     
                      btn.addEventListener('click', handleRemove);
                      btn.addEventListener('touchend', handleRemove);
-                     
-                     // Stop dragging if we touch the button
                      btn.addEventListener('touchstart', (e) => e.stopPropagation());
                      btn.addEventListener('mousedown', (e) => e.stopPropagation());
                  }
@@ -2177,14 +2184,12 @@
              const currentSeed = state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed;
              content.innerHTML = artSVG(currentSeed, state.compose.vibe);
              
-             // Allow clicks to pass through overlay to the file input
              overlay.classList.add('pointer-events-none');
              overlay.innerHTML = `Tap to upload`;
         }
         
         // 3. Art Picker UI
         if (artPicker) {
-            // (Same logic as before, just kept for completeness)
             artPicker.innerHTML = illustChoices.map(ch => {
                 const isSelected = (ch.seed == null && state.compose.illustSeed == null) || (state.compose.illustSeed === ch.seed);
                 const seed = ch.seed != null ? ch.seed : state.compose.seed;
