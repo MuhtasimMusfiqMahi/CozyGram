@@ -1282,7 +1282,6 @@
         const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
         stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
         
-        // Render the Media using the helper above
         let art = postMediaHTML(p);
         
         const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
@@ -1310,8 +1309,8 @@
             ${promptChip}
             <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
                 ${tapeDeco}
-                <!-- FIX: Ensure Aspect Ratio matches Composer EXACTLY (Square on Mobile, 4/3 on Desktop) -->
-                <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square lg:aspect-[4/3] bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
+                <!-- FIX: Strictly 'aspect-square' on ALL screens to match composer -->
+                <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
                         ${art}
                         <div class="absolute inset-0 z-10"></div>
                 </div>
@@ -2036,8 +2035,8 @@
         if(!container || !content) return; 
         
         // --- 1. Frame Logic & Aspect Ratio ---
-        // FIX: Changed 'sm:aspect-[4/3]' to 'lg:aspect-[4/3]' to match the Feed exactly.
-        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square lg:aspect-[4/3] overflow-hidden relative transition-all duration-300 ';
+        // FIX: Strictly 'aspect-square' on ALL screens. Removed desktop overrides.
+        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square overflow-hidden relative transition-all duration-300 ';
         
         const oldTape = container.querySelector('.tape-deco');
         if(oldTape) oldTape.remove();
