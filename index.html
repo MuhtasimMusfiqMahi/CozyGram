@@ -66,7 +66,21 @@
     }
 
     /* ANIMATIONS */
-    .wobbly { transition: transform .18s ease, filter .18s ease; }
+    .wobbly { 
+      transition: transform .18s ease, filter .18s ease; 
+      cursor: pointer; 
+      /* Optimize for touch rendering */
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    /* ONLY apply the "Lift" effect if the user has a mouse */
+    @media (hover: hover) {
+      .wobbly:hover { 
+        transform: translateY(-2px) rotate(-0.25deg); 
+        filter: saturate(1.02); 
+      }
+    }
     .wobbly:hover { transform: translateY(-2px) rotate(-0.25deg); filter: saturate(1.02); }
     .wobbly:active { transform: translateY(0px) scale(.99); }
     
@@ -1281,7 +1295,7 @@
             ${promptChip}
             <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
                 ${tapeDeco}
-                <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-[4/3] bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
+                <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square lg:aspect-[4/3] bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
                         ${art}
                         <div class="absolute inset-0 z-10"></div>
                 </div>
@@ -1990,7 +2004,7 @@
         if(!container || !content) return; 
         
         // 1. Frame Logic (Visual Styles)
-        container.className = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-[4/3] overflow-hidden relative transition-all duration-300';
+        container.className = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square sm:aspect-[4/3] overflow-hidden relative transition-all duration-300';
         
         // Remove old tape if exists
         const oldTape = container.querySelector('.tape-deco');
