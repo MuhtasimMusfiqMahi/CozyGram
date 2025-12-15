@@ -823,6 +823,15 @@
       const gradId = `g${seed}${palette}`;
       return `<svg viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}" stop-opacity=".76"/><stop offset=".55" stop-color="${b}" stop-opacity=".64"/><stop offset="1" stop-color="${c}" stop-opacity=".92"/></linearGradient></defs><rect x="0" y="0" width="100" height="100" rx="18" fill="url(#${gradId})" />${blobs}<g opacity=".95">${doodle}</g><g opacity=".33"><path d="M14 18c10 2 14-3 22-6" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="5" stroke-linecap="round"/></g></svg>`;
     }
+
+    function avatarHTML(u) {
+        // If user has a custom photo, show it
+        if (u && u.avatar_url) {
+            return `<img src="${u.avatar_url}" class="w-full h-full object-cover" alt="${u.username}'s avatar" />`;
+        }
+        // Fallback to the generated art
+        return avatarSVG(u?.seed || 1);
+    }
     
     function avatarSVG(seed=1){
       const bg = ['linear-gradient(135deg, rgba(247,197,159,.95), rgba(251,245,234,.85))','linear-gradient(135deg, rgba(134,166,139,.75), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(219,161,168,.8), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(111,106,134,.55), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(184,125,102,.65), rgba(251,245,234,.92))'][seed%5];
@@ -1224,7 +1233,7 @@
                 ${isSaved ? `<div class="absolute left-3 top-3 px-2 py-1 rounded-[14px] bg-white/75 text-[10px] font-extrabold border border-black/5">saved</div>` : ''}
                 <div class="flex items-center justify-between gap-3 mb-3">
                     <button onclick="openUserModal('${p.user_id}')" class="flex items-center gap-3 text-left wobbly">
-                        <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarSVG(u.seed)}</div>
+                        <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
                         <div><div class="font-extrabold text-sm">${html(u.username)}</div><div class="text-xs text-black/50">${timeStr}</div></div>
                     </button>
                     <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly px-3 py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
@@ -1266,52 +1275,62 @@
     }
 
     function renderProfile() {
-        if(!state.profile) return;
-        const p = state.profile;
-        const meId = state.user.id;
-        const moodBtn = (id, l, g) => `<button class="moodBtn2 wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${p.mood===id ? 'bg-gradient-to-b from-white/80 to-white/60 ring-2 ring-black/10' : 'bg-white/70'}" data-mood="${id}"><span class="inline-flex items-center gap-2 text-xs font-extrabold"><span class="w-5 h-5 rounded-[10px_12px_12px_9px] border border-black/10" style="background:${g}"></span>${l}</span></button>`;
-        const shelfIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
-        const plantIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
-        const windowIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 4h12v16H6z" fill="rgba(134,166,139,.18)"/><path class="ink-line-lite" d="M12 4v16M6 12h12" fill="none"/></svg>`;
-        const drawerIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
-        const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}" aria-label="Open ${t}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
+    if(!state.profile) return;
+    const p = state.profile;
+    const meId = state.user.id;
+    const moodBtn = (id, l, g) => `<button class="moodBtn2 wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${p.mood===id ? 'bg-gradient-to-b from-white/80 to-white/60 ring-2 ring-black/10' : 'bg-white/70'}" data-mood="${id}"><span class="inline-flex items-center gap-2 text-xs font-extrabold"><span class="w-5 h-5 rounded-[10px_12px_12px_9px] border border-black/10" style="background:${g}"></span>${l}</span></button>`;
+    const shelfIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
+    const plantIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
+    const windowIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 4h12v16H6z" fill="rgba(134,166,139,.18)"/><path class="ink-line-lite" d="M12 4v16M6 12h12" fill="none"/></svg>`;
+    const drawerIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
+    const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}" aria-label="Open ${t}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
 
-        const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
-        const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
-        const savedPosts = state.savedPostIds.map(pid => state.posts.find(x => x.id === pid)).filter(Boolean).slice(0, 4);
-        const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+    const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
+    const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+    const savedPosts = state.savedPostIds.map(pid => state.posts.find(x => x.id === pid)).filter(Boolean).slice(0, 4);
+    const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
 
-        $('#view-profile').innerHTML = `
-            <div class="relative hand-card hand-outline bg-gradient-to-b from-white/70 to-white/55 border border-black/10 p-4 overflow-hidden mb-4">
-              <div class="absolute -left-10 -top-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle at 30% 30%, rgba(219,161,168,.18), rgba(219,161,168,.0) 60%);"></div>
-              <div class="flex items-center justify-between gap-3">
-                <div><div class="font-[Fraunces] text-lg">Your cozy corner</div><div class="text-sm text-black/65">A profile that feels like a room.</div></div>
-                <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden">${avatarSVG(p.seed)}</div>
-              </div>
-              <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                ${roomItem('Shelf', 'saved prompts', shelfIcon, 'shelf')}${roomItem('Plant', 'soft habits', plantIcon, 'plant')}${roomItem('Window', 'mood light', windowIcon, 'window')}${roomItem('Drawer', `${state.savedPostIds.length} saved`, drawerIcon, 'drawer')}
-              </div>
-              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
-                <div class="flex items-center justify-between"><div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div><div class="text-xs text-black/45">private</div></div>
-                <div class="mt-2 flex flex-wrap gap-2">${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}</div>
-              </div>
-              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
-                <div class="font-extrabold">About</div><div class="text-sm text-black/70 mt-1">${html(p.bio||'')}</div>
-                <div class="mt-2 flex flex-wrap items-center gap-2"><button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button><button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button><button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button></div>
-              </div>
+    $('#view-profile').innerHTML = `
+        <div class="relative hand-card hand-outline bg-gradient-to-b from-white/70 to-white/55 border border-black/10 p-4 overflow-hidden mb-4">
+          <div class="absolute -left-10 -top-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle at 30% 30%, rgba(219,161,168,.18), rgba(219,161,168,.0) 60%);"></div>
+          <div class="flex items-center justify-between gap-3">
+            <div><div class="font-[Fraunces] text-lg">Your cozy corner</div><div class="text-sm text-black/65">A profile that feels like a room.</div></div>
+            <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden">${avatarHTML(p)}</div>
+          </div>
+          <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            ${roomItem('Shelf', 'saved prompts', shelfIcon, 'shelf')}${roomItem('Plant', 'soft habits', plantIcon, 'plant')}${roomItem('Window', 'mood light', windowIcon, 'window')}${roomItem('Drawer', `${state.savedPostIds.length} saved`, drawerIcon, 'drawer')}
+          </div>
+          <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+            <div class="flex items-center justify-between"><div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div><div class="text-xs text-black/45">private</div></div>
+            <div class="mt-2 flex flex-wrap gap-2">${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}</div>
+          </div>
+          
+          <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+            <div class="font-extrabold">About</div>
+            <div class="text-sm text-black/70 mt-1">${html(p.bio||'')}</div>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+                <button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button>
+                <button id="changeAvatarBtn" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Change avatar</button>
+                <button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button>
+                <button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button>
             </div>
-            <div class="hand-card hand-outline paper-noise p-4"><div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div></div>
-            <div class="mt-4 hand-card hand-outline bg-white/70 border border-black/10 p-3"><div class="flex items-center justify-between"><div><div class="text-sm font-extrabold">Saved in your drawer</div><div class="text-xs text-black/60 mt-1">Posts you want to keep close (private).</div></div><button id="openDrawer2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Open</button></div><div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">${savedThumbs}</div></div>
-        `;
-        $$('.roomBtn').forEach(btn => btn.onclick = () => openRoom(btn.dataset.room));
-        $$('.moodBtn2').forEach(btn => { btn.onclick = async () => { const m = btn.dataset.mood; await setMood(m); }; });
-        $('#openProfileSetup').onclick = openEditProfile;
-        $('#newPromptPost').onclick = () => { $('#composeModal').classList.remove('hidden'); $('#composeCaption').value='What’s one kind thing you did today?\n\n'; toast('Prompt loaded.'); };
-        $('#newStory').onclick = openStoryComposeModal;
-        $('#openDrawer2').onclick = () => openRoom('drawer');
-        $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
-        $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
-    }
+          </div>
+          </div>
+        <div class="hand-card hand-outline paper-noise p-4"><div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div></div>
+        <div class="mt-4 hand-card hand-outline bg-white/70 border border-black/10 p-3"><div class="flex items-center justify-between"><div><div class="text-sm font-extrabold">Saved in your drawer</div><div class="text-xs text-black/60 mt-1">Posts you want to keep close (private).</div></div><button id="openDrawer2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Open</button></div><div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">${savedThumbs}</div></div>
+    `;
+    $$('.roomBtn').forEach(btn => btn.onclick = () => openRoom(btn.dataset.room));
+    $$('.moodBtn2').forEach(btn => { btn.onclick = async () => { const m = btn.dataset.mood; await setMood(m); }; });
+    
+    // Remember to define the new click handler for the 'Change avatar' button
+    $('#openProfileSetup').onclick = openEditProfile;
+    // NOTE: A handler for $('#changeAvatarBtn') should be added here or elsewhere in your application.
+    $('#newPromptPost').onclick = () => { $('#composeModal').classList.remove('hidden'); $('#composeCaption').value='What’s one kind thing you did today?\n\n'; toast('Prompt loaded.'); };
+    $('#newStory').onclick = openStoryComposeModal;
+    $('#openDrawer2').onclick = () => openRoom('drawer');
+    $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
+    $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
+}
 
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
@@ -1331,7 +1350,7 @@
             listDiv.innerHTML = state.stories.map((s, idx) => `
                 <button class="w-full wobbly text-left" onclick="openStory(${idx})">
                     <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarSVG(s.seed)}</div>
+                        <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
                         <div class="flex-1 min-w-0"><div class="font-extrabold truncate">${html(s.user)}'s pages</div><div class="text-xs text-black/55">${s.time} • ${s.pages.length} pages</div></div>
                         <div class="text-xs text-black/50">open →</div>
                     </div>
@@ -1376,7 +1395,7 @@
             <button class="w-full wobbly text-left mb-2" onclick="openThread('${t.id}')">
                 <div class="hand-card hand-outline ${activeClass} ${unreadClass} border p-3 flex items-center gap-3 relative transition-all duration-300">
                     ${isUnread ? `<div class="absolute -top-1 -right-1 w-3 h-3 bg-[#f4a37a] rounded-full border-2 border-white shadow-sm"></div>` : ''}
-                    <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarSVG(t.seed)}</div>
+                    <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarHTML(u)}</div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between gap-2">
                             <div class="font-extrabold truncate text-sm">${html(t.user)}</div>
@@ -1440,7 +1459,7 @@
         
         // Header
         if(user) {
-            $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(user.seed)}</div><div class="font-extrabold text-sm">${html(user.username)}</div></div>`;
+            $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarHTML(user)}</div><div class="font-extrabold text-sm">${html(user.username)}</div></div>`;
         }
 
         // Messages
@@ -2144,6 +2163,50 @@
             
             updateComposeView(); 
         };
+
+        // --- AVATAR UPLOAD LOGIC ---
+        const changeAvatarBtn = $('#changeAvatarBtn');
+        if (changeAvatarBtn) {
+            changeAvatarBtn.onclick = () => {
+                $('#avatarFileInput').click(); // Trigger hidden input
+            };
+        }
+
+        $('#avatarFileInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            toast('Compressing avatar...');
+            
+            try {
+                // 1. Compress
+                const compressed = await compressImageToBlob(file, 600, 0.8); // Smaller size for avatars
+                
+                toast('Uploading...');
+                
+                // 2. Upload to Supabase Storage
+                const name = `avatars/${state.user.id}/${Date.now()}.jpg`;
+                const { error } = await sb.storage.from('cozy-media').upload(name, compressed);
+                if (error) throw error;
+
+                // 3. Get URL
+                const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
+                const publicUrl = data.publicUrl;
+
+                // 4. Update Profile in Database
+                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', state.user.id);
+
+                // 5. Update Local State & UI
+                state.profile.avatar_url = publicUrl;
+                renderProfile();
+                toast('New avatar set!');
+
+            } catch (err) {
+                console.error(err);
+                toast('Error updating avatar.');
+            }
+        };
+
         $$('.frameBtn').forEach(b => b.onclick = () => { state.compose.frame = b.dataset.f; updateComposeView(); });
         $$('.vibeBtn').forEach(b => b.onclick = () => { state.compose.vibe = b.dataset.v; updateComposeView(); });
         $('#composeCaption').oninput = (e) => { const tags = inferTags(e.target.value); $('#composeTags').innerHTML = tags.map(t => `<span class="text-[10px] bg-black/5 px-2 py-1 rounded-full text-black/50">#${t}</span>`).join(''); };
@@ -2237,6 +2300,8 @@
 
     init();
   </script>
+  <!-- Hidden File Input for Avatars -->
+ <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 </body>
 </html>
 ```
