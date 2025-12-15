@@ -725,6 +725,7 @@
             mediaKind: null,      // 'image' or 'video'
             mediaPreviewUrl: null, // The blob:url for the preview
             seed: Math.floor(Math.random()*100), 
+            mediaPos: { x: 50, y: 50 },
             illustSeed: null 
         },
         filter: { search: '', topic: 'all' },
@@ -863,8 +864,20 @@
 
     function postMediaHTML(p){
       const m = p.media;
-      if(m?.type==='image' && m.mediaId) return `<img data-media-img="${m.mediaId}" class="w-full h-full object-cover" alt="Post photo" />`;
-      if(m?.type==='video' && m.mediaId) return `<video data-media-video="${m.mediaId}" class="w-full h-full object-cover" playsinline controls preload="metadata"></video>`;
+      
+      // Handle Image with Custom Position
+      if(m?.type === 'image' && m.mediaId) {
+          const posX = m.position?.x ?? 50; // Default to 50%
+          const posY = m.position?.y ?? 50;
+          return `<img src="${m.mediaId}" class="w-full h-full object-cover" style="object-position: ${posX}% ${posY}%" alt="Post photo" />`;
+      }
+      
+      // Handle Video
+      if(m?.type === 'video' && m.mediaId) {
+          return `<video src="${m.mediaId}" class="w-full h-full object-cover" playsinline controls preload="metadata"></video>`;
+      }
+      
+      // Handle Art
       const seed = m?.seed || Number(String(p.id||'').replace(/\D/g,'')) || 12;
       const pal = m?.palette || p.palette || 'sunset';
       return artSVG(seed, pal);
@@ -1997,101 +2010,190 @@
 
     // --- PART 6: DYNAMIC COMPOSER VIEW ---
     function updateComposeView() {
-        const container = $('#composePreviewContainer');
-        const content = $('#composePreview');
-        const artPicker = $('#artPicker');
+        const container = document.getElementById('composePreviewContainer');
+        const content = document.getElementById('composePreview');
+        const artPicker = document.getElementById('artPicker');
+        const fileInput = document.getElementById('mediaInput');
         
         if(!container || !content) return; 
         
-        // 1. Frame Logic (Visual Styles)
-        container.className = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square sm:aspect-[4/3] overflow-hidden relative transition-all duration-300';
-        
-        // Remove old tape if exists
+        // --- 1. Frame Logic ---
+        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square sm:aspect-[4/3] overflow-hidden relative transition-all duration-300 ';
         const oldTape = container.querySelector('.tape-deco');
         if(oldTape) oldTape.remove();
 
         if (state.compose.frame === 'polaroid') {
-            container.classList.add('bg-white', 'p-4', 'pb-10', 'shadow-sm');
+            classes += 'bg-white p-4 pb-10 shadow-sm';
         } else if (state.compose.frame === 'tape') {
-            container.classList.add('bg-white/80', 'p-2');
-            // Inject Tape
+            classes += 'bg-white/80 p-2';
             const tape = document.createElement('div');
             tape.className = 'tape-deco absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f7c59f]/80 rotate-[-2deg] border border-black/5 z-20 shadow-sm';
             container.appendChild(tape);
         } else {
-             // Wavy / Default
-             container.classList.add('bg-white/40');
+             classes += 'bg-white/40';
+        }
+        container.className = classes;
+
+        // --- 2. Content Rendering ---
+        content.innerHTML = ''; 
+        const hasMedia = !!(state.compose.file && state.compose.mediaPreviewUrl);
+        
+        // Overlay Helper (Create once, update later)
+        let overlay = container.querySelector('.overlay-ctrl');
+        if(!overlay) {
+            overlay = document.createElement('div');
+            // Added z-50 to ensure it's always on top of the image
+            overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-[10px] font-bold transition-opacity z-50';
+            container.appendChild(overlay);
         }
 
-        // 2. Art Picker Rendering (Disable if media is uploaded)
+        if (hasMedia) {
+             // === MEDIA MODE ===
+             if(fileInput) fileInput.classList.add('hidden'); 
+             
+             // Create Image/Video Element
+             let mediaEl;
+             const posStyle = `object-position: ${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
+             
+             if(state.compose.mediaKind === 'video') {
+                 mediaEl = document.createElement('video');
+                 mediaEl.src = state.compose.mediaPreviewUrl;
+                 mediaEl.className = "w-full h-full object-cover rounded-[12px] cursor-move";
+                 mediaEl.style.cssText = posStyle;
+                 mediaEl.playsInline = true;
+                 mediaEl.controls = false; 
+             } else {
+                 mediaEl = document.createElement('img');
+                 mediaEl.src = state.compose.mediaPreviewUrl;
+                 mediaEl.className = "w-full h-full object-cover rounded-[12px] cursor-move select-none";
+                 mediaEl.style.cssText = posStyle;
+                 mediaEl.draggable = false; 
+             }
+             content.appendChild(mediaEl);
+
+             // === DRAG LOGIC ===
+             let isDown = false;
+             let startX = 0;
+             let startY = 0;
+             
+             const startDrag = (x, y) => {
+                 isDown = true;
+                 startX = x;
+                 startY = y;
+                 mediaEl.style.transition = 'none'; 
+                 overlay.innerHTML = "Dragging...";
+                 overlay.classList.remove('opacity-0');
+             };
+             
+             const moveDrag = (x, y) => {
+                 if(!isDown) return;
+                 const deltaX = (startX - x) * 0.4; 
+                 const deltaY = (startY - y) * 0.4;
+                 
+                 state.compose.mediaPos.x = Math.max(0, Math.min(100, state.compose.mediaPos.x + deltaX));
+                 state.compose.mediaPos.y = Math.max(0, Math.min(100, state.compose.mediaPos.y + deltaY));
+                 
+                 mediaEl.style.objectPosition = `${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
+                 
+                 startX = x; 
+                 startY = y;
+             };
+             
+             const endDrag = () => {
+                 if(!isDown) return;
+                 isDown = false;
+                 mediaEl.style.transition = 'object-position 0.2s ease'; 
+                 renderOverlayButtons(); 
+             };
+
+             // Attach Drag Events
+             mediaEl.onmousedown = (e) => startDrag(e.clientX, e.clientY);
+             window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+             window.addEventListener('mouseup', endDrag);
+
+             mediaEl.ontouchstart = (e) => startDrag(e.touches[0].clientX, e.touches[0].clientY);
+             window.addEventListener('touchmove', (e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY));
+             window.addEventListener('touchend', endDrag);
+
+             // Helper to render buttons and BLOCK drag on them
+             function renderOverlayButtons() {
+                 // Ensure pointer events are ON and it's visible
+                 overlay.classList.remove('pointer-events-none');
+                 overlay.classList.remove('opacity-0');
+                 
+                 overlay.innerHTML = `
+                    <div class="flex gap-2 items-center">
+                        <span class="text-[9px] opacity-50 select-none">Drag to adjust</span>
+                        <button id="removeMediaBtn" class="bg-red-100 text-red-600 px-3 py-1.5 rounded-[6px] text-[10px] font-bold shadow-sm border border-red-200 cursor-pointer active:scale-95 transition-transform">Remove</button>
+                    </div>`;
+                 
+                 const btn = document.getElementById('removeMediaBtn');
+                 if(btn) {
+                     // CRITICAL: Stop propagation so clicking button doesn't start drag or hit hidden inputs
+                     const stop = (e) => { e.stopPropagation(); };
+                     
+                     btn.addEventListener('mousedown', stop);
+                     btn.addEventListener('touchstart', stop);
+                     btn.addEventListener('click', (e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         removeComposeMedia();
+                     });
+                 }
+             }
+             renderOverlayButtons();
+
+        } else {
+             // === EMPTY/ART MODE ===
+             if(fileInput) fileInput.classList.remove('hidden');
+             state.compose.mediaPos = { x: 50, y: 50 }; 
+
+             const currentSeed = state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed;
+             content.innerHTML = artSVG(currentSeed, state.compose.vibe);
+             
+             // Allow clicks to pass through overlay to the file input
+             overlay.classList.add('pointer-events-none');
+             overlay.innerHTML = `Tap to upload`;
+        }
+        
+        // 3. Art Picker UI
         if (artPicker) {
-            const isDisabled = !!state.compose.file;
             artPicker.innerHTML = illustChoices.map(ch => {
                 const isSelected = (ch.seed == null && state.compose.illustSeed == null) || (state.compose.illustSeed === ch.seed);
-                const previewSeed = ch.seed != null ? ch.seed : state.compose.seed;
-                
+                const seed = ch.seed != null ? ch.seed : state.compose.seed;
                 return `
-                <button type="button" class="artBtn wobbly px-2.5 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${isSelected ? 'bg-white/85 ring-2 ring-black/10' : 'bg-white/70'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}" data-seed="${ch.seed || ''}">
-                  <div class="w-12 h-9 rounded-[14px_12px_16px_10px] overflow-hidden border border-black/10 bg-white/40 pointer-events-none" style="aspect-ratio: 4/3">
-                    ${artSVG(previewSeed, state.compose.vibe)}
-                  </div>
+                <button type="button" class="artBtn wobbly px-2.5 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${isSelected ? 'bg-white/85 ring-2 ring-black/10' : 'bg-white/70'} ${hasMedia ? 'opacity-40 cursor-not-allowed grayscale' : ''}" data-seed="${ch.seed || ''}">
+                  <div class="w-12 h-9 rounded-[14px_12px_16px_10px] overflow-hidden border border-black/10 bg-white/40 pointer-events-none" style="aspect-ratio: 4/3">${artSVG(seed, state.compose.vibe)}</div>
                   <div class="mt-1 text-[11px] font-extrabold text-black/70 pointer-events-none">${html(ch.label)}</div>
                 </button>`;
             }).join('');
             
-            // Re-attach listeners
-            $$('.artBtn').forEach(b => {
+            artPicker.querySelectorAll('.artBtn').forEach(b => {
                 b.onclick = () => {
-                    if (state.compose.file) { toast('Remove photo to use art.'); return; }
-                    const seedAttr = b.dataset.seed;
-                    state.compose.illustSeed = seedAttr ? parseInt(seedAttr) : null;
+                    if (hasMedia) { toast('Remove photo to use art.'); return; }
+                    state.compose.illustSeed = b.dataset.seed ? parseInt(b.dataset.seed) : null;
                     updateComposeView();
                 };
             });
         }
-
-        
-
-        // 3. Content Rendering (Image vs Video vs Illustration)
-        content.innerHTML = ''; // Clear previous
-        
-        if (state.compose.file && state.compose.mediaPreviewUrl) {
-             // --- SHOW MEDIA ---
-             if(state.compose.mediaKind === 'video') {
-                 content.innerHTML = `<video src="${state.compose.mediaPreviewUrl}" class="w-full h-full object-cover rounded-[12px]" playsinline controls></video>`;
-             } else {
-                 content.innerHTML = `<img src="${state.compose.mediaPreviewUrl}" class="w-full h-full object-cover rounded-[12px]" />`;
-             }
-             
-             // Update the overlay label
-             const overlay = container.querySelector('.absolute.bottom-2');
-             if(overlay) {
-                 overlay.innerHTML = `<button id="removeMediaBtn" class="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold shadow-sm border border-red-200">Remove Media</button>`;
-                 document.getElementById('removeMediaBtn').onclick = (e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                     removeComposeMedia();
-                 }
-             }
-        } else {
-             // --- SHOW ART ---
-             const currentSeed = state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed;
-             content.innerHTML = artSVG(currentSeed, state.compose.vibe);
-             
-             // Reset overlay label
-             const overlay = container.querySelector('.absolute.bottom-2');
-             if(overlay) overlay.innerHTML = `Tap to upload`;
-        }
     }
-
     function removeComposeMedia() {
-        if(state.compose.mediaPreviewUrl) {
+        // 1. Clear Memory (prevent leaks)
+        if (state.compose.mediaPreviewUrl) {
             try { URL.revokeObjectURL(state.compose.mediaPreviewUrl); } catch(e) {}
         }
+        
+        // 2. Reset State
         state.compose.file = null;
         state.compose.mediaPreviewUrl = null;
         state.compose.mediaKind = null;
-        $('#mediaInput').value = ''; // Reset input
+        
+        // 3. Reset the physical Input element
+        // (This allows selecting the same file again if needed)
+        const input = document.getElementById('mediaInput');
+        if (input) input.value = '';
+
+        // 4. Refresh UI
         updateComposeView();
         toast("Media removed.");
     }
@@ -2381,12 +2483,16 @@
             }
 
             // 4. Save Post Record
-            await sb.from('posts').insert({ 
+            const { error: insertError } = await sb.from('posts').insert({ 
                 user_id: state.user.id, 
                 caption, 
                 image_url: imageUrl, 
-                // Store metadata so we know how to render it later
-                media: imageUrl ? { type: mediaType, mediaId: imageUrl } : null,
+                // SAVE THE POSITION HERE:
+                media: imageUrl ? { 
+                    type: mediaType, 
+                    mediaId: imageUrl, 
+                    position: state.compose.mediaPos // {x: 50, y: 50}
+                } : null,
                 frame: state.compose.frame, 
                 palette: state.compose.vibe, 
                 seed: state.compose.seed 
@@ -2399,9 +2505,10 @@
             $('#mediaInput').value = ''; // Reset file input
             loadFeed(); 
             
-        } catch(e) {
-            console.error(e);
-            toast("Upload failed. Try a smaller file?");
+        }  catch(e) {
+            console.error("FULL ERROR:", e); // Prints to Console
+            // Show the actual error message in the toast so we know what's wrong
+            toast("Error: " + (e.message || "Upload failed")); 
         } finally {
             $('#postNowBtn').innerText = "Post to Cloud";
         }
@@ -2482,15 +2589,27 @@
         safeWire('#closeCompose', () => $('#composeModal').classList.add('hidden'));
         safeWire('#postNowBtn', createPost);
         
-        safeWire('#mediaInput', (e) => { 
-            const file = e.target.files[0];
-            if(!file) return;
-            if(state.compose.mediaPreviewUrl) URL.revokeObjectURL(state.compose.mediaPreviewUrl);
-            state.compose.file = file;
-            state.compose.mediaPreviewUrl = URL.createObjectURL(file);
-            state.compose.mediaKind = file.type.startsWith('video/') ? 'video' : 'image';
-            updateComposeView(); 
-        });
+// FIX: Use onchange for files, because safeWire only does onclick!
+        const mediaInput = document.getElementById('mediaInput');
+        if (mediaInput) {
+            mediaInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Clear old preview memory
+                if (state.compose.mediaPreviewUrl) {
+                    try { URL.revokeObjectURL(state.compose.mediaPreviewUrl); } catch(e) {}
+                }
+
+                // Update State
+                state.compose.file = file;
+                state.compose.mediaPreviewUrl = URL.createObjectURL(file);
+                state.compose.mediaKind = file.type.startsWith('video/') ? 'video' : 'image';
+                
+                // Render
+                updateComposeView(); 
+            };
+        }
 
         safeWireAll('.frameBtn', (b) => b.onclick = () => { state.compose.frame = b.dataset.f; updateComposeView(); });
         safeWireAll('.vibeBtn', (b) => b.onclick = () => { state.compose.vibe = b.dataset.v; updateComposeView(); });
