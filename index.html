@@ -54,7 +54,10 @@
       border: 2px solid rgba(43,43,53,.10); transform: rotate(-0.35deg); pointer-events:none;
     }
 
-    /* --- NEW ANIMATIONS --- */
+    .wobbly { transition: transform .18s ease, filter .18s ease; }
+    .wobbly:hover { transform: translateY(-2px) rotate(-0.25deg); filter: saturate(1.02); }
+    .wobbly:active { transform: translateY(0px) scale(.99); }
+    
     .wiggle { animation: wiggle .7s ease; }
     @keyframes wiggle { 
       0% { transform: rotate(0);} 
@@ -63,10 +66,6 @@
       100% { transform: rotate(0);} 
     }
 
-    .wobbly { transition: transform .18s ease, filter .18s ease; }
-    .wobbly:hover { transform: translateY(-2px) rotate(-0.25deg); filter: saturate(1.02); }
-    .wobbly:active { transform: translateY(0px) scale(.99); }
-    
     .nav-pill {
       border-radius: 18px 18px 22px 16px;
       box-shadow: 0 8px 18px rgba(25,20,35,.10); border: 1px solid rgba(43,43,53,.08);
@@ -384,10 +383,30 @@
   </div>
   <div id="editProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg mb-3">Edit Corner</h3><button onclick="$('#editProfileModal').classList.add('hidden')" class="text-sm">Cancel</button></div>
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-[Fraunces] text-lg">Edit Corner</h3>
+            <button onclick="$('#editProfileModal').classList.add('hidden')" class="text-sm">Cancel</button>
+        </div>
+        
+        <!-- NEW: Avatar Picker Inside Modal -->
+        <div class="flex justify-center mb-4">
+            <div class="relative group cursor-pointer wobbly" onclick="$('#avatarFileInput').click()">
+                <div id="editProfileAvatarPreview" class="w-20 h-20 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100">
+                    <!-- Avatar injected via JS -->
+                </div>
+                <div class="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[24px_20px_26px_18px] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Change</span>
+                </div>
+                <div class="absolute -bottom-1 -right-1 bg-white border border-black/10 rounded-full p-1 shadow-sm pointer-events-none">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+        </div>
+
         <input id="setupName" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80" placeholder="Name" />
         <input id="setupPronouns" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80" placeholder="Pronouns" />
         <textarea id="setupBio" class="w-full mb-3 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 h-24" placeholder="Bio..."></textarea>
+        
         <div class="mt-2 text-xs font-bold opacity-50">Mood Lighting</div>
         <div class="flex gap-2 mb-4 mt-1">
           <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="sunset">Sunset</button>
@@ -416,7 +435,9 @@
           <div class="mt-3 flex items-center justify-between gap-2"><button onclick="closeTextModal()" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Cancel</button><button id="textModalSave" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white text-sm font-extrabold">Save</button></div>
       </div>
   </div>
-  <div id="toast" class="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white border border-black/10 px-4 py-2 rounded-[18px_16px_22px_14px] shadow-lg text-sm font-bold hidden z-50 pop-in"><div></div></div>
+  <div id="toast" class="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white border border-black/10 px-4 py-2 rounded-[18px_16px_22px_14px] shadow-lg text-sm font-bold hidden z-50 pop-in"><div></div></div> 
+   <!-- Hidden File Input for Avatars -->
+ <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 
   <script>
     const SUPABASE_URL = 'https://dcarzattebyvkojqflyb.supabase.co';
@@ -454,6 +475,61 @@
         interval = seconds / 60;
         if (interval > 1) return Math.floor(interval) + "m";
         return "now";
+    }
+
+    // --- MISSING HELPERS (Paste this after timeAgo) ---
+
+    // 1. Array of illustration choices for the composer
+    const illustChoices = [
+      { id: 'surprise', label: 'Surprise', seed: null },
+      { id: 'sunny', label: 'Sunny', seed: 11 },
+      { id: 'cloud', label: 'Cloud', seed: 22 },
+      { id: 'garden', label: 'Garden', seed: 33 },
+      { id: 'cozy', label: 'Cozy', seed: 44 },
+      { id: 'moon', label: 'Moon', seed: 55 },
+      { id: 'spark', label: 'Spark', seed: 66 },
+      { id: 'picnic', label: 'Picnic', seed: 77 }
+    ];
+
+    // 2. Function to generate the abstract art SVGs
+    function artSVG(seed=1, palette='sunset'){
+      const palettes = { 
+        sunset: ['#f4a37a','#f7c59f','#fbf5ea','#dba1a8'], 
+        sage: ['#86a68b','#b7cbb7','#fbf5ea','#f7c59f'], 
+        berry: ['#dba1a8','#c77d93','#fbf5ea','#6f6a86'], 
+        clay: ['#b87d66','#f4a37a','#fbf5ea','#86a68b'] 
+      };
+      
+      const [a,b,c,d] = palettes[palette] || palettes.sunset;
+      
+      // Generate random-looking blobs based on the seed
+      const blobs = Array.from({length: 7}, (_,i)=>{ 
+        const x = 10 + ((seed*37 + i*11) % 80); 
+        const y = 10 + ((seed*23 + i*17) % 80); 
+        const r = 9 + ((seed*19 + i*7) % 20); 
+        const col = [a,b,d,c][i%4]; 
+        const op = 0.30 + ((seed+i)%4)*0.06; 
+        return `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" opacity="${op}" />`; 
+      }).join('');
+      
+      const doodle = `<path d="M20 70c10-18 30-18 40 0" fill="none" stroke="rgba(43,43,53,.33)" stroke-width="3" stroke-linecap="round"/><path d="M26 52c6 4 14 4 20 0" fill="none" stroke="rgba(43,43,53,.30)" stroke-width="3" stroke-linecap="round"/><path d="M54 30c6 6 6 18 0 24" fill="none" stroke="rgba(43,43,53,.26)" stroke-width="3" stroke-linecap="round"/><path d="M10 36c4-6 10-6 14 0" fill="none" stroke="rgba(43,43,53,.23)" stroke-width="3" stroke-linecap="round"/>`;
+      const gradId = `g${seed}${palette}`;
+      
+      return `<svg viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}" stop-opacity=".76"/><stop offset=".55" stop-color="${b}" stop-opacity=".64"/><stop offset="1" stop-color="${c}" stop-opacity=".92"/></linearGradient></defs><rect x="0" y="0" width="100" height="100" rx="18" fill="url(#${gradId})" />${blobs}<g opacity=".95">${doodle}</g><g opacity=".33"><path d="M14 18c10 2 14-3 22-6" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="5" stroke-linecap="round"/></g></svg>`;
+    }
+
+    // 3. (Just in case you missed it earlier) Apply Mood Function
+    function applyMood(moodId){
+      const themes = {
+        sunset: { a:'rgba(247,197,159,.55)', b:'rgba(134,166,139,.35)', c:'rgba(219,161,168,.22)', bg1:'#fff5ea', bg2:'#fbf5ea', bg3:'#f7f0e6' },
+        sage:   { a:'rgba(134,166,139,.45)', b:'rgba(247,197,159,.25)', c:'rgba(111,106,134,.18)', bg1:'#f6fff8', bg2:'#fbf5ea', bg3:'#f3f6f2' },
+        berry:  { a:'rgba(219,161,168,.42)', b:'rgba(247,197,159,.22)', c:'rgba(111,106,134,.22)', bg1:'#fff3f6', bg2:'#fbf5ea', bg3:'#f7f0f2' },
+        clay:   { a:'rgba(184,125,102,.40)', b:'rgba(247,197,159,.28)', c:'rgba(134,166,139,.18)', bg1:'#fff7f1', bg2:'#fbf5ea', bg3:'#f6efe7' }
+      };
+      const m = themes[moodId] || themes.sunset;
+      const r = document.documentElement.style;
+      r.setProperty('--mood-a', m.a); r.setProperty('--mood-b', m.b); r.setProperty('--mood-c', m.c);
+      r.setProperty('--mood-bg1', m.bg1); r.setProperty('--mood-bg2', m.bg2); r.setProperty('--mood-bg3', m.bg3);
     }
 
     // --- MEDIA COMPRESSION HELPER ---
@@ -524,6 +600,30 @@
         comments: { postId: null }
     };
 
+    // --- MISSING CONSTANTS (Paste this after 'const state') ---
+
+    const STICKER_SVGS = {
+      hug: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M24 12c6-7 16-2 14 7-2 9-14 18-14 18S12 28 10 19c-2-9 8-14 14-7Z" fill="rgba(244,163,122,.45)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M17 23c2 2 4 3 7 3s5-1 7-3" fill="none" stroke="rgba(43,43,53,.45)" stroke-width="2" stroke-linecap="round"/></svg>`,
+      star: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M24 9l4 10 11 1-8 7 2 11-9-6-9 6 2-11-8-7 11-1 4-10Z" fill="rgba(247,197,159,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
+      leaf: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M12 30c10-18 20-18 24-18 0 6-2 24-20 26-5 1-6-4-4-8Z" fill="rgba(134,166,139,.5)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M18 31c6-6 12-10 18-12" fill="none" stroke="rgba(43,43,53,.45)" stroke-width="2" stroke-linecap="round"/></svg>`,
+      spark: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M24 10l3 8 8 3-8 3-3 8-3-8-8-3 8-3 3-8Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
+      cocoa: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M16 18h16v14a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6V18Z" fill="rgba(247,197,159,.35)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M32 20h4a4 4 0 0 1 0 8h-4" fill="none" stroke="rgba(43,43,53,.35)" stroke-width="2" stroke-linecap="round"/></svg>`
+    };
+
+    const MOCK_CLUBS = [
+        { id:'study', title:'Study Nook', desc:'Quiet encouragement', tag:'school' }, 
+        { id:'art', title:'Doodle Picnic', desc:'Messy sketches welcome', tag:'art' }, 
+        { id:'music', title:'Playlist Exch', desc:'Warm songs only', tag:'music' }, 
+        { id:'books', title:'Reading Corner', desc:'No spoilers, just vibes', tag:'selfcare' }
+    ];
+
+    const MOCK_PROMPTS = [
+        { title:'What color did you see?', desc:'One sentence post.' }, 
+        { title:'Show your desk corner', desc:'No faces needed.' }, 
+        { title:'One kind thing you did', desc:'Small counts.' }, 
+        { title:'A comfort snack', desc:'Name it like a spell.' }
+    ];
+
     // --- HELPER FUNCTIONS ---
     
     function inferTags(text) {
@@ -534,6 +634,43 @@
         if (lower.includes('friend') && !tags.includes('friends')) tags.push('friends');
         if (lower.includes('self') && !tags.includes('selfcare')) tags.push('selfcare');
         return tags;
+    }
+
+    // --- CLEAN HELPER FUNCTIONS ---
+    
+    function avatarHTML(u) {
+        // If user has a custom photo, show it
+        if (u && u.avatar_url) {
+            return `<img src="${u.avatar_url}" class="w-full h-full object-cover" alt="${u.username}'s avatar" />`;
+        }
+        // Fallback to the generated art
+        return avatarSVG(u?.seed || 1);
+    }
+    
+    function avatarSVG(seed=1){
+      const bg = ['linear-gradient(135deg, rgba(247,197,159,.95), rgba(251,245,234,.85))','linear-gradient(135deg, rgba(134,166,139,.75), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(219,161,168,.8), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(111,106,134,.55), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(184,125,102,.65), rgba(251,245,234,.92))'][seed%5];
+      return `<div class="w-full h-full" style="background:${bg}"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M16 36c2-12 10-20 16-20s14 8 16 20" fill="none" stroke="rgba(43,43,53,.65)" stroke-width="2.2" stroke-linecap="round"/><path d="M22 36c0 10 4 16 10 16s10-6 10-16" fill="none" stroke="rgba(43,43,53,.65)" stroke-width="2.2" stroke-linecap="round"/><circle cx="26" cy="32" r="2" fill="rgba(43,43,53,.65)"/><circle cx="38" cy="32" r="2" fill="rgba(43,43,53,.65)"/><path d="M28 41c2 2 6 2 8 0" fill="none" stroke="rgba(43,43,53,.5)" stroke-width="2.2" stroke-linecap="round"/><path d="M23 24l-5-5M41 24l5-5" fill="none" stroke="rgba(43,43,53,.5)" stroke-width="2.2" stroke-linecap="round"/></svg></div>`;
+    }
+
+    function svgIcon(kind, active=false, badge=false){
+      const tint = active ? 'rgba(244,163,122,.85)' : 'rgba(43,43,53,.68)';
+      const fill = active ? 'rgba(247,197,159,.45)' : 'rgba(134,166,139,.18)';
+      // The Red Dot logic
+      const badgeHtml = badge ? `<div class="absolute -top-1 -right-1 badge-dot"></div>` : '';
+      
+      const wrap = (inner, label) => `
+        <div class="relative">
+            <div class="mx-auto w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 grid place-items-center ${active ? 'shadow-sm' : ''}">${inner}</div>
+            <div class="mt-1 text-[11px] text-center ${active ? 'font-extrabold text-black/75' : 'text-black/55'}">${label}</div>
+            ${badgeHtml}
+        </div>`;
+
+      if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
+      if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Pages');
+      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
+      if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
+      if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
+      return '';
     }
 
     function showView(viewId) {
@@ -587,221 +724,6 @@
         if(viewId === 'profile') renderProfile();
     }
 
-    function renderOnboarding() {
-        const steps = [
-            { text: "Welcome to CozyGram. Let me show you around.", pct: 0 },
-            { text: "This is a quiet place. No follower counts here.", pct: 25 },
-            { text: "We use stickers instead of likes to show warmth.", pct: 50 },
-            { text: "Ready to find your cozy corner?", pct: 75 },
-            { text: "Let's get you signed in.", pct: 100 }
-        ];
-        
-        const current = steps[state.onboardingStep] || steps[0];
-        const txt = document.getElementById('onboardText');
-        if(txt) txt.innerText = current.text;
-
-        const dots = document.getElementById('onboardDots');
-        if(dots) dots.innerHTML = steps.map((_, i) => 
-            `<div class="w-2 h-2 rounded-full transition-colors ${i === state.onboardingStep ? 'bg-[#f4a37a]' : 'bg-black/10'}"></div>`
-        ).join('');
-
-        if (state.onboardingStep === 4) {
-             document.getElementById('authContainer').classList.remove('hidden');
-             document.getElementById('onboardNav').classList.add('hidden');
-             document.getElementById('mascot').classList.add('hidden'); 
-        } else {
-             document.getElementById('authContainer').classList.add('hidden');
-             document.getElementById('onboardNav').classList.remove('hidden');
-             document.getElementById('mascot').classList.remove('hidden');
-        }
-    }
-
-    function openUserModal(userId) {
-        const user = state.allUsers.find(u => u.id === userId) || { username: 'Neighbor', seed: 5, bio: '', pronouns: '', mood: 'sunset' };
-        const modal = document.getElementById('userModal');
-        const body = document.getElementById('userModalBody');
-        
-        // 1. Get Context
-        const meId = state.user.id;
-        const isMe = userId === meId;
-        const isMuted = state.mutedUsers.includes(userId);
-        
-        // 2. Get Recent Posts (Mini Gallery)
-        const recent = state.posts.filter(p => p.user_id === userId).slice(0, 6);
-        
-        // 3. Render Rich UI
-        body.innerHTML = `
-            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-3">
-              <div class="flex items-start gap-3">
-                <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0">
-                    ${avatarSVG(user.seed)}
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div class="font-extrabold truncate text-lg">${html(user.username)}</div>
-                    <div class="text-xs text-black/45">${html(user.pronouns||'')}</div>
-                  </div>
-                  <div class="text-xs text-black/60 line-clamp-3 leading-snug mt-1">${html(user.bio||'A cozy corner.')}</div>
-                  <div class="text-[10px] text-black/40 mt-2 font-bold uppercase tracking-wider">Mood: ${html(user.mood||'sunset')}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 mb-3">
-              ${!isMe ? `
-              <button id="userMsgBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] font-extrabold text-white text-left shadow-sm">
-                Message
-                <div class="text-[10px] font-normal opacity-90">Send a note</div>
-              </button>
-              <button id="userMuteBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
-                ${isMuted ? 'Unmute' : 'Mute'}
-                <div class="text-[10px] font-normal text-black/50">${isMuted ? 'Allow posts' : 'Hide posts'}</div>
-              </button>
-              ` : `<div class="col-span-2 text-center text-xs text-black/40 py-2">This is your corner.</div>`}
-              
-              <button id="userFilterBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
-                Filter
-                <div class="text-[10px] font-normal text-black/50">Show only this</div>
-              </button>
-              <button id="userBioBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
-                Copy Bio
-                <div class="text-[10px] font-normal text-black/50">Save to clipboard</div>
-              </button>
-            </div>
-
-            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
-              <div class="flex items-center justify-between mb-2">
-                <div class="text-xs font-extrabold opacity-50">RECENT SCRAPBOOK BITS</div>
-              </div>
-              <div class="grid grid-cols-3 gap-2">
-                ${recent.map(p => `
-                  <div class="wobbly rounded-[12px] overflow-hidden border border-black/10 bg-white aspect-square" onclick="toast('Use the feed to see full post')">
-                    ${postMediaHTML(p)}
-                  </div>
-                `).join('') || `<div class="col-span-3 text-xs text-black/40 text-center py-4">No posts yet.</div>`}
-              </div>
-            </div>
-        `;
-        
-        // 4. Wire up the buttons
-        const msgBtn = document.getElementById('userMsgBtn');
-        if(msgBtn) msgBtn.onclick = () => {
-            modal.classList.add('hidden');
-            openThread(userId);
-        };
-
-        const filterBtn = document.getElementById('userFilterBtn');
-        if(filterBtn) filterBtn.onclick = () => {
-            state.filter.search = user.username;
-            document.getElementById('searchInput').value = user.username;
-            modal.classList.add('hidden');
-            renderPosts();
-            toast(`Filtering by ${user.username}`);
-        };
-
-        const bioBtn = document.getElementById('userBioBtn');
-        if(bioBtn) bioBtn.onclick = () => {
-            safeCopy(user.bio);
-            toast('Bio copied.');
-        };
-
-        const muteBtn = document.getElementById('userMuteBtn');
-        if(muteBtn) muteBtn.onclick = async () => {
-            modal.classList.add('hidden');
-            // Re-use existing mute logic
-            if (isMuted) {
-                await unmuteUser(userId);
-            } else {
-                state.mutedUsers.push(userId);
-                toast('User muted.');
-                await sb.from('mutes').insert({ user_id: meId, muted_user_id: userId });
-                renderPosts();
-            }
-        };
-
-        modal.classList.remove('hidden');
-    }
-    
-    function openAccountModal() {
-        const p = state.profile || { username: 'You', seed: 0, pronouns: '', bio: '' };
-        
-        $('#accountBody').innerHTML = `
-            <div class="hand-card bg-white/70 border border-black/10 p-3 flex items-center gap-3">
-                <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden">${avatarSVG(p.seed)}</div>
-                <div class="min-w-0 flex-1">
-                  <div class="font-extrabold truncate">${html(p.username)}</div>
-                  <div class="text-xs text-black/60 truncate">${html(p.pronouns||'')}</div>
-                </div>
-                <div class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">Current</div>
-            </div>
-            
-            <div class="hand-card bg-white/70 border border-black/10 p-3 mt-3">
-                <div class="text-xs font-bold opacity-50 mb-2">ACTIONS</div>
-                <button onclick="openEditProfile(); $('#accountModal').classList.add('hidden')" class="w-full text-left p-2 hover:bg-black/5 rounded font-bold text-sm wobbly">Edit Profile</button>
-            </div>
-        `;
-        
-        $('#accountModal').classList.remove('hidden');
-    }
-
-    function clearUserFilter() {
-        state.filter.search = '';
-        document.getElementById('searchInput').value = '';
-        renderPosts();
-    }
-    
-    function clearModal() {
-         $$('[data-overlay]').forEach(el => el.classList.add('hidden'));
-    }
-
-    function openTextModal(title, subtitle, placeholder, onSaveCallback) {
-        document.getElementById('textModalTitle').innerText = title;
-        document.getElementById('textModalSubtitle').innerText = subtitle;
-        const input = document.getElementById('textModalInput');
-        input.value = '';
-        input.placeholder = placeholder;
-        state.textModal.onSave = onSaveCallback;
-        document.getElementById('textModal').classList.remove('hidden');
-        input.focus();
-    }
-
-    function closeTextModal() {
-        document.getElementById('textModal').classList.add('hidden');
-    }
-
-    function openModal(id) {
-        const m = document.getElementById(id);
-        if(m) m.classList.remove('hidden');
-    }
-    
-    function notifIcon(type) {
-        if(type === 'sticker') return STICKER_SVGS.star;
-        if(type === 'reply') return STICKER_SVGS.hug; 
-        return STICKER_SVGS.leaf;
-    }
-
-    // --- END HELPERS ---
-
-    const STICKER_SVGS = {
-      hug: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M24 12c6-7 16-2 14 7-2 9-14 18-14 18S12 28 10 19c-2-9 8-14 14-7Z" fill="rgba(244,163,122,.45)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M17 23c2 2 4 3 7 3s5-1 7-3" fill="none" stroke="rgba(43,43,53,.45)" stroke-width="2" stroke-linecap="round"/></svg>`,
-      star: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M24 9l4 10 11 1-8 7 2 11-9-6-9 6 2-11-8-7 11-1 4-10Z" fill="rgba(247,197,159,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
-      leaf: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M12 30c10-18 20-18 24-18 0 6-2 24-20 26-5 1-6-4-4-8Z" fill="rgba(134,166,139,.5)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M18 31c6-6 12-10 18-12" fill="none" stroke="rgba(43,43,53,.45)" stroke-width="2" stroke-linecap="round"/></svg>`,
-      spark: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M24 10l3 8 8 3-8 3-3 8-3-8-8-3 8-3 3-8Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
-      cocoa: `<svg viewBox="0 0 48 48" class="w-6 h-6"><path d="M16 18h16v14a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6V18Z" fill="rgba(247,197,159,.35)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M32 20h4a4 4 0 0 1 0 8h-4" fill="none" stroke="rgba(43,43,53,.35)" stroke-width="2" stroke-linecap="round"/></svg>`
-    };
-    const illustChoices = [
-      { id: 'surprise', label: 'Surprise', seed: null }, { id: 'sunny', label: 'Sunny', seed: 11 }, { id: 'cloud', label: 'Cloud', seed: 22 }, { id: 'garden', label: 'Garden', seed: 33 }, { id: 'cozy', label: 'Cozy', seed: 44 }, { id: 'moon', label: 'Moon', seed: 55 }, { id: 'spark', label: 'Spark', seed: 66 }, { id: 'picnic', label: 'Picnic', seed: 77 }
-    ];
-    const MOCK_CLUBS = [
-        { id:'study', title:'Study Nook', desc:'Quiet encouragement', tag:'school' }, { id:'art', title:'Doodle Picnic', desc:'Messy sketches welcome', tag:'art' }, { id:'music', title:'Playlist Exch', desc:'Warm songs only', tag:'music' }, { id:'books', title:'Reading Corner', desc:'No spoilers, just vibes', tag:'selfcare' }
-    ];
-    const MOCK_PROMPTS = [
-        { title:'What color did you see?', desc:'One sentence post.' }, { title:'Show your desk corner', desc:'No faces needed.' }, { title:'One kind thing you did', desc:'Small counts.' }, { title:'A comfort snack', desc:'Name it like a spell.' }
-    ];
-    // REMOVED MOCK_STORIES. Now using real DB.
-    
-    let MOCK_NOTIFS = [];
-
     function applyMood(moodId){
       const themes = {
         sunset: { a:'rgba(247,197,159,.55)', b:'rgba(134,166,139,.35)', c:'rgba(219,161,168,.22)', bg1:'#fff5ea', bg2:'#fbf5ea', bg3:'#f7f0e6' },
@@ -813,55 +735,6 @@
       const r = document.documentElement.style;
       r.setProperty('--mood-a', m.a); r.setProperty('--mood-b', m.b); r.setProperty('--mood-c', m.c);
       r.setProperty('--mood-bg1', m.bg1); r.setProperty('--mood-bg2', m.bg2); r.setProperty('--mood-bg3', m.bg3);
-    }
-
-    function artSVG(seed=1, palette='sunset'){
-      const palettes = { sunset: ['#f4a37a','#f7c59f','#fbf5ea','#dba1a8'], sage: ['#86a68b','#b7cbb7','#fbf5ea','#f7c59f'], berry: ['#dba1a8','#c77d93','#fbf5ea','#6f6a86'], clay: ['#b87d66','#f4a37a','#fbf5ea','#86a68b'] };
-      const [a,b,c,d] = palettes[palette] || palettes.sunset;
-      const blobs = Array.from({length: 7}, (_,i)=>{ const x = 10 + ((seed*37 + i*11) % 80); const y = 10 + ((seed*23 + i*17) % 80); const r = 9 + ((seed*19 + i*7) % 20); const col = [a,b,d,c][i%4]; const op = 0.30 + ((seed+i)%4)*0.06; return `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" opacity="${op}" />`; }).join('');
-      const doodle = `<path d="M20 70c10-18 30-18 40 0" fill="none" stroke="rgba(43,43,53,.33)" stroke-width="3" stroke-linecap="round"/><path d="M26 52c6 4 14 4 20 0" fill="none" stroke="rgba(43,43,53,.30)" stroke-width="3" stroke-linecap="round"/><path d="M54 30c6 6 6 18 0 24" fill="none" stroke="rgba(43,43,53,.26)" stroke-width="3" stroke-linecap="round"/><path d="M10 36c4-6 10-6 14 0" fill="none" stroke="rgba(43,43,53,.23)" stroke-width="3" stroke-linecap="round"/>`;
-      const gradId = `g${seed}${palette}`;
-      return `<svg viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}" stop-opacity=".76"/><stop offset=".55" stop-color="${b}" stop-opacity=".64"/><stop offset="1" stop-color="${c}" stop-opacity=".92"/></linearGradient></defs><rect x="0" y="0" width="100" height="100" rx="18" fill="url(#${gradId})" />${blobs}<g opacity=".95">${doodle}</g><g opacity=".33"><path d="M14 18c10 2 14-3 22-6" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="5" stroke-linecap="round"/></g></svg>`;
-    }
-
-    function avatarHTML(u) {
-        // If user has a custom photo, show it
-        if (u && u.avatar_url) {
-            return `<img src="${u.avatar_url}" class="w-full h-full object-cover" alt="${u.username}'s avatar" />`;
-        }
-        // Fallback to the generated art
-        return avatarSVG(u?.seed || 1);
-    }
-    
-    function avatarSVG(seed=1){
-      const bg = ['linear-gradient(135deg, rgba(247,197,159,.95), rgba(251,245,234,.85))','linear-gradient(135deg, rgba(134,166,139,.75), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(219,161,168,.8), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(111,106,134,.55), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(184,125,102,.65), rgba(251,245,234,.92))'][seed%5];
-      return `<div class="w-full h-full" style="background:${bg}"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M16 36c2-12 10-20 16-20s14 8 16 20" fill="none" stroke="rgba(43,43,53,.65)" stroke-width="2.2" stroke-linecap="round"/><path d="M22 36c0 10 4 16 10 16s10-6 10-16" fill="none" stroke="rgba(43,43,53,.65)" stroke-width="2.2" stroke-linecap="round"/><circle cx="26" cy="32" r="2" fill="rgba(43,43,53,.65)"/><circle cx="38" cy="32" r="2" fill="rgba(43,43,53,.65)"/><path d="M28 41c2 2 6 2 8 0" fill="none" stroke="rgba(43,43,53,.5)" stroke-width="2.2" stroke-linecap="round"/><path d="M23 24l-5-5M41 24l5-5" fill="none" stroke="rgba(43,43,53,.5)" stroke-width="2.2" stroke-linecap="round"/></svg></div>`;
-    }
-
-    function svgIcon(kind, active=false, badge=false){
-      const tint = active ? 'rgba(244,163,122,.85)' : 'rgba(43,43,53,.68)';
-      const fill = active ? 'rgba(247,197,159,.45)' : 'rgba(134,166,139,.18)';
-      // The Red Dot logic
-      const badgeHtml = badge ? `<div class="absolute -top-1 -right-1 badge-dot"></div>` : '';
-      
-      const wrap = (inner, label) => `
-        <div class="relative">
-            <div class="mx-auto w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 grid place-items-center ${active ? 'shadow-sm' : ''}">${inner}</div>
-            <div class="mt-1 text-[11px] text-center ${active ? 'font-extrabold text-black/75' : 'text-black/55'}">${label}</div>
-            ${badgeHtml}
-        </div>`;
-
-      if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
-      
-      if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Pages');
-      
-      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
-      
-      if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
-      
-      if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
-      
-      return '';
     }
 
     function postMediaHTML(p){
@@ -883,18 +756,15 @@
     async function loadThreads() {
         if (!state.user) return;
         try {
-            // 1. Fetch Messages
             const { data: msgs } = await sb.from('messages')
                 .select('*, profiles:from_id(username, seed)')
                 .or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`)
                 .order('created_at', { ascending: true });
 
-            // 2. NEW: Fetch Read History from Cloud
             const { data: reads } = await sb.from('thread_reads')
                 .select('other_user_id, last_read_at')
                 .eq('user_id', state.user.id);
 
-            // 3. Map Read History to State
             if(reads) {
                 reads.forEach(r => {
                     state.lastRead[r.other_user_id] = new Date(r.last_read_at).getTime();
@@ -911,6 +781,8 @@
                             id: otherId, 
                             user: u.username, 
                             seed: u.seed, 
+                            // Add avatar_url here
+                            avatar_url: u.avatar_url,
                             last: '', 
                             timestamp: 0, 
                             messages: [] 
@@ -934,13 +806,20 @@
     // FIX: LOAD STORIES FROM DB
     async function loadStories() {
         try {
-            const { data, error } = await sb.from('stories').select(`*, profiles(username, seed)`).order('created_at', { ascending: false });
+            // Added avatar_url to the select query
+            const { data, error } = await sb.from('stories')
+                .select(`*, profiles(username, seed, avatar_url)`)
+                .order('created_at', { ascending: false });
+            
             if (error) throw error;
+            
             if (data) {
                 state.stories = data.map(s => ({ 
                     id: s.id, 
                     user: s.profiles?.username || 'Anon', 
                     seed: s.profiles?.seed || 1, 
+                    // Store the avatar URL
+                    avatar_url: s.profiles?.avatar_url,
                     title: s.title || 'Journal Entry', 
                     time: timeAgo(new Date(s.created_at)), 
                     pages: Array.isArray(s.pages) ? s.pages : (s.pages ? [s.pages] : ['Empty page...'])
@@ -1309,8 +1188,8 @@
             <div class="font-extrabold">About</div>
             <div class="text-sm text-black/70 mt-1">${html(p.bio||'')}</div>
             <div class="mt-2 flex flex-wrap items-center gap-2">
+                <!-- Only 'Edit Profile' remains here -->
                 <button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button>
-                <button id="changeAvatarBtn" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Change avatar</button>
                 <button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button>
                 <button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button>
             </div>
@@ -1347,7 +1226,11 @@
         if (state.stories.length === 0) {
             listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No journal pages found.<br>Be the first to write one?</div>`;
         } else {
-            listDiv.innerHTML = state.stories.map((s, idx) => `
+            listDiv.innerHTML = state.stories.map((s, idx) => {
+                // FIX: Define the user object 'u' here
+                const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
+                
+                return `
                 <button class="w-full wobbly text-left" onclick="openStory(${idx})">
                     <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
                         <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
@@ -1355,7 +1238,7 @@
                         <div class="text-xs text-black/50">open →</div>
                     </div>
                 </button>
-            `).join('');
+            `}).join('');
         }
 
         const promptsHtml = MOCK_PROMPTS.map(p => `
@@ -1378,19 +1261,17 @@
             const active = state.activeThreadId === t.id;
             const lastMsg = t.messages[t.messages.length - 1];
             
-            // LOGIC: It is unread IF:
-            // 1. The last message is from 'them'
-            // 2. AND the message time is NEWER than when I last clicked this thread
-            // 3. AND I am not currently looking at it right now
             const lastReadTime = state.lastRead[t.id] || 0;
             const isNew = t.timestamp > lastReadTime;
             const isUnread = (lastMsg && lastMsg.from === 'them' && isNew && !active);
             
-            // Styles
             const activeClass = active ? 'bg-gradient-to-b from-[#f7c59f]/55 to-white/70 ring-2 ring-[#f4a37a]/20' : 'bg-white/70';
             const unreadClass = isUnread ? 'border-[#f4a37a] shadow-sm' : 'border-black/10';
             const textWeight = isUnread ? 'font-bold text-black/90' : 'text-black/60';
             
+            // FIX: Define the user object 'u' here
+            const u = { username: t.user, seed: t.seed, avatar_url: t.avatar_url };
+
             return `
             <button class="w-full wobbly text-left mb-2" onclick="openThread('${t.id}')">
                 <div class="hand-card hand-outline ${activeClass} ${unreadClass} border p-3 flex items-center gap-3 relative transition-all duration-300">
@@ -1670,8 +1551,135 @@
     function openComments(postId){ state.comments.postId = postId; openModal('commentsModal'); renderCommentsModal(); }
     $('#sendCommentBtn').onclick = async ()=>{ const val = $('#commentInput').value.trim(); if(!val) return; try { await sb.from('comments').insert({ post_id: state.comments.postId, user_id: state.user.id, text: val }); toast('Note sent.'); $('#commentInput').value = ''; } catch(e) { toast('Error sending note.'); } };
     
-    function openEditProfile() { $('#setupName').value = state.profile.username || ''; $('#setupPronouns').value = state.profile.pronouns || ''; $('#setupBio').value = state.profile.bio || ''; $('#editProfileModal').classList.remove('hidden'); }
+    function openEditProfile() { 
+        $('#setupName').value = state.profile.username || ''; 
+        $('#setupPronouns').value = state.profile.pronouns || ''; 
+        $('#setupBio').value = state.profile.bio || ''; 
+        
+        // Show current avatar in the picker
+        $('#editProfileAvatarPreview').innerHTML = avatarHTML(state.profile);
+
+        const currentMood = state.profile.mood || 'sunset';
+        $$('.setupMood').forEach(b => {
+            if(b.dataset.m === currentMood) b.classList.add('ring-2', 'ring-black/10', 'bg-white');
+            else b.classList.remove('ring-2', 'ring-black/10', 'bg-white');
+        });
+        $('#editProfileModal').classList.remove('hidden'); 
+    }
     function closeCompose(){ $('#composeModal').classList.add('hidden'); state.compose.file = null; $('#mediaInput').value = ''; }
+
+    async function openUserModal(userId) {
+        const modal = document.getElementById('userModal');
+        const body = document.getElementById('userModalBody');
+        
+        // 1. Show Loading State
+        body.innerHTML = `<div class="p-8 text-center opacity-50 animate-pulse">Knocking on door...</div>`;
+        modal.classList.remove('hidden');
+
+        // 2. Fetch Fresh Data
+        let user = state.allUsers.find(u => u.id === userId);
+        try {
+            const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
+            if (data) user = data;
+        } catch(e) {}
+
+        // Fallback if user barely exists
+        user = user || { username: 'Neighbor', seed: 5, bio: '', pronouns: '', mood: 'sunset' };
+
+        const meId = state.user.id;
+        const isMe = userId === meId;
+        const isMuted = state.mutedUsers.includes(userId);
+        
+        // 3. Get Recent Posts
+        const recent = state.posts.filter(p => p.user_id === userId).slice(0, 6);
+        
+        // 4. Render
+        body.innerHTML = `
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-3">
+              <div class="flex items-start gap-3">
+                <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0 bg-white">
+                    ${avatarHTML(user)}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="font-extrabold truncate text-lg">${html(user.username)}</div>
+                    <div class="text-xs text-black/45">${html(user.pronouns||'')}</div>
+                  </div>
+                  <div class="text-xs text-black/60 line-clamp-3 leading-snug mt-1">${html(user.bio||'A cozy corner.')}</div>
+                  <div class="text-[10px] text-black/40 mt-2 font-bold uppercase tracking-wider">Mood: ${html(user.mood||'sunset')}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              ${!isMe ? `
+              <button id="userMsgBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] font-extrabold text-white text-left shadow-sm">
+                Message
+                <div class="text-[10px] font-normal opacity-90">Send a note</div>
+              </button>
+              <button id="userMuteBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
+                ${isMuted ? 'Unmute' : 'Mute'}
+                <div class="text-[10px] font-normal text-black/50">${isMuted ? 'Allow posts' : 'Hide posts'}</div>
+              </button>
+              ` : `<div class="col-span-2 text-center text-xs text-black/40 py-2">This is your corner.</div>`}
+              
+              <button id="userFilterBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
+                Filter
+                <div class="text-[10px] font-normal text-black/50">Show only this</div>
+              </button>
+              <button id="userBioBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
+                Copy Bio
+                <div class="text-[10px] font-normal text-black/50">Save to clipboard</div>
+              </button>
+            </div>
+
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-xs font-extrabold opacity-50">RECENT SCRAPBOOK BITS</div>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                ${recent.map(p => `
+                  <div class="wobbly rounded-[12px] overflow-hidden border border-black/10 bg-white aspect-square" onclick="toast('Use the feed to see full post')">
+                    ${postMediaHTML(p)}
+                  </div>
+                `).join('') || `<div class="col-span-3 text-xs text-black/40 text-center py-4">No posts yet.</div>`}
+              </div>
+            </div>
+        `;
+        
+        // Wire buttons
+        const msgBtn = document.getElementById('userMsgBtn');
+        if(msgBtn) msgBtn.onclick = () => { modal.classList.add('hidden'); openThread(userId); };
+
+        const filterBtn = document.getElementById('userFilterBtn');
+        if(filterBtn) filterBtn.onclick = () => {
+            state.filter.search = user.username;
+            document.getElementById('searchInput').value = user.username;
+            modal.classList.add('hidden');
+            renderPosts();
+            toast(`Filtering by ${user.username}`);
+        };
+
+        const bioBtn = document.getElementById('userBioBtn');
+        if(bioBtn) bioBtn.onclick = () => { safeCopy(user.bio); toast('Bio copied.'); };
+
+        const muteBtn = document.getElementById('userMuteBtn');
+        if(muteBtn) muteBtn.onclick = async () => {
+            modal.classList.add('hidden');
+            if (isMuted) {
+                await unmuteUser(userId);
+            } else {
+                state.mutedUsers.push(userId);
+                toast('User muted.');
+                await sb.from('mutes').insert({ user_id: meId, muted_user_id: userId });
+                renderPosts();
+            }
+        };
+
+        modal.classList.remove('hidden');
+    }
+    
+    // ... function openAccountModal() is below this ...
     
     function openAccountModal() {
         const p = state.profile || { username: 'You', seed: 0, pronouns: '', bio: '' };
@@ -2165,26 +2173,24 @@
         };
 
         // --- AVATAR UPLOAD LOGIC ---
-        const changeAvatarBtn = $('#changeAvatarBtn');
-        if (changeAvatarBtn) {
-            changeAvatarBtn.onclick = () => {
-                $('#avatarFileInput').click(); // Trigger hidden input
-            };
-        }
+        // --- AVATAR UPLOAD LOGIC ---
+        // (No button click listener needed here, it's handled by onclick in HTML)
 
         $('#avatarFileInput').onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            toast('Compressing avatar...');
+            // Show a temporary preview inside the Edit Modal immediately
+            const tempUrl = URL.createObjectURL(file);
+            $('#editProfileAvatarPreview').innerHTML = `<img src="${tempUrl}" class="w-full h-full object-cover">`;
+
+            toast('Compressing & Uploading...');
             
             try {
                 // 1. Compress
-                const compressed = await compressImageToBlob(file, 600, 0.8); // Smaller size for avatars
+                const compressed = await compressImageToBlob(file, 600, 0.8);
                 
-                toast('Uploading...');
-                
-                // 2. Upload to Supabase Storage
+                // 2. Upload
                 const name = `avatars/${state.user.id}/${Date.now()}.jpg`;
                 const { error } = await sb.storage.from('cozy-media').upload(name, compressed);
                 if (error) throw error;
@@ -2193,12 +2199,14 @@
                 const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
                 const publicUrl = data.publicUrl;
 
-                // 4. Update Profile in Database
+                // 4. Update Database
                 await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', state.user.id);
 
-                // 5. Update Local State & UI
+                // 5. Update State
                 state.profile.avatar_url = publicUrl;
-                renderProfile();
+                
+                // 6. Update UI
+                renderProfile(); // Updates the main profile page
                 toast('New avatar set!');
 
             } catch (err) {
@@ -2300,8 +2308,5 @@
 
     init();
   </script>
-  <!-- Hidden File Input for Avatars -->
- <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 </body>
 </html>
-```
