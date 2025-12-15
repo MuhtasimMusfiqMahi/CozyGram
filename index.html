@@ -22,6 +22,12 @@
       --safe-bottom: env(safe-area-inset-bottom, 0px); --safe-top: env(safe-area-inset-top, 0px);
     }
 
+    /* STEP 7: PREVENT HORIZONTAL SCROLLING */
+    html {
+      width: 100%;
+      overflow-x: hidden; /* Stop root level scrolling */
+    }
+
     body {
       font-family: Nunito, ui-sans-serif, system-ui, -apple-system, sans-serif;
       color: var(--ink);
@@ -31,7 +37,12 @@
         radial-gradient(1000px 700px at 60% 90%, var(--mood-c), rgba(251,245,234,0) 58%),
         linear-gradient(180deg, var(--mood-bg1) 0%, var(--mood-bg2) 35%, var(--mood-bg3) 100%);
       -webkit-tap-highlight-color: transparent;
-      min-height: 100vh;
+      
+      /* Mobile Constraints */
+      min-height: 100dvh;
+      width: 100%;       /* Force width to container */
+      max-width: 100vw;  /* Hard limit to viewport width */
+      overflow-x: hidden; /* Cut off any elements attempting to overflow */
       position: relative;
     }
 
@@ -95,63 +106,94 @@
     @keyframes pageflip { from { transform: perspective(900px) rotateY(-16deg); opacity:0.0; } to { transform: perspective(900px) rotateY(0deg); opacity:1; } }
 
     .hidden { display: none !important; }
-    /* Update this existing class in your <style> tag */
+    /* Mobile Default: Extra space for Bottom Nav + Floating Button + Safe Area */
 .main-safe-pad { 
-  /* Mobile: Big padding so content scrolls above the bottom nav */
-  padding-bottom: calc(6rem + var(--safe-bottom)); 
+  padding-bottom: calc(8.5rem + var(--safe-bottom)); 
 }
 
+/* Desktop Override: Nav is on the left, so we reset the bottom padding */
 @media (min-width: 1024px) {
   .main-safe-pad { 
-    /* Desktop: Reset to zero or small padding since Nav is on the side */
     padding-bottom: 2rem; 
   }
 }
-    .nav-safe { bottom: calc(1rem + var(--safe-bottom)); }
-    .fab-safe { bottom: calc(5.75rem + var(--safe-bottom)); }
-    .modal-safe { padding-bottom: calc(1rem + var(--safe-bottom)); padding-top: calc(1rem + var(--safe-top)); }
+.nav-safe { 
+  /* Mobile: stick to bottom with safe area margin */
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 20px)); 
+}
+/* STEP 8: FAB POSITIONING */
+.fab-safe { 
+      /* Mobile: Sit above the Nav Pill */
+      /* 6rem gives enough clearance for the pill + shadow + spacing */
+      bottom: calc(6rem + env(safe-area-inset-bottom, 20px)); 
+    }
+.modal-safe { 
+      padding-top: calc(2rem + var(--safe-top)); 
+      padding-bottom: 0; 
+      padding-left: 0;
+      padding-right: 0;
+    }
     .modal-card { 
-  /* Mobile Default: Stick to bottom, round top corners only */
-  max-height: 85vh; /* Don't cover whole screen */
-  width: 100%;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
-  margin-bottom: 0; /* Touch the bottom edge */
-  overflow: auto;
-}
+      width: 100%;
+      /* Max height to ensure we can always reach the top close button */
+      max-height: 85vh; 
+      
+      /* Reset corners: Round top, square bottom */
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-top-left-radius: 26px;
+      border-top-right-radius: 26px;
+      
+      /* Remove bottom border/shadow so it looks like it comes from the bezel */
+      border-bottom: none;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.1); 
+      margin-bottom: 0;
+      
+      /* Scroll internally if content is long */
+      overflow-y: auto;
+      
+      /* CRITICAL: Add padding inside the card for the iPhone Home Bar */
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
 
-/* Desktop Override: Restore the floating "Card" look */
-@media (min-width: 640px) {
-  .modal-card {
-    max-height: min(820px, calc(100dvh - 2rem));
-    border-radius: 26px 22px 28px 20px; /* Restore cozy shape */
-    margin-bottom: auto; /* Center it again */
-  }
-}
+    /* 3. Desktop/Tablet Override (Restore the "Floaty Card" look) */
+    @media (min-width: 640px) {
+      .modal-safe {
+        padding: 2rem; /* Restore wrapper padding */
+      }
+      .modal-card {
+        width: 100%; 
+        max-height: min(820px, calc(100dvh - 4rem));
+        
+        /* Restore all-around rounded corners */
+        border-radius: 26px 22px 28px 20px; 
+        
+        /* Restore bottom border */
+        border-bottom: 1px solid rgba(43,43,53,.08);
+        
+        margin-bottom: auto; /* Center vertically */
+        padding-bottom: 1rem; /* Restore standard internal padding */
+      }
+    }
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
     @media (min-width: 1024px) {
-      #app { max-width: 1200px; padding-left: 7.5rem; padding-right: 1.5rem; }
+      /* Desktop Layout */
+  #app { 
+    max-width: 1200px; 
+    padding-left: 7.5rem; /* Space for Side Nav */
+    padding-right: 1.5rem; 
+    margin-left: auto; 
+    margin-right: auto;
+  }
       #bottomNav { left: 1.25rem; right: auto; top: 50%; bottom: auto; transform: translateY(-50%); width: 120px; }
       #bottomNav .navGrid { display: grid; grid-template-columns: 1fr; gap: .75rem; }
-      #fab {
-  /* High enough to clear the bottom nav on mobile */
-  bottom: calc(5.5rem + var(--safe-bottom)); 
-}
-
-/* Add this INSIDE the existing @media (min-width: 1024px) block */
-@media (min-width: 1024px) {
-  /* ... existing styles ... */
-  #fab {
-    /* Moves to bottom right corner on desktop */
-    left: auto; 
-    right: 1.5rem; 
-    bottom: 1.5rem; 
-    transform: none; 
-  }
-}
+      #fab { 
+        left: auto;        /* Undo the 'left-1/2' from mobile */
+        right: 1.5rem;     /* Stick to right edge */
+        bottom: 1.5rem;    /* Stick to bottom edge (no longer 6rem up) */
+        transform: none;   /* Undo the 'translate-x-1/2' centering */
+      }
       .desktop-two-col { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
     }
     
@@ -166,7 +208,7 @@
   <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 
   <!-- ONBOARDING MODAL -->
-  <div id="onboardingModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="onboardingModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex items-start justify-between gap-3 mb-4">
             <div class="flex items-start gap-3">
@@ -182,7 +224,7 @@
         </div>
         <div id="authContainer" class="hidden animate-fade-in space-y-3">
             <div class="text-sm font-bold text-center mb-2">Ready to enter your corner?</div>
-            <input id="emailInput" type="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a]" />
+            <input id="emailInput" type="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-base sm:text-sm" />
             <button id="magicLinkBtn" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-r from-[#f4a37a] to-[#f7c59f] font-extrabold text-white wobbly shadow-sm">Send Magic Link</button>
             <div id="loginMsg" class="text-center text-xs text-black/50 min-h-[1.5em]"></div>
         </div>
@@ -230,7 +272,7 @@
         </div>
         <div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
           <div class="flex-1 relative">
-            <input id="searchInput" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10" placeholder="Search cozy corners..." />
+            <input id="searchInput" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder="Search cozy corners..." />
             <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/40">Cmd K</div>
           </div>
           <button id="openSafety" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-white/80 to-white/65" aria-label="Safety"><svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="rgba(134,166,139,.22)"/><path class="ink-line-lite" d="M9 12l2 2 4-5" fill="none"/></svg></button>
@@ -340,7 +382,7 @@
                           <button class="quickReply text-[10px] px-2 py-1 bg-white border rounded-[8px] wobbly" onclick="$('#chatInput').value='Thinking of you 🌿'; $('#chatInput').focus();">Thinking of you</button>
                       </div>
                       <div class="flex gap-2">
-                          <input id="chatInput" class="flex-1 px-3 py-2 rounded-[12px] border border-black/10 text-sm focus:outline-none" placeholder="Write a gentle note..." />
+                          <input id="chatInput" class="flex-1 px-3 py-2 rounded-[12px] border border-black/10 text-base sm:text-sm focus:outline-none" placeholder="Write a gentle note..." />
                           <button id="chatSendBtn" class="px-3 py-2 bg-[#f4a37a] text-white font-bold rounded-[12px] wobbly text-xs">Send</button>
                       </div>
                       <div id="kindHint" class="mt-2 text-xs text-black/55 hidden">Tip: “Do you want comfort or solutions?” helps a lot.</div>
@@ -382,25 +424,25 @@
   </div>
 
   <!-- ALL MODALS -->
-  <div id="userModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="userModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Cozy Corner</h3><button onclick="$('#userModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="userModalBody"></div>
       </div>
   </div>
-  <div id="newThreadModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="newThreadModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">New Note</h3><button onclick="$('#newThreadModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="userList" class="space-y-2"></div>
       </div>
   </div>
-  <div id="accountModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="accountModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Account</h3><button onclick="$('#accountModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="accountBody" class="space-y-2"></div>
       </div>
   </div>
-  <div id="safetyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="safetyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex items-center justify-between mb-4"><h3 class="font-[Fraunces] text-lg">Safety & comfort</h3><button onclick="$('#safetyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Done</button></div>
         <div class="space-y-3 text-sm">
@@ -410,7 +452,7 @@
         </div>
       </div>
   </div>
-  <div id="storyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="storyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3"><div id="storyAvatar" class="w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white"></div><div><div id="storyTitle" class="font-extrabold text-sm"></div><div id="storyMeta" class="text-xs text-black/55"></div></div></div>
@@ -422,39 +464,39 @@
       <div class="flex items-center justify-between"><button id="prevStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Prev</button><button id="nextStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Next</button></div>
     </div>
   </div>
-  <div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Make a cozy post</h3><button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
         <div class="grid grid-cols-2 gap-3 mb-3">
             <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-[4/3] overflow-hidden relative"><div id="composePreview" class="w-full h-full"></div><input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" /><div class="absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-[10px] pointer-events-none font-bold">Tap to upload</div></div>
             <div class="space-y-2">
                 <div class="text-[10px] uppercase font-bold opacity-50">Frame</div>
-                <div class="flex gap-2 flex-wrap"><button class="frameBtn px-2 py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="wavy">Wavy</button><button class="frameBtn px-2 py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="polaroid">Polar</button><button class="frameBtn px-2 py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="tape">Tape</button></div>
+                <div class="flex gap-2 flex-wrap"><button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="wavy">Wavy</button><button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="polaroid">Polar</button><button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="tape">Tape</button></div>
                 <div class="text-[10px] uppercase font-bold opacity-50">Vibe</div>
-                <div class="flex gap-1 flex-wrap"><button class="vibeBtn w-6 h-6 rounded-full border wobbly" style="background:#f4a37a" data-v="sunset"></button><button class="vibeBtn w-6 h-6 rounded-full border wobbly" style="background:#86a68b" data-v="sage"></button><button class="vibeBtn w-6 h-6 rounded-full border wobbly" style="background:#dba1a8" data-v="berry"></button><button class="vibeBtn w-6 h-6 rounded-full border wobbly" style="background:#b87d66" data-v="clay"></button></div>
+                <div class="flex gap-1 flex-wrap"><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#f4a37a" data-v="sunset"></button><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#86a68b" data-v="sage"></button><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#dba1a8" data-v="berry"></button><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#b87d66" data-v="clay"></button></div>
                 <div class="text-[10px] uppercase font-bold opacity-50">Illustration</div><div id="artPicker" class="flex gap-2 flex-wrap mt-1"></div>
             </div>
         </div>
-        <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-24 text-sm" placeholder="What made today soft?"></textarea>
+        <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-24 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
         <div id="composeTags" class="flex gap-2 mt-2 mb-2"></div>
         <button id="postNowBtn" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Post to Cloud</button>
     </div>
   </div>
-  <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">New Page</h3><button onclick="$('#storyComposeModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
-        <input id="storyHeading" class="w-full px-4 py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-sm" placeholder="Title (e.g. Morning thoughts)" />
+        <input id="storyHeading" class="w-full px-4 py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder="Title (e.g. Morning thoughts)" />
         <textarea id="storyText" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-32 text-sm font-serif leading-relaxed" placeholder="Dear journal..."></textarea>
         <button onclick="saveStoryPage()" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Publish Page</button>
     </div>
   </div>
-  <div id="roomModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="roomModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg" id="roomTitle">Your Room</h3><button onclick="$('#roomModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="roomBody" class="space-y-4"></div>
       </div>
   </div>
-  <div id="postOptionsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="postOptionsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
         <h3 class="font-bold mb-3 text-center">Options</h3>
         <button id="savePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Save to Drawer</button>
@@ -467,7 +509,7 @@
         <button onclick="$('#postOptionsModal').classList.add('hidden')" class="w-full py-3 rounded-[18px_16px_22px_14px] border border-black/10 text-black/50 wobbly">Cancel</button>
     </div>
   </div>
-  <div id="editProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
+  <div id="editProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-[Fraunces] text-lg">Edit Corner</h3>
@@ -489,9 +531,9 @@
             </div>
         </div>
 
-        <input id="setupName" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80" placeholder="Name" />
-        <input id="setupPronouns" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80" placeholder="Pronouns" />
-        <textarea id="setupBio" class="w-full mb-3 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 h-24" placeholder="Bio..."></textarea>
+        <input id="setupName" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-base sm:text-sm " placeholder="Name" />
+        <input id="setupPronouns" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-base sm:text-sm " placeholder="Pronouns" />
+        <textarea id="setupBio" class="w-full mb-3 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 h-24 text-base sm:text-sm " placeholder="Bio..."></textarea>
         
         <div class="mt-2 text-xs font-bold opacity-50">Mood Lighting</div>
         <div class="flex gap-2 mb-4 mt-1">
@@ -503,19 +545,19 @@
         <button id="saveProfileSetup" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Save</button>
     </div>
   </div>
-  <div id="commentsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="commentsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Supportive Notes</h3><button onclick="$('#commentsModal').classList.add('hidden')" class="text-sm font-bold opacity-50">Close</button></div>
         <div id="commentsList" class="space-y-2 mb-4 text-sm text-black/70"></div>
-        <textarea id="commentInput" class="w-full p-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white focus:outline-none h-20 text-lg font-hand" placeholder="Leave a kind note..."></textarea>
+        <textarea id="commentInput" class="w-full p-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white focus:outline-none h-20 text-base sm:text-lg" placeholder="Leave a kind note..."></textarea>
         <button id="sendCommentBtn" class="w-full mt-2 py-2 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Send</button>
     </div>
   </div>
-  <div id="textModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="textModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
           <div class="flex items-start justify-between gap-3 mb-3"><div><div id="textModalTitle" class="font-[Fraunces] text-lg">Write</div><div id="textModalSubtitle" class="text-xs text-black/60">Gentle + short is perfect.</div></div><button onclick="closeTextModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
           <div class="mt-3">
-              <textarea id="textModalInput" class="w-full min-h-[140px] px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10" placeholder=""></textarea>
+              <textarea id="textModalInput" class="w-full min-h-[140px] px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder=""></textarea>
               <div class="mt-2 flex items-center justify-between gap-2"><div id="textModalHint" class="text-xs text-black/55">Tip: be specific and kind.</div><div class="text-xs text-black/45"><span id="textModalCount">0</span>/<span id="textModalMax">220</span></div></div>
           </div>
           <div class="mt-3 flex items-center justify-between gap-2"><button onclick="closeTextModal()" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Cancel</button><button id="textModalSave" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white text-sm font-extrabold">Save</button></div>
@@ -1234,7 +1276,7 @@
                     <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
                     <div><div class="font-extrabold text-sm">${html(u.username)}</div><div class="text-xs text-black/50">${timeStr}</div></div>
                 </button>
-                <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly px-3 py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
+                <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly w-10 h-10 flex items-center justify-center sm:w-auto sm:h-auto sm:px-3 sm:py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
             </div>
             ${promptChip}
             <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
@@ -1256,7 +1298,7 @@
             <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
                 <div class="flex items-center justify-between mb-2">
                     <div class="text-xs text-black/55">Supportive notes</div>
-                    <button onclick="openComments('${p.id}')" class="wobbly px-3 py-1 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                    <button onclick="openComments('${p.id}')" class="wobbly px-4 py-2 sm:px-3 sm:py-1 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
                 </div>
                 <div class="space-y-1" id="comments-${p.id}">${commentsHtml || '<div class="text-sm text-black/55">No notes yet. Leave a gentle one?</div>'}</div>
             </div>
@@ -1304,7 +1346,7 @@
 
     // Helper for stickers
     function stickerBtn(pid, type, svg, count) {
-        return `<button onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-2 py-1 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white">${svg} <span>${count || 0}</span></button>`;
+        return `<button onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-3 py-2 sm:px-2 sm:py-1 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white">${svg} <span>${count || 0}</span></button>`;
     }
 
     function renderProfile() {
