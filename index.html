@@ -258,7 +258,7 @@
 <!-- HEADER -->
 <header class="px-4 pt-5 pb-3">
     <div class="hand-card paper-noise hand-outline px-4 py-3">
-      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-wrap lg:justify-between">
         
         <!-- LOGO SECTION -->
         <div class="flex items-center gap-3">
@@ -268,7 +268,7 @@
           </div>
           <div>
               <div class="flex items-baseline gap-2">
-              <h1 class="font-[Fraunces] text-xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
+                <h1 class="font-[Fraunces] text-xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
               </div>
               <p class="text-xs text-black/60 leading-tight font-medium">Creativity over popularity</p>
           </div>
@@ -348,17 +348,14 @@
         </div>
 
         <!-- 3. FILTERS -->
-        <div id="userFilterBanner" class="hand-card hand-outline bg-white/70 border border-black/10 p-4 hidden">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3"><div class="text-sm font-extrabold">Filtering by User</div></div>
-                <button onclick="clearUserFilter()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Clear</button>
-            </div>
+        <div id="userFilterBanner" class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-2 hidden flex justify-between items-center">
+            <span class="text-xs font-bold opacity-60">Filtering by User</span>
+            <button onclick="clearUserFilter()" class="text-[10px] font-bold underline">Clear</button>
         </div>
-        <div class="flex flex-wrap gap-2">
-             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="all">All</button>
-             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="art">Art</button>
-             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="selfcare">Self-care</button>
-             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="friends">Friends</button>
+        
+        <!-- The Container where buttons will live -->
+        <div id="filterBar" class="flex flex-wrap gap-2 mb-4 min-h-[32px]">
+            <!-- Default filters injected via JS -->
         </div>
 
         <!-- 4. NEW POST BUTTON (Moved Here) -->
@@ -746,6 +743,7 @@
             illustSeed: null 
         },
         filter: { search: '', topic: 'all' },
+        searchMode: 'posts',
         kindness: true, hideNumbers: true,
         hiddenPosts: [], // DB-backed
         mutedUsers: [], // DB-backed
@@ -999,6 +997,92 @@
     function loadDailyCheckin() {
         const mood = localStorage.getItem('dailyCheckin');
         if(mood) { $$('.moodPick').forEach(b => { if(b.dataset.mood === mood) b.classList.add('bg-white','ring-2','ring-black/10'); }); }
+    }
+
+    // --- SEARCH & FILTER LOGIC ---
+
+    function renderFilters() {
+        const bar = document.getElementById('filterBar');
+        if(!bar) return;
+
+        // A. SEARCH MODE (Show People vs Posts)
+        if (state.filter.search.length > 0) {
+            const isPosts = state.searchMode === 'posts';
+            bar.innerHTML = `
+                <button onclick="setSearchMode('posts')" class="wobbly px-3 py-2 rounded-[14px] border border-black/10 text-xs font-extrabold transition-all ${isPosts ? 'bg-black text-white' : 'bg-white/70 text-black/60'}">
+                    Posts
+                </button>
+                <button onclick="setSearchMode('people')" class="wobbly px-3 py-2 rounded-[14px] border border-black/10 text-xs font-extrabold transition-all ${!isPosts ? 'bg-black text-white' : 'bg-white/70 text-black/60'}">
+                    People
+                </button>
+            `;
+        } 
+        // B. DEFAULT MODE (Show Topics)
+        else {
+            const topics = [
+                { id: 'all', label: 'All' },
+                { id: 'art', label: 'Art 🎨' },
+                { id: 'selfcare', label: 'Self-care 🌿' },
+                { id: 'friends', label: 'Friends 💌' }
+            ];
+            
+            bar.innerHTML = topics.map(t => {
+                const isActive = state.filter.topic === t.id;
+                return `<button onclick="setTopic('${t.id}')" class="wobbly px-3 py-2 rounded-[14px] border border-black/10 text-xs font-extrabold transition-all ${isActive ? 'bg-white ring-2 ring-black/10 text-black' : 'bg-white/70 text-black/60'}">${t.label}</button>`;
+            }).join('');
+        }
+    }
+
+    function setTopic(t) {
+        state.filter.topic = t;
+        renderFilters();
+        renderPosts();
+    }
+
+    function setSearchMode(mode) {
+        state.searchMode = mode;
+        renderFilters();
+        renderMainContent(); // Decides whether to show Posts or Users
+    }
+
+    // This replaces the old renderPosts to handle both content types
+    function renderMainContent() {
+        // If we are searching PEOPLE
+        if (state.filter.search.length > 0 && state.searchMode === 'people') {
+            renderUserResults();
+        } else {
+            // Otherwise render POSTS (Default)
+            renderPosts();
+        }
+    }
+
+    function renderUserResults() {
+        const list = document.getElementById('feed-container');
+        const term = state.filter.search.toLowerCase();
+        
+        // STRICT SEARCH: Only look at the username
+        const matches = state.allUsers.filter(u => 
+            (u.username || '').toLowerCase().includes(term)
+        );
+
+        if (matches.length === 0) {
+            list.innerHTML = `<div class="p-8 text-center opacity-50 text-sm">No neighbors found named "${state.filter.search}".</div>`;
+            return;
+        }
+
+        list.innerHTML = matches.map(u => `
+            <button onclick="openUserModal('${u.id}')" class="w-full text-left wobbly pop-in mb-3">
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">
+                        ${avatarHTML(u)}
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-sm">${html(u.username)}</div>
+                        <div class="text-xs text-black/50 line-clamp-1">${html(u.bio || 'Just a cozy neighbor')}</div>
+                    </div>
+                </div>
+            </button>
+        `).join('');
     }
 
     // --- APP LOGIC (UPDATED INIT) ---
@@ -1366,30 +1450,49 @@
     }
 
     function renderPosts() {
-        const list = $('#feed-container');
+        const list = document.getElementById('feed-container');
+        if (!list) return;
         
-        // 1. Handle Filters visibility
-        if (state.filter.search && state.filter.search.length > 0) $('#userFilterBanner').classList.remove('hidden');
-        else $('#userFilterBanner').classList.add('hidden');
+        // 1. Handle "Filtering by User" Banner
+        const userBanner = document.getElementById('userFilterBanner');
+        // Only show banner if we are NOT typing in the search bar (e.g. clicked a profile button)
+        if (state.filter.search && state.filter.search !== document.getElementById('searchInput').value) {
+             if(userBanner) userBanner.classList.remove('hidden');
+        } else {
+             if(userBanner) userBanner.classList.add('hidden');
+        }
         
         // 2. Filter Logic
+        const term = state.filter.search.toLowerCase();
+        
         const filtered = state.posts.filter(p => {
             const tags = inferTags(p.caption); 
-            const matchesSearch = state.filter.search ? (p.caption.toLowerCase().includes(state.filter.search.toLowerCase()) || p.profiles.username.toLowerCase().includes(state.filter.search.toLowerCase())) : true;
+            
+            // STRICT SEARCH: Only look at the caption
+            const matchesSearch = state.filter.search ? (
+                (p.caption || '').toLowerCase().includes(term)
+            ) : true;
+            
+            // Topic filter
             const matchesTopic = state.filter.topic === 'all' ? true : tags.includes(state.filter.topic);
+            
             return matchesSearch && matchesTopic; 
         });
 
         // 3. Render
         if(filtered.length === 0) { 
-            list.innerHTML = '<div class="p-6 text-center opacity-50">No posts found.</div>'; 
+            // If searching, show specific message
+            if(state.filter.search) {
+                list.innerHTML = `<div class="p-6 text-center opacity-50 font-[Fraunces]">No captions found with "${state.filter.search}".</div>`; 
+            } else {
+                list.innerHTML = `<div class="p-6 text-center opacity-50 font-[Fraunces]">No posts found.</div>`; 
+            }
             return; 
         }
 
         const postsHtml = filtered.map(p => getPostHTML(p)).join('');
         list.innerHTML = postsHtml;
     }
-
     // Helper for stickers
     function stickerBtn(pid, type, svg, count) {
         return `<button onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-3 py-2 sm:px-2 sm:py-1 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white">${svg} <span>${count || 0}</span></button>`;
@@ -1802,6 +1905,16 @@
         $('#hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
 
         $('#deletePostBtn').classList.toggle('hidden', uid !== state.user.id); 
+    }
+
+    function clearUserFilter() {
+        state.filter.search = '';
+        state.searchMode = 'posts';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('userFilterBanner').classList.add('hidden');
+        renderFilters();
+        renderPosts();
+        toast("Filter cleared");
     }
     
     function renderCommentsModal(){
@@ -2686,12 +2799,29 @@
         }
 
         // --- FEED & FILTERS ---
-        safeWireAll('.topicBtn', (b) => b.onclick = () => { 
-            state.filter.topic = b.dataset.t; 
-            $$('.topicBtn').forEach(x => x.classList.remove('bg-white', 'ring-2', 'ring-black/10')); 
-            b.classList.add('bg-white', 'ring-2', 'ring-black/10'); 
-            renderPosts(); 
-        });
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchSubmitBtn');
+
+        // Initial Render
+        renderFilters();
+
+        if (searchInput) {
+            searchInput.oninput = (e) => {
+                const val = e.target.value.trim();
+                state.filter.search = val;
+                
+                // If clearing search, reset mode to posts
+                if(val.length === 0) state.searchMode = 'posts';
+                
+                renderFilters();      // Update buttons (All vs People/Posts)
+                renderMainContent();  // Update results
+            };
+        }
+        
+        // Make the magnifying glass button focus the input
+        if (searchBtn) {
+            searchBtn.onclick = () => searchInput.focus();
+        }
 
         safeWire('#openAccount', openAccountModal);
         safeWire('#openSafety', () => $('#safetyModal').classList.remove('hidden'));
