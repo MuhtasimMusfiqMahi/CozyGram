@@ -67,58 +67,11 @@
       100% { transform: rotate(0);} 
     }
 
-/* --- STEP 2: MOBILE GLASS NAVIGATION --- */
-
-.nav-pill {
-        /* Shape & Position */
-        border-radius: 32px !important; /* More pill-shaped */
-        padding: 8px 12px !important; /* Tighter padding */
-        
-        /* Premium Glass Effect */
-        background: rgba(255, 255, 255, 0.75) !important; /* More translucent */
-        backdrop-filter: blur(20px) saturate(180%) !important; /* The "iOS Blur" */
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        
-        /* Borders & Shadows */
-        border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        box-shadow: 
-            0 15px 35px -5px rgba(25, 20, 35, 0.15), /* Deep shadow for float */
-            inset 0 1px 0 rgba(255, 255, 255, 0.8) !important; /* Top lighting highlight */
-            
-        /* Animation */
-        transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    /* Hide nav when it obstructs inputs (optional tweak) */
-    .nav-pill:focus-within { opacity: 0; pointer-events: none; }
-
-    /* The Glow behind the active icon */
-    .navBtn { position: relative; border-radius: 50%; }
-    
-    .navBtn.active-tab::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        margin: auto;
-        width: 36px; height: 36px;
-        border-radius: 50%;
-        background: radial-gradient(circle, var(--mood-a) 0%, rgba(255,255,255,0) 70%);
-        opacity: 0.6;
-        z-index: -1;
-        animation: navGlow 3s ease-in-out infinite;
-    }
-
-    @keyframes navGlow {
-        0%, 100% { opacity: 0.4; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(1.15); }
-    }
-
-    /* Adjust the grid to be more spacious */
-    .navGrid { 
-        display: flex !important; 
-        justify-content: space-between; 
-        align-items: center; 
-        width: 100%;
+    .nav-pill {
+      border-radius: 18px 18px 22px 16px;
+      box-shadow: 0 8px 18px rgba(25,20,35,.10); border: 1px solid rgba(43,43,53,.08);
+      background: linear-gradient(180deg, rgba(255,250,241,.9), rgba(255,250,241,.75));
+      backdrop-filter: blur(10px);
     }
 
     .ink-line { stroke: rgba(43,43,53,.78); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -135,19 +88,6 @@
     .sticker-fly svg { width: 48px; height: 48px; drop-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
     .pop-in { animation: pop .28s ease-out; }
-    /* Confetti Animation */
-    @keyframes fall {
-        0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
-    }
-    .confetti-piece {
-        position: absolute;
-        width: 8px; height: 8px;
-        border-radius: 2px;
-        animation: fall 1.5s ease-out forwards;
-        z-index: 50;
-        pointer-events: none;
-    }
     @keyframes pop { from { transform: translateY(10px) scale(.98); opacity:0;} to { transform: translateY(0) scale(1); opacity:1;} }
     .floaty { animation: floaty 4.6s ease-in-out infinite; }
     @keyframes floaty { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-6px);} }
@@ -155,140 +95,83 @@
     @keyframes pageflip { from { transform: perspective(900px) rotateY(-16deg); opacity:0.0; } to { transform: perspective(900px) rotateY(0deg); opacity:1; } }
 
     .hidden { display: none !important; }
-    .main-safe-pad { padding-bottom: calc(7.5rem + var(--safe-bottom)); }
+    /* Update this existing class in your <style> tag */
+.main-safe-pad { 
+  /* Mobile: Big padding so content scrolls above the bottom nav */
+  padding-bottom: calc(6rem + var(--safe-bottom)); 
+}
+
+@media (min-width: 1024px) {
+  .main-safe-pad { 
+    /* Desktop: Reset to zero or small padding since Nav is on the side */
+    padding-bottom: 2rem; 
+  }
+}
     .nav-safe { bottom: calc(1rem + var(--safe-bottom)); }
     .fab-safe { bottom: calc(5.75rem + var(--safe-bottom)); }
     .modal-safe { padding-bottom: calc(1rem + var(--safe-bottom)); padding-top: calc(1rem + var(--safe-top)); }
-    .modal-card { max-height: min(820px, calc(100dvh - 2rem - var(--safe-bottom))); overflow: auto; }
+    .modal-card { 
+  /* Mobile Default: Stick to bottom, round top corners only */
+  max-height: 85vh; /* Don't cover whole screen */
+  width: 100%;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 26px;
+  border-top-right-radius: 26px;
+  margin-bottom: 0; /* Touch the bottom edge */
+  overflow: auto;
+}
+
+/* Desktop Override: Restore the floating "Card" look */
+@media (min-width: 640px) {
+  .modal-card {
+    max-height: min(820px, calc(100dvh - 2rem));
+    border-radius: 26px 22px 28px 20px; /* Restore cozy shape */
+    margin-bottom: auto; /* Center it again */
+  }
+}
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
     @media (min-width: 1024px) {
       #app { max-width: 1200px; padding-left: 7.5rem; padding-right: 1.5rem; }
       #bottomNav { left: 1.25rem; right: auto; top: 50%; bottom: auto; transform: translateY(-50%); width: 120px; }
       #bottomNav .navGrid { display: grid; grid-template-columns: 1fr; gap: .75rem; }
-      #fab { left: auto; right: 1.5rem; bottom: 1.5rem; transform: none; }
+      #fab {
+  /* High enough to clear the bottom nav on mobile */
+  bottom: calc(5.5rem + var(--safe-bottom)); 
+}
+
+/* Add this INSIDE the existing @media (min-width: 1024px) block */
+@media (min-width: 1024px) {
+  /* ... existing styles ... */
+  #fab {
+    /* Moves to bottom right corner on desktop */
+    left: auto; 
+    right: 1.5rem; 
+    bottom: 1.5rem; 
+    transform: none; 
+  }
+}
       .desktop-two-col { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
-    }
-
-    /* --- STEP 3: MOBILE FEED POLISH --- */
-    
-    @media (max-width: 640px) {
-        /* 1. Feed Container Spacing */
-        #feed-container {
-            /* Remove gap between posts to feel like a continuous stream */
-            gap: 0 !important; 
-            /* Remove side padding on the container */
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        /* 2. The Post Card Itself */
-        #feed-container article.hand-card {
-            /* Flatten the card style */
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            border-left: none !important;
-            border-right: none !important;
-            border-top: 1px solid rgba(0,0,0,0.05) !important;
-            border-bottom: 1px solid rgba(0,0,0,0.05) !important;
-            
-            /* Add some breathing room vertically */
-            margin-bottom: 0 !important;
-            padding-bottom: 24px !important;
-            
-            /* Remove the paper noise texture on mobile for a cleaner look */
-            background-image: none !important;
-            background-color: rgba(255,255,255,0.4) !important;
-        }
-        
-        /* 3. The Media Container inside the post */
-        #feed-container .postMediaTap {
-            /* Make media wider */
-            width: calc(100% + 2rem) !important; /* Pull it out to the edges */
-            margin-left: -1rem !important;
-            border-radius: 0 !important;
-            border-left: none !important;
-            border-right: none !important;
-        }
-
-        /* 4. Daily Checkin Widget */
-        #dailyCheckin {
-            margin: 0 16px 16px 16px !important; /* Keep margins on this one so it stands out */
-        }
-        
-        /* 5. "New Post" Prompt Trigger */
-        #newPostTrigger {
-            margin: 0 16px 16px 16px !important;
-        }
     }
     
     
     ::-webkit-scrollbar { width: 10px; }
     ::-webkit-scrollbar-thumb { background: rgba(43,43,53,.12); border-radius: 999px; }
-    /* --- MOBILE BOTTOM SHEET SYSTEM --- */
-    
-    /* The Drag Handle (Hidden on Desktop) */
-    .sheet-handle {
-        width: 36px; height: 5px; 
-        background-color: rgba(43, 43, 53, 0.15); 
-        border-radius: 99px; 
-        margin: 0 auto 12px auto;
-        display: none; /* Default hidden */
-    }
-
-    /* Mobile Only Overrides (< 640px) */
-    @media (max-width: 640px) {
-        
-        /* Reveal the handle */
-        .sheet-handle { display: block; }
-
-        /* Force Modal to be a Bottom Sheet */
-        .modal-card {
-            border-radius: 28px 28px 0 0 !important; /* Top corners only */
-            margin: 0 !important; /* Remove floating margins */
-            width: 100% !important;
-            max-width: 100% !important;
-            border-bottom: none !important; /* Connects to bottom of screen */
-            padding-bottom: calc(1.5rem + var(--safe-bottom)) !important; /* Safe area for swipe bar */
-            
-            /* Animation Change: Slide Up */
-            animation: slideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-            transform-origin: bottom center;
-        }
-
-        /* Adjust the "Hand Outline" border for the sheet shape */
-        .modal-card.hand-card { box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
-        .modal-card.hand-outline:before {
-            border-radius: 28px 28px 0 0 !important;
-            border-bottom: none !important;
-            inset: -2px -2px 0 -2px !important; /* Hide bottom border */
-        }
-        
-        /* Ensure close buttons are easy to reach or hidden if redundant */
-        .modal-close-top { display: none; } /* Optional: Hide top-right X if we rely on swipe (advanced) or just keep it */
-    }
-
-    @keyframes slideUp {
-        from { transform: translateY(100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-
   </style>
 </head>
 <body>
 
-    <!-- Hidden Input for Avatars -->
+  <!-- HIDDEN INPUT FOR AVATARS (MUST BE BEFORE SCRIPT) -->
   <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 
   <!-- ONBOARDING MODAL -->
-  <div id="onboardingModal" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+  <div id="onboardingModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div> <!-- Mobile Handle -->
         <div class="flex items-start justify-between gap-3 mb-4">
             <div class="flex items-start gap-3">
                 <div id="mascot" class="w-14 h-14 rounded-[22px_18px_26px_16px] bg-gradient-to-br from-[#86a68b] via-[#fbf5ea] to-[#f4a37a] border border-black/10 grid place-items-center floaty">
-                    <svg class="w-9 h-9" viewBox="0 0 64 64"><path stroke="rgba(43,43,53,.78)" stroke-width="2.2" fill="none" d="M15 34c2-12 10-20 17-20s15 8 17 20"/><path stroke="rgba(43,43,53,.78)" stroke-width="2.2" fill="none" d="M20 34c0 10 5 18 12 18s12-8 12-18"/><path stroke="rgba(43,43,53,.78)" stroke-width="2.2" fill="none" d="M24 22l-7-6M40 22l7-6"/><path stroke="rgba(43,43,53,.78)" stroke-width="2.2" fill="none" d="M25 40c2 3 4 4 7 4s5-1 7-4"/><circle cx="26" cy="30" r="2" fill="rgba(43,43,53,.75)"/><circle cx="38" cy="30" r="2" fill="rgba(43,43,53,.75)"/></svg>
+                    <svg class="w-9 h-9" viewBox="0 0 64 64" aria-hidden="true"><path class="ink-line" fill="none" d="M15 34c2-12 10-20 17-20s15 8 17 20"/><path class="ink-line" fill="none" d="M20 34c0 10 5 18 12 18s12-8 12-18"/><path class="ink-line" fill="none" d="M24 22l-7-6M40 22l7-6"/><path class="ink-line" fill="none" d="M25 40c2 3 4 4 7 4s5-1 7-4"/><circle cx="26" cy="30" r="2" fill="rgba(43,43,53,.75)"/><circle cx="38" cy="30" r="2" fill="rgba(43,43,53,.75)"/></svg>
                 </div>
                 <div>
                     <h2 class="font-[Fraunces] text-lg">Hi, I’m Pippin!</h2>
@@ -314,198 +197,211 @@
     </div>
   </div>
 
-  <!-- APP CONTAINER (Grid on Desktop) -->
-  <div id="app" class="mx-auto min-h-screen lg:max-w-6xl lg:grid lg:grid-cols-[260px_1fr_320px] lg:gap-8 lg:p-6">
-
-    <!-- === LEFT SIDEBAR (Desktop Only) === -->
-    <aside class="hidden lg:flex flex-col gap-6 sticky top-6 h-[calc(100vh-3rem)]">
-        <div class="flex items-center gap-3 px-4">
-            <div class="w-10 h-10 rounded-[14px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
-                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoD" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoD)"/></svg>
-                <svg class="w-6 h-6 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
+  <div id="app" class="mx-auto w-full max-w-md lg:max-w-none min-h-screen flex flex-col">
+    <!-- HEADER -->
+    <header class="px-4 pt-5 pb-3">
+      <div class="hand-card paper-noise hand-outline px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          
+          <!-- NEW LOGO -->
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
             </div>
-            <h1 class="font-[Fraunces] text-2xl tracking-tight text-[#2b2b35]">CozyGram</h1>
-        </div>
-        <nav class="flex flex-col gap-2">
-            <button class="navBtn desktop-nav-item wobbly flex items-center gap-3 px-4 py-3 rounded-[20px] hover:bg-white/60 transition-colors font-bold text-[#2b2b35]" data-tab="feed"><span class="text-xl">🏠</span> Feed</button>
-            <button class="navBtn desktop-nav-item wobbly flex items-center gap-3 px-4 py-3 rounded-[20px] hover:bg-white/60 transition-colors font-bold text-[#2b2b35]" data-tab="stories"><span class="text-xl">📖</span> Stories</button>
-            <button class="navBtn desktop-nav-item wobbly flex items-center gap-3 px-4 py-3 rounded-[20px] hover:bg-white/60 transition-colors font-bold text-[#2b2b35]" data-tab="messages"><span class="text-xl">💌</span> Notes</button>
-            <button class="navBtn desktop-nav-item wobbly flex items-center gap-3 px-4 py-3 rounded-[20px] hover:bg-white/60 transition-colors font-bold text-[#2b2b35]" data-tab="notifs"><span class="text-xl">🏮</span> Lantern</button>
-            <button class="navBtn desktop-nav-item wobbly flex items-center gap-3 px-4 py-3 rounded-[20px] hover:bg-white/60 transition-colors font-bold text-[#2b2b35]" data-tab="profile"><span class="text-xl">🏡</span> Corner</button>
-        </nav>
-        <button id="desktopCreateBtn" class="w-full py-4 rounded-[20px] bg-gradient-to-r from-[#f4a37a] to-[#f7c59f] text-white font-[Fraunces] text-lg font-bold shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-95 wobbly">+ New Post</button>
-    </aside>
-
-    <!-- === CENTER COLUMN (Main Content) === -->
-    <div class="flex flex-col relative w-full max-w-md mx-auto lg:max-w-none">
-        <!-- MOBILE HEADER (Hidden on Large Screens) -->
-        <header class="px-4 pt-5 pb-3 lg:hidden">
-            <div class="hand-card paper-noise hand-outline px-4 py-3">
-                <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-[14px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
-                            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100"><defs><linearGradient id="logoM" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoM)"/></svg>
-                            <svg class="w-6 h-6 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/></svg>
-                        </div>
-                        <div>
-                            <div class="flex items-baseline gap-2">
-                            <h1 class="font-[Fraunces] text-xl tracking-tight text-[#2b2b35]">CozyGram</h1>
-                            <span class="px-1.5 py-0.5 rounded-md bg-white/50 border border-black/5 text-[10px] font-bold text-black/40 uppercase tracking-wider">Cloud</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="openSearch" class="wobbly w-9 h-9 rounded-[12px] border border-black/10 bg-white/70 grid place-items-center"><svg class="w-4 h-4" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="2"/></svg></button>
-                        <button id="openAccount" class="wobbly w-9 h-9 rounded-[12px] border border-black/10 bg-white/70 grid place-items-center"><svg class="w-4 h-4" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="currentColor" opacity="0.2"/><path d="M4 22c1.5-5 6-7 8-7s6.5 2 8 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-                    </div>
+            <div>
+                <div class="flex items-baseline gap-2">
+                <h1 class="font-[Fraunces] text-2xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
+                <span id="backendPill" class="px-1.5 py-0.5 rounded-md bg-white/50 border border-black/5 text-[10px] font-bold text-black/40 uppercase tracking-wider">Cloud</span>
                 </div>
+                <p class="text-xs text-black/60 leading-tight font-medium">Creativity over popularity</p>
             </div>
-        </header>
+          </div>
 
-        <main id="main" class="flex-1 px-4 main-safe-pad lg:px-0 lg:pb-8">
-            <section id="view-feed" class="space-y-4">
-                <div id="dailyCheckin" class="hand-card hand-outline paper-noise p-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div><div class="font-[Fraunces] text-lg">Daily gentle check‑in</div><div class="text-sm text-black/70 mt-1">Private to this device.</div></div>
-                        <button id="clearCheckin" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Clear</button>
-                    </div>
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="calm"><span class="text-xs font-extrabold">Calm 🌿</span></button>
-                        <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="bright"><span class="text-xs font-extrabold">Bright ✨</span></button>
-                        <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="tired"><span class="text-xs font-extrabold">Tired ☁️</span></button>
-                    </div>
-                </div>
-                
-                 <!-- 2. LOW PRESSURE BANNER -->
-                <div class="hand-card hand-outline paper-noise p-4">
-                  <div class="flex items-start gap-3">
-                    <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
-                        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
-                        <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                      <div class="font-[Fraunces] text-lg">A low-pressure feed</div>
-                      <div class="text-sm text-black/70 mt-1">No public likes. No follower counts. Just gentle notes + stickers.</div>
-                      <div class="mt-3 flex flex-wrap gap-2">
-                        <button id="shuffleFeedBtn" onclick="toast('Shuffled cozy order.')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Shuffle cozy</button>
-                        <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Meet Pippin</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button id="newPostTrigger" class="w-full text-left hand-card hand-outline bg-gradient-to-r from-white/80 to-[#fffaf1] border border-black/10 p-3 wobbly flex items-center gap-4 group">
-                   <div class="w-10 h-10 rounded-[14px] bg-[#f4a37a]/15 border border-[#f4a37a]/20 grid place-items-center text-xl group-hover:scale-110 transition-transform">✨</div>
-                   <div><div class="text-sm font-extrabold text-black/80">Make a cozy post</div><div class="text-xs text-black/50">Share a moment...</div></div>
-                </button>
-
-                <div id="userFilterBanner" class="hidden hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-center">
-                     <span class="text-xs font-bold">Filtered View</span>
-                     <button onclick="clearUserFilter()" class="text-[10px] bg-white border border-black/10 px-2 py-1 rounded">Clear</button>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                     <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="all">All</button>
-                     <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="art">Art</button>
-                     <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="selfcare">Self-care</button>
-                     <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="friends">Friends</button>
-                </div>
-                <div id="feed-container" class="space-y-4"><div class="p-6 text-center animate-pulse text-black/50 font-[Fraunces]">Connecting to the clouds...</div></div>
-            </section>
-
-            <section id="view-stories" class="hidden space-y-4">
-                <div class="hand-card hand-outline paper-noise p-4"><h2 class="font-[Fraunces] text-lg">Stories</h2><p class="text-sm text-black/70">Journal pages from friends.</p></div>
-                <div id="clubsContainer"></div>
-                <div id="storiesList" class="space-y-3"></div>
-                <div class="hand-card bg-white/70 border border-black/10 p-4"><div class="font-extrabold text-sm mb-2">Prompts</div><div id="promptsGrid" class="grid grid-cols-2 gap-2"></div></div>
-            </section>
-            
-            <section id="view-messages" class="hidden space-y-4">
-                 <div class="hand-card paper-noise p-4"><h2 class="font-[Fraunces] text-lg">Notes</h2><button onclick="$('#newThreadModal').classList.remove('hidden')" class="mt-2 w-full py-2 bg-white border rounded font-bold text-xs">Start Note</button></div>
-                 <div class="desktop-two-col"><div id="threadList" class="space-y-2"></div><div class="hand-card bg-white/70 border border-black/10 p-3 h-[500px] flex flex-col"><div id="chatHeader" class="border-b pb-2 mb-2 text-sm font-bold opacity-50">Select note</div><div id="chatMessages" class="flex-1 overflow-auto space-y-2 p-1"></div><div id="chatInputArea" class="hidden flex gap-2 pt-2"><input id="chatInput" class="flex-1 border rounded px-2" /><button id="chatSendBtn" class="bg-[#f4a37a] text-white px-3 rounded text-xs font-bold">Send</button></div></div></div>
-            </section>
-
-            <section id="view-notifs" class="hidden space-y-4">
-                <div class="hand-card paper-noise p-4"><h2 class="font-[Fraunces] text-lg">Lantern Glow</h2></div>
-                <div id="notifList" class="space-y-3"></div>
-            </section>
-            
-            <section id="view-profile" class="hidden space-y-4"></section>
-        </main>
-    </div>
-
-    <!-- === RIGHT SIDEBAR (Desktop Only) === -->
-    <aside class="hidden lg:block sticky top-6 h-[calc(100vh-3rem)] space-y-6">
-        <div class="flex gap-2">
-            <div class="flex-1 relative">
-                <input id="desktopSearchInput" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/60 focus:bg-white transition-colors text-sm" placeholder="Search..." />
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 opacity-30 text-xs">Cmd K</div>
-            </div>
-            <button id="desktopSafetyBtn" class="w-11 h-11 rounded-[16px] border border-black/10 bg-white/60 grid place-items-center hover:bg-white" title="Safety Settings">
-                <svg class="w-5 h-5 opacity-40" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="currentColor"/><path d="M9 12l2 2 4-5" stroke="currentColor" fill="none"/></svg>
+          <div class="flex items-center gap-2">
+            <button id="kindToggle" class="wobbly inline-flex items-center gap-2 px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-pressed="true" title="Kindness mode">
+              <span class="text-xs font-semibold">Kind</span>
+              <span id="kindPetal" class="inline-block w-5 h-5"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 11c4-6 13-3 12 5-1 10-12 15-12 15S13 26 12 16c-1-8 8-11 12-5Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg></span>
             </button>
+            <button id="openSearch" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Search"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><circle class="ink-line-lite" cx="11" cy="11" r="6" fill="none"></circle><path class="ink-line-lite" d="M16 16l5 5" fill="none"></path></svg></button>
+            <button id="openAccount" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Account"><svg class="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true"><path class="ink-line-lite" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="rgba(134,166,139,.22)"></path><path class="ink-line-lite" d="M4 22c1.5-5 6-7 8-7s6.5 2 8 7" fill="none"></path></svg></button>
+            <button id="logoutBtn" class="wobbly inline-flex items-center justify-center w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 hidden" aria-label="Log out"><svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline class="ink-line-lite" points="16 17 21 12 16 7"/><line class="ink-line-lite" x1="21" y1="12" x2="9" y2="12"/></svg></button>
+          </div>
         </div>
-        <div class="hand-card hand-outline bg-white/50 border border-black/5 p-4">
-            <div class="flex justify-between items-center mb-3">
-                <div class="text-xs font-extrabold uppercase tracking-wider text-black/40">Your Room</div>
-                <button onclick="openAccountModal()" class="text-[10px] font-bold bg-white px-2 py-1 rounded border border-black/5 hover:border-black/20">Settings</button>
+        <div class="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
+          <div class="flex-1 relative">
+            <input id="searchInput" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10" placeholder="Search cozy corners..." />
+            <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/40">Cmd K</div>
+          </div>
+          <button id="openSafety" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-white/80 to-white/65" aria-label="Safety"><svg class="w-5 h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="rgba(134,166,139,.22)"/><path class="ink-line-lite" d="M9 12l2 2 4-5" fill="none"/></svg></button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="flex-1 px-4 main-safe-pad">
+      <!-- FEED -->
+      <!-- FEED SECTION -->
+      <section id="view-feed" class="space-y-4">
+        
+        <!-- 1. DAILY CHECKIN -->
+        <div id="dailyCheckin" class="hand-card hand-outline paper-noise p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div><div class="font-[Fraunces] text-lg">Daily gentle check‑in</div><div class="text-sm text-black/70 mt-1">Private to this device.</div></div>
+            <button id="clearCheckin" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Clear</button>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="calm"><span class="text-xs font-extrabold">Calm 🌿</span></button>
+            <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="bright"><span class="text-xs font-extrabold">Bright ✨</span></button>
+            <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="tired"><span class="text-xs font-extrabold">Tired ☁️</span></button>
+          </div>
+        </div>
+
+        <!-- 2. LOW PRESSURE BANNER (Moved from JS to HTML) -->
+        <div class="hand-card hand-outline paper-noise p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-12 h-12 rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+                <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="openRoom('plant')" class="p-3 rounded-[16px] bg-white border border-black/5 hover:border-black/20 transition-all text-left"><div class="text-xl mb-1">🌿</div><div class="text-[10px] font-bold text-black/60">Habits</div></button>
-                <button onclick="openRoom('shelf')" class="p-3 rounded-[16px] bg-white border border-black/5 hover:border-black/20 transition-all text-left"><div class="text-xl mb-1">📚</div><div class="text-[10px] font-bold text-black/60">Shelf</div></button>
-                <button onclick="openRoom('window')" class="p-3 rounded-[16px] bg-white border border-black/5 hover:border-black/20 transition-all text-left"><div class="text-xl mb-1">🪟</div><div class="text-[10px] font-bold text-black/60">Mood</div></button>
-                <button onclick="openRoom('drawer')" class="p-3 rounded-[16px] bg-white border border-black/5 hover:border-black/20 transition-all text-left"><div class="text-xl mb-1">🗄️</div><div class="text-[10px] font-bold text-black/60">Drawer</div></button>
+            <div class="min-w-0 flex-1">
+              <div class="font-[Fraunces] text-lg">A low-pressure feed</div>
+              <div class="text-sm text-black/70 mt-1">No public likes. No follower counts. Just gentle notes + stickers.</div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button id="shuffleFeedBtn" onclick="toast('Shuffled cozy order.')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Shuffle cozy</button>
+                <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Meet Pippin</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. FILTERS -->
+        <div id="userFilterBanner" class="hand-card hand-outline bg-white/70 border border-black/10 p-4 hidden">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3"><div class="text-sm font-extrabold">Filtering by User</div></div>
+                <button onclick="clearUserFilter()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Clear</button>
             </div>
         </div>
-    </aside>
+        <div class="flex flex-wrap gap-2">
+             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="all">All</button>
+             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="art">Art</button>
+             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="selfcare">Self-care</button>
+             <button class="topicBtn wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-t="friends">Friends</button>
+        </div>
 
-  </div> <!-- End App Grid -->
+        <!-- 4. NEW POST BUTTON (Moved Here) -->
+        <button id="newPostTrigger" class="w-full text-left hand-card hand-outline bg-gradient-to-r from-white/80 to-[#fffaf1] border border-black/10 p-3 wobbly flex items-center gap-4 group">
+           <div class="w-10 h-10 rounded-[14px] bg-[#f4a37a]/15 border border-[#f4a37a]/20 grid place-items-center text-xl group-hover:scale-110 transition-transform">
+             ✨
+           </div>
+           <div>
+             <div class="text-sm font-extrabold text-black/80">Make a cozy post</div>
+             <div class="text-xs text-black/50">Share a moment, a doodle, or a thought...</div>
+           </div>
+        </button>
 
-  <!-- FAB (Mobile Only) -->
-  <button id="fab" class="fixed right-6 bottom-24 lg:hidden wobbly hand-card hand-outline paper-noise px-4 py-3 flex items-center gap-3 z-20">
+        <!-- 5. FEED CONTENT -->
+        <div id="feed-container" class="space-y-4">
+            <div class="p-6 text-center animate-pulse text-black/50 font-[Fraunces]">Connecting to the clouds...</div>
+        </div>
+      </section>
+
+      <!-- STORIES -->
+      <section id="view-stories" class="hidden space-y-4">
+          <div class="hand-card hand-outline paper-noise p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div><h2 class="font-[Fraunces] text-lg">Stories, but as journal pages</h2><p class="text-sm text-black/70 mt-1">Flip through pages. Respond with a sticker.</p></div>
+              <button onclick="openStoryComposeModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New page</button>
+            </div>
+          </div>
+          <div id="clubsContainer" class="hand-card hand-outline bg-white/70 border border-black/10 p-4"></div>
+          <div id="storiesList" class="space-y-3"></div>
+          <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4">
+            <div class="flex items-center justify-between mb-3"><div class="text-sm font-extrabold">Gentle prompts</div><button class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" onclick="pickRandomPrompt()">Surprise me</button></div>
+            <div id="promptsGrid" class="grid grid-cols-2 gap-3"></div>
+          </div>
+      </section>
+      
+      <!-- MESSAGES -->
+      <section id="view-messages" class="hidden space-y-4">
+          <div class="hand-card hand-outline paper-noise p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div><h2 class="font-[Fraunces] text-lg">Passing Notes</h2><p class="text-sm text-black/70 mt-1">Chats feel like folded paper.</p></div>
+                <button onclick="$('#newThreadModal').classList.remove('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New note</button>
+            </div>
+          </div>
+          <div class="desktop-two-col">
+              <div id="threadList" class="space-y-2"></div>
+              <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex flex-col h-[500px]">
+                  <div id="chatHeader" class="flex items-center justify-between border-b border-black/5 pb-2 mb-2"><div class="font-extrabold text-sm opacity-50">Select a note to read</div></div>
+                  <div id="chatMessages" class="flex-1 overflow-y-auto space-y-2 p-1 mb-2"></div>
+                  <div id="chatInputArea" class="hidden">
+                      <div class="flex flex-wrap gap-2 mb-2">
+                          <button class="quickReply text-[10px] px-2 py-1 bg-white border rounded-[8px] wobbly" onclick="$('#chatInput').value='Sending a warm hug 🤗'; $('#chatInput').focus();">Warm hug</button>
+                          <button class="quickReply text-[10px] px-2 py-1 bg-white border rounded-[8px] wobbly" onclick="$('#chatInput').value='Thinking of you 🌿'; $('#chatInput').focus();">Thinking of you</button>
+                      </div>
+                      <div class="flex gap-2">
+                          <input id="chatInput" class="flex-1 px-3 py-2 rounded-[12px] border border-black/10 text-sm focus:outline-none" placeholder="Write a gentle note..." />
+                          <button id="chatSendBtn" class="px-3 py-2 bg-[#f4a37a] text-white font-bold rounded-[12px] wobbly text-xs">Send</button>
+                      </div>
+                      <div id="kindHint" class="mt-2 text-xs text-black/55 hidden">Tip: “Do you want comfort or solutions?” helps a lot.</div>
+                  </div>
+              </div>
+          </div>
+      </section>
+      
+      <!-- NOTIFICATIONS -->
+      <section id="view-notifs" class="hidden space-y-4">
+          <div class="hand-card hand-outline paper-noise p-4">
+              <h2 class="font-[Fraunces] text-lg">Lantern Glow</h2>
+              <p class="text-sm text-black/70 mt-1">Updates that feel warm.</p>
+          </div>
+          <div class="flex justify-between items-center px-1"><div class="text-xs text-black/50">Recent glows</div><button class="text-xs font-bold opacity-50 hover:opacity-100" onclick="document.getElementById('notifList').innerHTML = ''; toast('Cleared.')">Clear all</button></div>
+          <div id="notifList" class="space-y-3"></div>
+      </section>
+      
+      <!-- PROFILE -->
+      <section id="view-profile" class="hidden space-y-4"></section>
+    </main>
+
+    <!-- FAB -->
+    <button id="fab" class="fixed left-1/2 -translate-x-1/2 fab-safe wobbly hand-card hand-outline paper-noise px-4 py-3 flex items-center gap-3 z-20">
       <span class="inline-block w-10 h-10 rounded-[18px_16px_22px_14px] bg-gradient-to-br from-[#f4a37a] via-[#fbf5ea] to-[#dba1a8] border border-black/10 grid place-items-center text-xl font-bold text-black/70">+</span>
       <div class="text-left"><div class="text-sm font-extrabold">New cozy post</div><div class="text-xs text-black/55">Frame + a little note</div></div>
-  </button>
+    </button>
 
-  <!-- MOBILE BOTTOM NAV (Hidden on lg) -->
-  <nav id="bottomNav" class="fixed left-1/2 -translate-x-1/2 nav-safe w-[min(380px,calc(100%-2rem))] nav-pill z-30 lg:hidden">
-      <div class="navGrid"> <!-- Flex container -->
+    <!-- BOTTOM NAV -->
+    <nav id="bottomNav" class="fixed left-1/2 -translate-x-1/2 nav-safe w-[min(420px,calc(100%-2rem))] nav-pill px-3 py-3 z-30">
+      <div class="navGrid grid grid-cols-5 gap-2">
         <button class="navBtn wobbly" data-tab="feed" aria-label="Home feed"><div class="navItem" id="nav-feed"></div></button>
         <button class="navBtn wobbly" data-tab="stories" aria-label="Stories journal"><div class="navItem" id="nav-stories"></div></button>
         <button class="navBtn wobbly" data-tab="messages" aria-label="Messages mailbox"><div class="navItem" id="nav-messages"></div></button>
         <button class="navBtn wobbly" data-tab="notifs" aria-label="Notifications lantern"><div class="navItem" id="nav-notifs"></div></button>
         <button class="navBtn wobbly" data-tab="profile" aria-label="Profile scrapbook"><div class="navItem" id="nav-profile"></div></button>
       </div>
-  </nav>
+    </nav>
+  </div>
 
-  <!-- === ALL MODALS === -->
-  
+  <!-- ALL MODALS -->
   <div id="userModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Cozy Corner</h3><button onclick="$('#userModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="userModalBody"></div>
       </div>
   </div>
-  
   <div id="newThreadModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">New Note</h3><button onclick="$('#newThreadModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="userList" class="space-y-2"></div>
       </div>
   </div>
-  
   <div id="accountModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Account</h3><button onclick="$('#accountModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="accountBody" class="space-y-2"></div>
       </div>
   </div>
-  
   <div id="safetyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
       <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex items-center justify-between mb-4"><h3 class="font-[Fraunces] text-lg">Safety & comfort</h3><button onclick="$('#safetyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Done</button></div>
         <div class="space-y-3 text-sm">
           <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3"><div><div class="font-extrabold">Kindness reminders</div><div class="text-xs text-black/60">Gentle prompts enabled.</div></div><button id="kindToggle2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-xs font-bold">On</button></div>
@@ -514,10 +410,8 @@
         </div>
       </div>
   </div>
-  
   <div id="storyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-      <div class="sheet-handle"></div>
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3"><div id="storyAvatar" class="w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white"></div><div><div id="storyTitle" class="font-extrabold text-sm"></div><div id="storyMeta" class="text-xs text-black/55"></div></div></div>
         <button onclick="$('#storyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
@@ -528,10 +422,8 @@
       <div class="flex items-center justify-between"><button id="prevStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Prev</button><button id="nextStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Next</button></div>
     </div>
   </div>
-  
   <div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Make a cozy post</h3><button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
         <div class="grid grid-cols-2 gap-3 mb-3">
             <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-[4/3] overflow-hidden relative"><div id="composePreview" class="w-full h-full"></div><input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" /><div class="absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-[10px] pointer-events-none font-bold">Tap to upload</div></div>
@@ -548,28 +440,22 @@
         <button id="postNowBtn" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Post to Cloud</button>
     </div>
   </div>
-  
   <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">New Page</h3><button onclick="$('#storyComposeModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
         <input id="storyHeading" class="w-full px-4 py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-sm" placeholder="Title (e.g. Morning thoughts)" />
         <textarea id="storyText" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-32 text-sm font-serif leading-relaxed" placeholder="Dear journal..."></textarea>
         <button onclick="saveStoryPage()" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Publish Page</button>
     </div>
   </div>
-  
   <div id="roomModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg" id="roomTitle">Your Room</h3><button onclick="$('#roomModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
         <div id="roomBody" class="space-y-4"></div>
       </div>
   </div>
-  
   <div id="postOptionsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
-        <div class="sheet-handle"></div>
         <h3 class="font-bold mb-3 text-center">Options</h3>
         <button id="savePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Save to Drawer</button>
         <button id="sharePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-white font-extrabold wobbly">Share Post</button>
@@ -581,25 +467,32 @@
         <button onclick="$('#postOptionsModal').classList.add('hidden')" class="w-full py-3 rounded-[18px_16px_22px_14px] border border-black/10 text-black/50 wobbly">Cancel</button>
     </div>
   </div>
-  
   <div id="editProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-[Fraunces] text-lg">Edit Corner</h3>
             <button onclick="$('#editProfileModal').classList.add('hidden')" class="text-sm">Cancel</button>
         </div>
+        
+        <!-- NEW: Avatar Picker Inside Modal -->
         <div class="flex justify-center mb-4">
             <div class="relative group cursor-pointer wobbly" onclick="document.getElementById('avatarFileInput').click()">
-                <div id="editProfileAvatarPreview" class="w-20 h-20 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100"></div>
+                <div id="editProfileAvatarPreview" class="w-20 h-20 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100">
+                    <!-- Avatar injected via JS -->
+                </div>
                 <div class="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[24px_20px_26px_18px] opacity-0 group-hover:opacity-100 transition-opacity">
                     <span class="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Change</span>
                 </div>
+                <div class="absolute -bottom-1 -right-1 bg-white border border-black/10 rounded-full p-1 shadow-sm pointer-events-none">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
             </div>
         </div>
+
         <input id="setupName" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80" placeholder="Name" />
         <input id="setupPronouns" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80" placeholder="Pronouns" />
         <textarea id="setupBio" class="w-full mb-3 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 h-24" placeholder="Bio..."></textarea>
+        
         <div class="mt-2 text-xs font-bold opacity-50">Mood Lighting</div>
         <div class="flex gap-2 mb-4 mt-1">
           <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="sunset">Sunset</button>
@@ -610,20 +503,16 @@
         <button id="saveProfileSetup" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Save</button>
     </div>
   </div>
-  
   <div id="commentsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="sheet-handle"></div>
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Supportive Notes</h3><button onclick="$('#commentsModal').classList.add('hidden')" class="text-sm font-bold opacity-50">Close</button></div>
         <div id="commentsList" class="space-y-2 mb-4 text-sm text-black/70"></div>
         <textarea id="commentInput" class="w-full p-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white focus:outline-none h-20 text-lg font-hand" placeholder="Leave a kind note..."></textarea>
         <button id="sendCommentBtn" class="w-full mt-2 py-2 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Send</button>
     </div>
   </div>
-  
   <div id="textModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-          <div class="sheet-handle"></div>
           <div class="flex items-start justify-between gap-3 mb-3"><div><div id="textModalTitle" class="font-[Fraunces] text-lg">Write</div><div id="textModalSubtitle" class="text-xs text-black/60">Gentle + short is perfect.</div></div><button onclick="closeTextModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
           <div class="mt-3">
               <textarea id="textModalInput" class="w-full min-h-[140px] px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10" placeholder=""></textarea>
@@ -632,8 +521,9 @@
           <div class="mt-3 flex items-center justify-between gap-2"><button onclick="closeTextModal()" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Cancel</button><button id="textModalSave" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white text-sm font-extrabold">Save</button></div>
       </div>
   </div>
-  
-  <div id="toast" class="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white border border-black/10 px-4 py-2 rounded-[18px_16px_22px_14px] shadow-lg text-sm font-bold hidden z-50 pop-in"><div></div></div>
+  <div id="toast" class="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white border border-black/10 px-4 py-2 rounded-[18px_16px_22px_14px] shadow-lg text-sm font-bold hidden z-50 pop-in"><div></div></div> 
+   <!-- Hidden File Input for Avatars -->
+ <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 
   <script>
     const SUPABASE_URL = 'https://dcarzattebyvkojqflyb.supabase.co';
@@ -884,34 +774,28 @@
             renderMessages();
         }
 
-        // Hide/Show sections & Update Mobile Nav Glow
+        // Hide/Show sections
         ['feed', 'stories', 'messages', 'notifs', 'profile'].forEach(id => {
-            // 1. Hide the section
             const el = document.getElementById(`view-${id}`);
             if (el) el.classList.add('hidden');
-
-            // 2. Update Mobile Nav Button Active State (Triggers CSS Glow)
-            const btn = document.querySelector(`.navBtn[data-tab="${id}"]`);
-            if (btn) {
-                if (id === viewId) btn.classList.add('active-tab');
-                else btn.classList.remove('active-tab');
-            }
         });
-
-        // Show current section
         const current = document.getElementById(`view-${viewId}`);
         if (current) current.classList.remove('hidden');
         
         // --- BADGE LOGIC ---
+        // Check if there are any unread messages
         const hasUnreadNotes = state.threads.some(t => {
             const lastReadTime = state.lastRead[t.id] || 0;
+            // A thread is unread if it has messages AND the newest one is newer than my last read time
+            // AND the last message wasn't sent by me
             const lastMsg = t.messages[t.messages.length-1];
             return lastMsg && lastMsg.from === 'them' && t.timestamp > lastReadTime;
         });
 
+        // Check if there are notifications
         const hasNotifs = state.notifications.length > 0;
 
-        // Update Nav Icons (Changes the SVG color inside the button)
+        // Update Nav Icons
         $('#nav-feed').innerHTML = svgIcon('feed', viewId === 'feed');
         $('#nav-stories').innerHTML = svgIcon('stories', viewId === 'stories');
         $('#nav-messages').innerHTML = svgIcon('messages', viewId === 'messages', hasUnreadNotes);
@@ -1042,7 +926,6 @@
 
         // 3. Load basic app data
         loadDailyCheckin();
-        upgradeModalsForMobile();
         wireEvents();
         
         // Non-blocking loads
@@ -1429,90 +1312,84 @@
         const p = state.profile;
         const meId = state.user.id;
         
-        // --- 1. DEFINE ICONS (Clean SVGs) ---
-        const icons = {
-            shelf: `<svg viewBox="0 0 24 24" class="w-6 h-6 mx-auto mb-1 text-[#f4a37a]"><path d="M4 6h16v13H4z" fill="rgba(244,163,122,.2)" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 10h16M4 14h16M8 6v13M16 6v13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-            plant: `<svg viewBox="0 0 24 24" class="w-6 h-6 mx-auto mb-1 text-[#86a68b]"><path d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-            window: `<svg viewBox="0 0 24 24" class="w-6 h-6 mx-auto mb-1 text-[#dba1a8]"><path d="M4 4h16v16H4z" fill="rgba(219,161,168,.15)" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2"/></svg>`,
-            drawer: `<svg viewBox="0 0 24 24" class="w-6 h-6 mx-auto mb-1 text-[#b87d66]"><path d="M4 6h16v12H4z" fill="rgba(184,125,102,.15)" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 10h16M4 14h16M10 10h4" stroke="currentColor" stroke-width="2"/></svg>`
-        };
+        const moodBtn = (id, l, g) => `<button class="moodBtn2 wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${p.mood===id ? 'bg-gradient-to-b from-white/80 to-white/60 ring-2 ring-black/10' : 'bg-white/70'}" data-mood="${id}"><span class="inline-flex items-center gap-2 text-xs font-extrabold"><span class="w-5 h-5 rounded-[10px_12px_12px_9px] border border-black/10" style="background:${g}"></span>${l}</span></button>`;
+        const shelfIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
+        const plantIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
+        const windowIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 4h12v16H6z" fill="rgba(134,166,139,.18)"/><path class="ink-line-lite" d="M12 4v16M6 12h12" fill="none"/></svg>`;
+        const drawerIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
+        
+        const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}" aria-label="Open ${t}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
 
-        // --- 2. THE DASHBOARD BUTTON GENERATOR ---
-        // This uses CSS Grid classes: col-span-1 (takes up 1 slot)
-        const roomBtn = (key, title, sub) => `
-            <button class="roomBtn wobbly group relative overflow-hidden rounded-[22px] bg-white border border-black/10 p-4 text-center shadow-sm" data-room="${key}">
-                <div class="relative z-10">
-                    ${icons[key]}
-                    <div class="font-bold text-sm text-[#2b2b35]">${title}</div>
-                    <div class="text-[10px] text-black/50 font-bold uppercase tracking-wider mt-0.5">${sub}</div>
-                </div>
-                <!-- Subtle gradient background on hover/active -->
-                <div class="absolute inset-0 bg-gradient-to-br from-black/0 to-black/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </button>
-        `;
+        const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
+        const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+        const savedPosts = state.savedPostIds.map(pid => state.posts.find(x => x.id === pid)).filter(Boolean).slice(0, 4);
+        const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
 
-        // --- 3. FETCH CONTENT ---
-        // Get recent posts for the "Scrapbook" section
-        const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 4);
-        const scrapbookHtml = myPosts.length ? myPosts.map(post => `
-            <button class="myPostThumb wobbly aspect-square rounded-[16px] overflow-hidden border border-black/10 relative" data-postid="${post.id}">
-                ${postMediaHTML(post)}
-            </button>
-        `).join('') : `<div class="col-span-4 py-6 text-center text-xs text-black/40 border border-dashed border-black/10 rounded-[16px]">Your scrapbook is empty.</div>`;
-
-        // --- 4. ASSEMBLE HTML ---
         $('#view-profile').innerHTML = `
-            <!-- HEADER CARD -->
-            <div class="hand-card hand-outline bg-white/60 border border-black/10 p-5 mb-6 relative overflow-hidden">
-                <div class="flex items-center gap-4 relative z-10">
-                    <div class="w-16 h-16 rounded-[22px_18px_26px_16px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
-                        ${avatarHTML(p)}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h1 class="font-[Fraunces] text-2xl truncate">${html(p.username)}</h1>
-                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider">${html(p.pronouns || 'Cozy Neighbor')}</div>
-                        <button id="openProfileSetup" class="mt-2 text-[10px] bg-white border border-black/10 px-2 py-1 rounded-full font-bold text-black/60 shadow-sm wobbly">Edit Profile</button>
-                    </div>
+            <div class="relative hand-card hand-outline bg-gradient-to-b from-white/70 to-white/55 border border-black/10 p-4 overflow-hidden mb-4">
+              <div class="absolute -left-10 -top-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle at 30% 30%, rgba(219,161,168,.18), rgba(219,161,168,.0) 60%);"></div>
+              
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <!-- FIX: Show actual Name and Pronouns -->
+                    <div class="font-[Fraunces] text-2xl tracking-tight leading-none mb-1">${html(p.username)}</div>
+                    <div class="text-xs text-black/50 font-bold uppercase tracking-wider">${html(p.pronouns || 'Your Corner')}</div>
                 </div>
-                <!-- Background decoration -->
-                <div class="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-gradient-to-br from-[var(--mood-a)] to-transparent opacity-30 blur-2xl pointer-events-none"></div>
+                <!-- Avatar Display -->
+                <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0 bg-white">
+                    ${avatarHTML(p)}
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                ${roomItem('Shelf', 'saved prompts', shelfIcon, 'shelf')}
+                ${roomItem('Plant', 'soft habits', plantIcon, 'plant')}
+                ${roomItem('Window', 'mood light', windowIcon, 'window')}
+                ${roomItem('Drawer', `${state.savedPostIds.length} saved`, drawerIcon, 'drawer')}
+              </div>
+
+              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+                <div class="flex items-center justify-between"><div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div><div class="text-xs text-black/45">private</div></div>
+                <div class="mt-2 flex flex-wrap gap-2">${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}</div>
+              </div>
+              
+              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+                <div class="font-extrabold">About</div>
+                <div class="text-sm text-black/70 mt-1">${html(p.bio||'')}</div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button>
+                    <button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button>
+                    <button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button>
+                </div>
+              </div>
             </div>
 
-            <!-- MY ROOM GRID (The Core Mobile Feature) -->
-            <div class="mb-2 flex items-center justify-between px-1">
-                <div class="text-sm font-extrabold text-[#2b2b35]">Your Room</div>
-                <div class="text-[10px] text-black/40">Private Dashboard</div>
+            <div class="hand-card hand-outline paper-noise p-4">
+                <div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div>
             </div>
             
-            <!-- CSS GRID: 2 Columns on Mobile, 4 Columns on Tablet+ -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                ${roomBtn('plant', 'Habits', 'Daily Growth')}
-                ${roomBtn('shelf', 'Shelf', 'Saved Prompts')}
-                ${roomBtn('window', 'Window', 'Mood Light')}
-                ${roomBtn('drawer', 'Drawer', `${state.savedPostIds.length} Saved`)}
+            <div class="mt-4 hand-card hand-outline bg-white/70 border border-black/10 p-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-extrabold">Saved in your drawer</div>
+                        <div class="text-xs text-black/60 mt-1">Posts you want to keep close (private).</div>
+                    </div>
+                    <button id="openDrawer2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Open</button>
+                </div>
+                <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">${savedThumbs}</div>
             </div>
-
-            <!-- SCRAPBOOK SECTION -->
-            <div class="mb-2 flex items-center justify-between px-1">
-                <div class="text-sm font-extrabold text-[#2b2b35]">Scrapbook</div>
-                <div class="text-[10px] text-black/40">Recent Posts</div>
-            </div>
-            <div class="grid grid-cols-4 gap-2">
-                ${scrapbookHtml}
-            </div>
-            
-            <!-- FOOTER LINKS -->
-            <div class="mt-8 flex justify-center gap-6 opacity-40">
-                <button onclick="openAccountModal()" class="text-xs font-bold hover:underline">Settings</button>
-                <button onclick="$('#safetyModal').classList.remove('hidden')" class="text-xs font-bold hover:underline">Safety</button>
-            </div>
-            <div class="h-24"></div> <!-- Space for Bottom Nav -->
         `;
         
-        // --- 5. WIRE EVENTS ---
         $$('.roomBtn').forEach(btn => btn.onclick = () => openRoom(btn.dataset.room));
+        $$('.moodBtn2').forEach(btn => { btn.onclick = async () => { const m = btn.dataset.mood; await setMood(m); }; });
+        
         $('#openProfileSetup').onclick = openEditProfile;
+        $('#newPromptPost').onclick = () => { $('#composeModal').classList.remove('hidden'); $('#composeCaption').value='What’s one kind thing you did today?\n\n'; toast('Prompt loaded.'); };
+        $('#newStory').onclick = openStoryComposeModal;
+        $('#openDrawer2').onclick = () => openRoom('drawer');
         $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
+        $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
     }
 
     // UPDATED RENDER STORIES TO USE DB
@@ -1703,54 +1580,9 @@
     async function toggleHabit(habit) {
         const today = new Date().toDateString();
         if (!state.habits[today]) state.habits[today] = {};
-        
-        // Toggle state
-        const newVal = !state.habits[today][habit];
-        state.habits[today][habit] = newVal;
-        
-        // 1. Trigger Visual Confetti if turning ON
-        if(newVal) {
-            const btn = document.querySelector(`button[data-habit="${habit}"]`);
-            if(btn) celebrate(btn);
-            toast("Good job! 🌿");
-        }
-
-        // 2. Update UI Immediately
+        state.habits[today][habit] = !state.habits[today][habit];
         openRoom('plant'); 
-        
-        // 3. Save to Cloud
-        try { 
-            await sb.from('habits').upsert({ 
-                user_id: state.user.id, 
-                date: today, 
-                data: state.habits[today] 
-            }); 
-        } catch(e) { console.error(e); }
-    }
-
-    // NEW: Celebration Function
-    function celebrate(element) {
-        const rect = element.getBoundingClientRect();
-        const colors = ['#86a68b', '#f4a37a', '#dba1a8', '#fbf5ea'];
-        
-        for(let i=0; i<12; i++) {
-            const bit = document.createElement('div');
-            bit.classList.add('confetti-piece');
-            
-            // Random Position relative to button
-            const left = rect.left + Math.random() * rect.width;
-            const top = rect.top + Math.random() * (rect.height/2);
-            
-            // Random Color
-            bit.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
-            bit.style.left = left + 'px';
-            bit.style.top = top + 'px';
-            
-            document.body.appendChild(bit);
-            
-            // Clean up
-            setTimeout(() => bit.remove(), 1500);
-        }
+        try { await sb.from('habits').upsert({ user_id: state.user.id, date: today, data: state.habits[today] }); } catch(e) {}
     }
     
     async function setMood(m) { 
@@ -1897,12 +1729,8 @@
       }
     }
     
-    // FIX: Change this function to use classList directly
-    function openComments(postId){ 
-        state.comments.postId = postId; 
-        $('#commentsModal').classList.remove('hidden'); // <--- This line was wrong
-        renderCommentsModal(); 
-    }
+    function openComments(postId){ state.comments.postId = postId; openModal('commentsModal'); renderCommentsModal(); }
+    $('#sendCommentBtn').onclick = async ()=>{ const val = $('#commentInput').value.trim(); if(!val) return; try { await sb.from('comments').insert({ post_id: state.comments.postId, user_id: state.user.id, text: val }); toast('Note sent.'); $('#commentInput').value = ''; } catch(e) { toast('Error sending note.'); } };
     
     function openEditProfile() { 
         $('#setupName').value = state.profile.username || ''; 
@@ -2546,20 +2374,6 @@
         } catch(e) {}
         
         if(state.kindness) toast("Sticker sent with love.");
-    }
-
-    function upgradeModalsForMobile() {
-        // Find all elements that look like modal cards
-        const cards = document.querySelectorAll('.modal-card');
-        cards.forEach(card => {
-            // Check if handle already exists to avoid duplicates
-            if(!card.querySelector('.sheet-handle')) {
-                const handle = document.createElement('div');
-                handle.className = 'sheet-handle';
-                // Insert as the very first child
-                card.prepend(handle);
-            }
-        });
     }
 
     // RESTORED: Wire Events Function
