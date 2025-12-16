@@ -1025,16 +1025,12 @@ function getSketchBackground(seed) {
         if (current) current.classList.remove('hidden');
         
         // --- BADGE LOGIC ---
-        // Check if there are any unread messages
         const hasUnreadNotes = state.threads.some(t => {
             const lastReadTime = state.lastRead[t.id] || 0;
-            // A thread is unread if it has messages AND the newest one is newer than my last read time
-            // AND the last message wasn't sent by me
             const lastMsg = t.messages[t.messages.length-1];
             return lastMsg && lastMsg.from === 'them' && t.timestamp > lastReadTime;
         });
 
-        // Check if there are notifications
         const hasNotifs = state.notifications.length > 0;
 
         // Update Nav Icons
@@ -1044,9 +1040,12 @@ function getSketchBackground(seed) {
         $('#nav-notifs').innerHTML = svgIcon('notifs', viewId === 'notifs', hasNotifs);
         $('#nav-profile').innerHTML = svgIcon('profile', viewId === 'profile');
         
+        // --- RENDERING TRIGGERS ---
         if(viewId === 'profile') renderProfile();
+        
+        // FIX: Force render notifications when entering the tab
+        if(viewId === 'notifs') renderNotifs();
     }
-
     function postMediaHTML(p){
       const m = p.media;
       
@@ -1078,24 +1077,22 @@ function getSketchBackground(seed) {
         if (!state.user) return;
         
         try {
+            // We select '*' which now includes 'post_id'
             const { data, error } = await sb
                 .from('notifications')
                 .select('*')
                 .eq('user_id', state.user.id)
-                .order('created_at', { ascending: false }) // Newest first
+                .order('created_at', { ascending: false })
                 .limit(50);
 
             if (error) throw error;
 
             if (data) {
                 state.notifications = data;
-                
-                // Update Badge
+                // Update badge and list
                 const hasNotifs = state.notifications.length > 0;
                 const nav = document.getElementById('nav-notifs');
                 if(nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', hasNotifs);
-                
-                // If we are currently on the Lantern page, refresh the UI
                 if(state.tab === 'notifs') renderNotifs();
             }
         } catch (e) {
@@ -1547,27 +1544,33 @@ function getSketchBackground(seed) {
                     if(list) list.insertAdjacentHTML('afterbegin', getStoryHTML(s, 0));
                  }
             })
-            // --- 5. NOTIFICATIONS ---
-            // This listens for any notification where 'user_id' equals MY ID.
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${state.user.id}` }, (payload) => {
-                console.log("Lantern: New Notification!", payload.new); // Debug log
-                state.notifications.unshift(payload.new);
-                
-                // 1. Update the Tab Icon (Red Dot)
-                document.getElementById('nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', true);
-                
-                // 2. Show a Toast
-                toast("Lantern: " + (payload.new.content || "New glow"));
-                
-                // 3. If we are LOOKING at the list, refresh it immediately
-                if(state.tab === 'notifs') renderNotifs();
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${state.user.id}` }, (payload) => {
-                state.notifications.unshift(payload.new);
-                document.getElementById('nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', true);
-                toast(payload.new.content);
-                if(state.tab === 'notifs') renderNotifs();
-            })
+// --- 5. NOTIFICATIONS ---
+.on('postgres_changes', { 
+    event: 'INSERT', 
+    schema: 'public', 
+    table: 'notifications' 
+    // Removed the 'filter' property to allow the client to catch 
+    // all incoming rows that the database allows it to see via RLS.
+}, (payload) => {
+    // SECURITY CHECK: Only process if the notification is actually for me
+    if (payload.new.user_id !== state.user.id) return;
+
+    // PREVENT DUPLICATES: Check if this ID already exists in our list
+    if (state.notifications.some(n => n.id === payload.new.id)) return;
+
+    console.log("Lantern: New Notification!", payload.new);
+    state.notifications.unshift(payload.new);
+    
+    // 1. Update the Tab Icon (Red Dot)
+    const nav = document.getElementById('nav-notifs');
+    if (nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', true);
+    
+    // 2. Show a Toast
+    toast("Lantern: " + (payload.new.content || "New glow"));
+    
+    // 3. Refresh list if user is currently looking at the tab
+    if (state.tab === 'notifs') renderNotifs();
+})
 
             // --- 6. MESSAGES ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
@@ -2070,13 +2073,14 @@ function getSketchBackground(seed) {
 // --- NOTIFICATION HELPERS ---
 // --- UPDATED NOTIFICATION RENDERER ---
 function notifIcon(type) {
-        // FIXED: Use indices that definitely exist in your SKETCH_PATHS array
-        // Index 4 = Envelope (Reply)
-        // Index 0 = Sun (Sticker/Warmth)
-        // Index 3 = Camera/System (System)
-        
+        // Reply = Envelope
         if(type === 'reply') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#f4a37a]">${SKETCH_PATHS[4]}</svg>`; 
+        // Sticker = Sun
         if(type === 'sticker') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#86a68b]">${SKETCH_PATHS[0]}</svg>`;
+        // System/Report = Magic Spark (Index 136 in original list, but we'll use Index 6 "Moon/Magic" here as it's safe)
+        if(type === 'system') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/60">${SKETCH_PATHS[57] || SKETCH_PATHS[6]}</svg>`;
+        
+        // Fallback
         return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/50">${SKETCH_PATHS[3]}</svg>`;
     }
 
@@ -2084,7 +2088,6 @@ function notifIcon(type) {
         const list = document.getElementById('notifList');
         if (!list) return;
 
-        // If no notifications, show empty state
         if (!state.notifications || state.notifications.length === 0) { 
             list.innerHTML = `
                 <div class="p-12 text-center flex flex-col items-center justify-center opacity-40">
@@ -2095,28 +2098,95 @@ function notifIcon(type) {
             return; 
         }
 
-        // Render the list
         list.innerHTML = state.notifications.map((n) => {
-            // Check if notification is less than 24 hours old
+            // DEBUG: Check your console to see if 'post_id' exists!
+            if(!n.post_id) console.log("Notification missing post_id:", n);
+
             const isFresh = new Date(n.created_at).getTime() > (Date.now() - 1000 * 60 * 60 * 24);
+            const iconHtml = notifIcon(n.type || 'system'); 
             
+            // BUTTON LOGIC
+            let seeBtn = '';
+            if (n.post_id) {
+                seeBtn = `
+                <button onclick="openSpotlight('${n.post_id}')" class="absolute top-2 right-12 px-3 py-1 h-6 flex items-center justify-center rounded-[8px] bg-[#fffaf1] border border-black/10 text-[10px] font-bold text-black/60 hover:bg-white hover:text-black hover:border-black/30 transition-all z-20 shadow-sm">
+                    View
+                </button>`;
+            }
+
             return `
             <div class="hand-card hand-outline bg-white/80 border border-black/10 p-4 flex items-start gap-4 mb-2 pop-in relative overflow-hidden group">
-                ${isFresh ? `<div class="absolute top-2 right-2 w-2 h-2 bg-[#f4a37a] rounded-full shadow-sm"></div>` : ''}
+                
+                <!-- DELETE BUTTON (Far Right) -->
+                <button onclick="deleteNotification('${n.id}')" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors z-20">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+
+                <!-- SEE POST BUTTON -->
+                ${seeBtn}
+
+                <!-- FRESH DOT -->
+                ${isFresh ? `<div class="absolute top-3 right-24 w-2 h-2 bg-[#f4a37a] rounded-full shadow-sm"></div>` : ''}
                 
                 <div class="w-12 h-12 rounded-full bg-[#fffaf1] border border-black/10 grid place-items-center shrink-0">
-                    ${notifIcon(n.type || 'sticker')}
+                    ${iconHtml}
                 </div>
                 
-                <div class="flex-1 min-w-0 pt-1">
+                <div class="flex-1 min-w-0 pt-1 pr-20"> <!-- Extra padding to avoid buttons -->
                     <div class="text-sm font-bold text-black/80 leading-snug">${html(n.content)}</div>
                     <div class="text-[10px] text-black/40 mt-1 font-bold uppercase tracking-widest flex items-center gap-2">
                         ${timeAgo(new Date(n.created_at))}
-                        <span class="opacity-0 group-hover:opacity-100 transition-opacity text-[#f4a37a]">• ${n.type}</span>
+                        <span class="opacity-0 group-hover:opacity-100 transition-opacity text-[#f4a37a]">• ${n.type || 'alert'}</span>
                     </div>
                 </div>
             </div>`;
         }).join('');
+    }
+
+    async function openSpotlight(postId) {
+        toast("Fetching post...");
+        
+        // Try to find it in memory first
+        let post = state.posts.find(p => p.id === postId);
+        
+        if (!post) {
+            // If not in memory, fetch from cloud
+            const { data, error } = await sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .eq('id', postId)
+                .single();
+            if (data) post = data;
+        }
+
+        if (post) {
+            // Use your existing Spotlight Modal
+            const body = document.getElementById('spotlightBody');
+            body.innerHTML = getPostHTML(post);
+            
+            // Remove the margin/padding from the card inside the modal for a cleaner look
+            const card = body.querySelector('article');
+            if(card) { card.classList.remove('mb-4', 'hand-card'); card.classList.add('border-0', 'shadow-none'); }
+            
+            document.getElementById('spotlightModal').classList.remove('hidden');
+        } else {
+            toast("Post might have been deleted.");
+        }
+    }
+    async function deleteNotification(id) {
+        // 1. Optimistic Update (Remove from screen immediately)
+        state.notifications = state.notifications.filter(n => n.id !== id);
+        renderNotifs(); // Re-draw the list
+        
+        // Update the navigation badge count
+        const hasNotifs = state.notifications.length > 0;
+        document.getElementById('nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', hasNotifs);
+
+        // 2. Database Delete (Background)
+        try {
+            await sb.from('notifications').delete().eq('id', id);
+        } catch(e) {
+            console.error("Error deleting notification:", e);
+        }
     }
 
     // --- ACTIONS ---
@@ -2259,36 +2329,48 @@ function notifIcon(type) {
         }
     }
     
-    function reportPost() {
-        $('#postOptionsModal').classList.add('hidden');
-        openTextModal('Report Post', 'Is this unsafe or unkind?', 'Describe what happened...', async (val) => {
-            if(!val) return toast('Please describe the issue.');
-            
-            try {
-                // 1. Submit Report
-                await sb.from('reports').insert({
-                    user_id: state.user.id,
-                    post_id: state.activePostOption,
-                    reason: val
-                });
-                
-                // 2. Optional: Notify the Admin (or in this case, generate a System receipt for the user)
-                // We insert a notification for THE USER WHO REPORTED (Confirmation)
-                await sb.from('notifications').insert({
-                    user_id: state.user.id,
-                    type: 'system',
-                    content: `We received your report. Thank you for keeping this corner cozy.`
-                });
+    async function reportPost() {
+    $('#postOptionsModal').classList.add('hidden');
+    openTextModal('Report Post', 'Is this unsafe or unkind?', 'Describe what happened...', async (val) => {
+        if(!val) return toast('Please describe the issue.');
+        
+        const postId = state.activePostOption; 
+        const post = state.posts.find(p => p.id === postId); 
 
-                toast('Report submitted.');
-                
-            } catch(e) {
-                console.error(e);
-                toast('Error submitting report.');
+        try {
+            // 1. Submit the actual report record
+            await sb.from('reports').insert({
+                user_id: state.user.id,
+                post_id: postId,
+                reason: val
+            });
+            
+            // 2. Notify the POST OWNER (The most important part)
+            if (post && post.user_id !== state.user.id) {
+                await sb.from('notifications').insert({
+                    user_id: post.user_id, // <--- Target is the Owner
+                    type: 'system',
+                    content: `A neighbor flagged your post: "${val}".`,
+                    post_id: postId 
+                });
             }
-            return true;
-        });
-    }
+
+            // 3. Save a receipt for the REPORTER (You)
+            await sb.from('notifications').insert({
+                user_id: state.user.id, // <--- Target is You
+                type: 'system',
+                content: `You reported a post for: "${val}"`,
+                post_id: postId 
+            });
+
+            toast('Report received.');
+        } catch(e) {
+            console.error(e);
+            toast('Error submitting report.');
+        }
+        return true; 
+    });
+}
 
     async function sharePost() {
         const pid = state.activePostOption;
@@ -3274,7 +3356,7 @@ function notifIcon(type) {
     }
 
     async function sendSticker(pid, type, el) {
-        // 1. Animation (Fly Effect)
+        // 1. Animation
         if(el) {
             const fly = document.createElement('div'); 
             fly.className = 'sticker-fly';
@@ -3284,32 +3366,28 @@ function notifIcon(type) {
             fly.style.top = (rect.top + window.scrollY) + 'px';
             document.body.appendChild(fly);
             setTimeout(() => fly.remove(), 1000);
-            
-            // Optimistic UI Update (Update count immediately)
             const span = el.querySelector('span:last-child');
             if(span) span.innerText = parseInt(span.innerText || '0') + 1;
         }
 
         try { 
-            // 2. Save Sticker to DB
+            // 2. Save Sticker
             const { error } = await sb.from('stickers').insert({ 
                 post_id: pid, 
                 sticker_type: type, 
                 user_id: state.user.id 
             }); 
-            
             if(error) throw error;
 
-            // 3. Send Notification to Post Owner
-            // We find the post in our local state to get the owner's ID
+            // 3. Notify Owner (FIXED VARIABLE NAMES)
             const post = state.posts.find(p => p.id === pid);
-            
-            // Only notify if: We found the post AND we are not the owner
             if(post && post.user_id !== state.user.id) {
                  await sb.from('notifications').insert({
-                     user_id: post.user_id, // Who gets the alert
-                     type: 'sticker',
-                     content: `${state.profile.username || 'A neighbor'} sent a ${type} sticker!`
+                     user_id: post.user_id,
+                     type: 'sticker', // Correct type
+                     // Correct content using the 'type' variable, not 'val'
+                     content: `${state.profile.username || 'A neighbor'} sent a ${type} sticker!`, 
+                     post_id: pid // Link for the button
                  });
             }
             
@@ -3583,20 +3661,17 @@ function notifIcon(type) {
             }
         });
 
-        // --- COMMENTS (ADDED HERE) ---
         safeWire('#sendCommentBtn', async () => { 
             const input = document.getElementById('commentInput');
             const val = input.value.trim();
             if(!val) return; 
 
-            // Disable button briefly to prevent double-sends
             const btn = document.getElementById('sendCommentBtn');
             const originalText = btn.innerText;
             btn.innerText = "...";
             btn.disabled = true;
 
             try { 
-                // 1. Insert AND Select the data back
                 const { data, error } = await sb.from('comments')
                     .insert({ post_id: state.comments.postId, user_id: state.user.id, text: val })
                     .select('id, user_id, text, created_at')
@@ -3604,7 +3679,6 @@ function notifIcon(type) {
                 
                 if(error) throw error;
 
-                // 2. Manually construct the comment object
                 const newComment = {
                     id: data.id,
                     user_id: state.user.id,
@@ -3612,30 +3686,28 @@ function notifIcon(type) {
                     profiles: { username: state.profile.username }
                 };
 
-                // 3. Update Local State (WE DEFINE 'post' HERE ONCE)
                 const post = state.posts.find(p => p.id === state.comments.postId);
-                
                 if(post) {
                     if(!post.comments) post.comments = [];
                     post.comments.push(newComment);
                 }
 
-                // 4. Update UI Immediately
                 renderCommentsModal();
                 
-                // Update the preview on the feed card
+                // Update feed preview
                 const previewContainer = document.getElementById(`comments-${state.comments.postId}`);
                 if(previewContainer && post) {
                      const previewHtml = (post.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
                      previewContainer.innerHTML = previewHtml;
                 }
 
-                // 5. Notification Logic (RE-USE THE 'post' VARIABLE FROM STEP 3)
+                // FIX: Notify Owner with Link
                 if(post && post.user_id !== state.user.id) {
                      await sb.from('notifications').insert({
                          user_id: post.user_id,
                          type: 'reply',
-                         content: `${state.profile.username || 'A neighbor'} wrote: "${val.substring(0, 25)}${val.length>25?'...':''}"`
+                         content: `${state.profile.username || 'A neighbor'} wrote: "${val.substring(0, 25)}${val.length>25?'...':''}"`,
+                         post_id: post.id // <--- THIS ADDS THE BUTTON
                      });
                 }
                 
