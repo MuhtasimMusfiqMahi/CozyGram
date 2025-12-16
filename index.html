@@ -851,7 +851,6 @@
       if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
       return '';
     }
-    
 
     function showView(viewId) {
         state.tab = viewId;
@@ -1109,13 +1108,26 @@
 
     // --- APP LOGIC (UPDATED INIT) ---
     async function init() {
-        // 1. Initialize Supabase
-        try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) { return; }
+ // 1. Initialize Supabase with Persistence Options
+        try { 
+            sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                auth: {
+                    persistSession: true, // Save login to LocalStorage
+                    autoRefreshToken: true, // Keep the session alive
+                    detectSessionInUrl: true // Check for Magic Links
+                }
+            }); 
+        } catch (e) { return; }
         
-        // 2. Setup the Listener IMMEDIATELY
+        // 2. Setup the Listener (Added 'INITIAL_SESSION')
+        // This catches the user if they are already logged in from a previous visit
         sb.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session && !state.user) {
+            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !state.user) {
                 handleLoginSuccess(session);
+            } else if (event === 'SIGNED_OUT') {
+                state.user = null;
+                // Optional: Show onboarding again if they actually click log out
+                window.location.href = window.location.pathname;
             }
         });
 
@@ -2033,14 +2045,48 @@ function getSketchBackground(seed) {
         container.scrollTop = container.scrollHeight;
     }
 
+// --- NOTIFICATION HELPERS ---
+function notifIcon(type) {
+        // Use our Sketch Paths! 
+        // 4 = Envelope (Reply), 1 = Rainbow (Sticker/Love), 11 = Lightbulb (System)
+        if(type === 'reply') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#f4a37a]">${SKETCH_PATHS[4]}</svg>`; // Envelope
+        if(type === 'sticker') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#86a68b]">${SKETCH_PATHS[19]}</svg>`; // Star/Sparkle
+        return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/50">${SKETCH_PATHS[10]}</svg>`; // Lightbulb
+    }
+
     function renderNotifs() {
         const list = $('#notifList');
-        if (state.notifications.length === 0) { list.innerHTML = `<div class="p-6 text-center opacity-40 italic">All quiet...</div>`; return; }
-        list.innerHTML = state.notifications.map((n) => `
-            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-start gap-3 pop-in">
-                <div class="w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-br from-[#f7c59f] via-[#fbf5ea] to-[#dba1a8] grid place-items-center">${notifIcon(n.type || 'sticker')}</div>
-                <div class="flex-1"><div class="text-sm text-black/75">${html(n.content)}</div><div class="text-xs text-black/50 mt-1">${timeAgo(new Date(n.created_at))}</div></div>
-            </div>`).join('');
+        if (!list) return;
+
+        if (state.notifications.length === 0) { 
+            list.innerHTML = `
+                <div class="p-8 text-center flex flex-col items-center justify-center opacity-50">
+                    <div class="w-24 h-24 mb-4 text-black/20"><svg viewBox="0 0 50 50">${SKETCH_PATHS[10]}</svg></div>
+                    <div class="font-[Fraunces] text-lg">It is quiet here.</div>
+                    <div class="text-xs">Your lantern glows when neighbors visit.</div>
+                </div>`; 
+            return; 
+        }
+
+        list.innerHTML = state.notifications.map((n) => {
+            const isNew = new Date(n.created_at).getTime() > (Date.now() - 1000 * 60 * 60); // New if < 1 hour
+            return `
+            <div class="hand-card hand-outline bg-white/80 border border-black/10 p-4 flex items-start gap-4 mb-2 pop-in relative overflow-hidden group">
+                ${isNew ? `<div class="absolute top-0 right-0 w-3 h-3 bg-[#f4a37a] rounded-full m-2"></div>` : ''}
+                
+                <div class="w-12 h-12 rounded-full bg-[#fffaf1] border border-black/10 grid place-items-center shrink-0">
+                    ${notifIcon(n.type || 'sticker')}
+                </div>
+                
+                <div class="flex-1 min-w-0 pt-1">
+                    <div class="text-sm font-bold text-black/80 leading-snug">${html(n.content)}</div>
+                    <div class="text-[10px] text-black/40 mt-1 font-bold uppercase tracking-widest flex items-center gap-2">
+                        ${timeAgo(new Date(n.created_at))}
+                        <span class="opacity-0 group-hover:opacity-100 transition-opacity text-[#f4a37a]">• ${n.type}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // --- ACTIONS ---
@@ -2189,16 +2235,22 @@ function getSketchBackground(seed) {
             if(!val) return toast('Please describe the issue.');
             
             try {
-                // Save to DB
+                // 1. Submit Report
                 await sb.from('reports').insert({
                     user_id: state.user.id,
                     post_id: state.activePostOption,
                     reason: val
                 });
-                toast('Report submitted.');
                 
-                // Refresh Profile if open
-                if(state.tab === 'profile') renderProfile();
+                // 2. Optional: Notify the Admin (or in this case, generate a System receipt for the user)
+                // We insert a notification for THE USER WHO REPORTED (Confirmation)
+                await sb.from('notifications').insert({
+                    user_id: state.user.id,
+                    type: 'system',
+                    content: `We received your report. Thank you for keeping this corner cozy.`
+                });
+
+                toast('Report submitted.');
                 
             } catch(e) {
                 console.error(e);
@@ -3192,28 +3244,50 @@ function getSketchBackground(seed) {
     }
 
     async function sendSticker(pid, type, el) {
-        // ... (keep the existing animation logic) ...
-        const fly = document.createElement('div'); fly.className = 'sticker-fly';
-        // ...
-        
-        try { 
-            // 1. Save Sticker
-            await sb.from('stickers').insert({ post_id: pid, sticker_type: type, user_id: state.user.id }); 
+        // 1. Animation (Fly Effect)
+        if(el) {
+            const fly = document.createElement('div'); 
+            fly.className = 'sticker-fly';
+            fly.innerHTML = STICKER_SVGS[type] || '✨'; 
+            const rect = el.getBoundingClientRect();
+            fly.style.left = (rect.left + window.scrollX) + 'px';
+            fly.style.top = (rect.top + window.scrollY) + 'px';
+            document.body.appendChild(fly);
+            setTimeout(() => fly.remove(), 1000);
             
-            // 2. Find Post Owner & Send Notification
-            // We need to know who owns the post to notify them. 
-            // Since we clicked a button, we can find the owner ID from state.posts
+            // Optimistic UI Update (Update count immediately)
+            const span = el.querySelector('span:last-child');
+            if(span) span.innerText = parseInt(span.innerText || '0') + 1;
+        }
+
+        try { 
+            // 2. Save Sticker to DB
+            const { error } = await sb.from('stickers').insert({ 
+                post_id: pid, 
+                sticker_type: type, 
+                user_id: state.user.id 
+            }); 
+            
+            if(error) throw error;
+
+            // 3. Send Notification to Post Owner
+            // We find the post in our local state to get the owner's ID
             const post = state.posts.find(p => p.id === pid);
+            
+            // Only notify if: We found the post AND we are not the owner
             if(post && post.user_id !== state.user.id) {
                  await sb.from('notifications').insert({
-                     user_id: post.user_id, // Notify the owner
+                     user_id: post.user_id, // Who gets the alert
                      type: 'sticker',
-                     content: `${state.profile.username} sent a ${type} sticker!`
+                     content: `${state.profile.username || 'A neighbor'} sent a ${type} sticker!`
                  });
             }
-        } catch(e) {}
-        
-        if(state.kindness) toast("Sticker sent with love.");
+            
+            if(state.kindness) toast("Warmth sent.");
+
+        } catch(e) {
+            console.error("Sticker error:", e);
+        }
     }
 
     // --- TEXT MODAL HELPERS ---
@@ -3489,7 +3563,7 @@ function getSketchBackground(seed) {
             btn.disabled = true;
 
             try { 
-                // 1. Insert AND Select the data back (so we get the real ID)
+                // 1. Insert AND Select the data back
                 const { data, error } = await sb.from('comments')
                     .insert({ post_id: state.comments.postId, user_id: state.user.id, text: val })
                     .select('id, user_id, text, created_at')
@@ -3497,38 +3571,38 @@ function getSketchBackground(seed) {
                 
                 if(error) throw error;
 
-                // 2. Manually construct the comment object with profile data
-                // (Since we just posted it, we know the profile is US)
+                // 2. Manually construct the comment object
                 const newComment = {
                     id: data.id,
                     user_id: state.user.id,
                     text: data.text,
-                    profiles: { username: state.profile.username } // Use our own username
+                    profiles: { username: state.profile.username }
                 };
 
-                // 3. Update Local State
+                // 3. Update Local State (WE DEFINE 'post' HERE ONCE)
                 const post = state.posts.find(p => p.id === state.comments.postId);
+                
                 if(post) {
                     if(!post.comments) post.comments = [];
-                    post.comments.push(newComment); // Add to the list in memory
+                    post.comments.push(newComment);
                 }
 
                 // 4. Update UI Immediately
-                renderCommentsModal(); // Refresh the list you are looking at
+                renderCommentsModal();
                 
-                // Update the preview on the feed card behind the modal
+                // Update the preview on the feed card
                 const previewContainer = document.getElementById(`comments-${state.comments.postId}`);
-                if(previewContainer) {
+                if(previewContainer && post) {
                      const previewHtml = (post.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
                      previewContainer.innerHTML = previewHtml;
                 }
 
-                // 5. Notification Logic (for the post owner)
+                // 5. Notification Logic (RE-USE THE 'post' VARIABLE FROM STEP 3)
                 if(post && post.user_id !== state.user.id) {
                      await sb.from('notifications').insert({
                          user_id: post.user_id,
                          type: 'reply',
-                         content: `${state.profile.username} left a note: "${val.substring(0, 20)}..."`
+                         content: `${state.profile.username || 'A neighbor'} wrote: "${val.substring(0, 25)}${val.length>25?'...':''}"`
                      });
                 }
                 
