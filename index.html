@@ -315,20 +315,6 @@
       <!-- FEED -->
       <!-- FEED SECTION -->
       <section id="view-feed" class="space-y-4">
-        
-        <!-- 1. DAILY CHECKIN -->
-        <div id="dailyCheckin" class="hand-card hand-outline paper-noise p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div><div class="font-[Fraunces] text-lg">Daily gentle check‑in</div><div class="text-sm text-black/70 mt-1">Private to this device.</div></div>
-            <button id="clearCheckin" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Clear</button>
-          </div>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="calm"><span class="text-xs font-extrabold">Calm 🌿</span></button>
-            <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="bright"><span class="text-xs font-extrabold">Bright ✨</span></button>
-            <button class="moodPick wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" data-mood="tired"><span class="text-xs font-extrabold">Tired ☁️</span></button>
-          </div>
-        </div>
-
         <!-- 2. LOW PRESSURE BANNER (Moved from JS to HTML) -->
         <div class="hand-card hand-outline paper-noise p-4">
           <div class="flex items-start gap-3">
@@ -524,7 +510,7 @@
         <div id="roomBody" class="space-y-4"></div>
       </div>
   </div>
-  <div id="postOptionsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+  <div id="postOptionsModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
         <h3 class="font-bold mb-3 text-center">Options</h3>
         <button id="savePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Save to Drawer</button>
@@ -581,7 +567,7 @@
         <button id="sendCommentBtn" class="w-full mt-2 py-2 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Send</button>
     </div>
   </div>
-  <div id="textModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+  <div id="textModal" class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
           <div class="flex items-start justify-between gap-3 mb-3"><div><div id="textModalTitle" class="font-[Fraunces] text-lg">Write</div><div id="textModalSubtitle" class="text-xs text-black/60">Gentle + short is perfect.</div></div><button onclick="closeTextModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
           <div class="mt-3">
@@ -594,6 +580,24 @@
   <div id="toast" class="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white border border-black/10 px-4 py-2 rounded-[18px_16px_22px_14px] shadow-lg text-sm font-bold hidden z-50 pop-in"><div></div></div> 
    <!-- Hidden File Input for Avatars -->
  <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
+ <!-- SINGLE POST SPOTLIGHT MODAL -->
+ <div id="spotlightModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
+      <!-- Header -->
+      <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
+          <h3 class="font-[Fraunces] text-lg">Shared Moment</h3>
+          <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+      </div>
+      <!-- Content Container -->
+      <div id="spotlightBody" class="p-4 overflow-y-auto">
+          <!-- Post gets injected here -->
+      </div>
+      <!-- Footer -->
+      <div class="p-4 border-t border-black/5 bg-white/50 text-center">
+          <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly">Go to Feed</button>
+      </div>
+    </div>
+</div>
 
   <script>
     const SUPABASE_URL = 'https://dcarzattebyvkojqflyb.supabase.co';
@@ -1113,6 +1117,7 @@
 
         if (data?.session) {
             if (!state.user) handleLoginSuccess(data.session);
+            setTimeout(checkDeepLink, 1000);
         } 
         else if (hasHash) {
             console.log("Processing magic link...");
@@ -1519,50 +1524,94 @@
         return `<button onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-2 py-1.5 lg:px-3 lg:py-2 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white transition-colors">${svg} <span>${count || 0}</span></button>`;
     }
 
-    function renderProfile() {
+    // --- MANAGEMENT LISTS LOGIC ---
+    
+    async function fetchManagementLists() {
+        // 1. Fetch Muted Users (with profile details)
+        const { data: mutes } = await sb.from('mutes')
+            .select('muted_user_id, profiles!muted_user_id(username, seed, avatar_url)')
+            .eq('user_id', state.user.id);
+
+        // 2. Fetch Hidden Posts (with post details)
+        const { data: hidden } = await sb.from('hidden_posts')
+            .select('post_id, posts!post_id(caption, media, seed, palette)')
+            .eq('user_id', state.user.id);
+
+        // 3. Fetch Reports (with post details)
+        const { data: reports } = await sb.from('reports')
+            .select('id, reason, post_id, posts!post_id(caption, media, seed, palette)')
+            .eq('user_id', state.user.id);
+
+        return { 
+            mutes: mutes || [], 
+            hidden: hidden || [], 
+            reports: reports || [] 
+        };
+    }
+
+    async function doUnmute(uid) {
+        toast("Unmuting...");
+        await sb.from('mutes').delete().eq('user_id', state.user.id).eq('muted_user_id', uid);
+        state.mutedUsers = state.mutedUsers.filter(id => id !== uid); 
+        // FIX: Reload the modal list instantly
+        openRoom('mutes'); 
+        toast("Neighbor unmuted.");
+    }
+
+    async function doUnhide(pid) {
+        toast("Unhiding...");
+        await sb.from('hidden_posts').delete().eq('user_id', state.user.id).eq('post_id', pid);
+        state.hiddenPosts = state.hiddenPosts.filter(id => id !== pid);
+        // FIX: Reload the modal list instantly
+        openRoom('hidden'); 
+        toast("Post visible again.");
+    }
+
+    async function doWithdrawReport(rid) {
+        await sb.from('reports').delete().eq('id', rid);
+        // FIX: Reload the modal list instantly
+        openRoom('reports'); 
+        toast("Report withdrawn.");
+    }
+    async function renderProfile() {
         if(!state.profile) return;
         const p = state.profile;
         const meId = state.user.id;
         
+        // 1. Helpers
         const moodBtn = (id, l, g) => `<button class="moodBtn2 wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${p.mood===id ? 'bg-gradient-to-b from-white/80 to-white/60 ring-2 ring-black/10' : 'bg-white/70'}" data-mood="${id}"><span class="inline-flex items-center gap-2 text-xs font-extrabold"><span class="w-5 h-5 rounded-[10px_12px_12px_9px] border border-black/10" style="background:${g}"></span>${l}</span></button>`;
+        const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8 opacity-70">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
+
+        // Icons
         const shelfIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
         const plantIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
         const windowIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M6 4h12v16H6z" fill="rgba(134,166,139,.18)"/><path class="ink-line-lite" d="M12 4v16M6 12h12" fill="none"/></svg>`;
         const drawerIcon = `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
-        
-        const roomItem = (t, s, i, r) => `<button class="roomBtn wobbly text-left" data-room="${r}" aria-label="Open ${t}"><div class="hand-card hand-outline bg-white/75 border border-black/10 p-3 h-full"><div class="w-8 h-8">${i}</div><div class="text-sm font-extrabold mt-1">${t}</div><div class="text-xs text-black/55">${s}</div></div></button>`;
 
+        // 2. Main Profile HTML
         const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
-        const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+        const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div></button>`).join('');
         const savedPosts = state.savedPostIds.map(pid => state.posts.find(x => x.id === pid)).filter(Boolean).slice(0, 4);
-        const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div><div class="mt-2 text-[11px] text-black/60 line-clamp-2">${html(post.caption||'')}</div></button>`).join('');
+        const savedThumbs = savedPosts.map(post => `<button class="savedPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div></button>`).join('');
 
         $('#view-profile').innerHTML = `
+            <!-- HEADER -->
             <div class="relative hand-card hand-outline bg-gradient-to-b from-white/70 to-white/55 border border-black/10 p-4 overflow-hidden mb-4">
               <div class="absolute -left-10 -top-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle at 30% 30%, rgba(219,161,168,.18), rgba(219,161,168,.0) 60%);"></div>
-              
               <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <!-- FIX: Show actual Name and Pronouns -->
                     <div class="font-[Fraunces] text-2xl tracking-tight leading-none mb-1">${html(p.username)}</div>
                     <div class="text-xs text-black/50 font-bold uppercase tracking-wider">${html(p.pronouns || 'Your Corner')}</div>
                 </div>
-                <!-- Avatar Display -->
                 <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0 bg-white">
                     ${avatarHTML(p)}
                 </div>
               </div>
-
               <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
                 ${roomItem('Shelf', 'saved prompts', shelfIcon, 'shelf')}
                 ${roomItem('Plant', 'soft habits', plantIcon, 'plant')}
                 ${roomItem('Window', 'mood light', windowIcon, 'window')}
                 ${roomItem('Drawer', `${state.savedPostIds.length} saved`, drawerIcon, 'drawer')}
-              </div>
-
-              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
-                <div class="flex items-center justify-between"><div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div><div class="text-xs text-black/45">private</div></div>
-                <div class="mt-2 flex flex-wrap gap-2">${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}</div>
               </div>
               
               <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
@@ -1571,39 +1620,69 @@
                 <div class="mt-2 flex flex-wrap items-center gap-2">
                     <button id="openProfileSetup" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Edit profile</button>
                     <button id="newPromptPost" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold">Post a prompt</button>
-                    <button id="newStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New journal page</button>
+                </div>
+              </div>
+
+              <!-- MOOD LIGHTING -->
+              <div class="mt-3 hand-card hand-outline bg-white/75 border border-black/10 p-3">
+                <div class="flex items-center justify-between">
+                    <div><div class="font-extrabold">Mood lighting</div><div class="text-xs text-black/60">Pick the vibe that colors your corner.</div></div>
+                    <div class="text-xs text-black/45">private</div>
+                </div>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    ${moodBtn('sunset','Sunset','linear-gradient(135deg,#f4a37a,#f7c59f)')}
+                    ${moodBtn('sage','Sage','linear-gradient(135deg,#86a68b,#b7cbb7)')}
+                    ${moodBtn('berry','Berry','linear-gradient(135deg,#dba1a8,#c77d93)')}
+                    ${moodBtn('clay','Clay','linear-gradient(135deg,#b87d66,#f4a37a)')}
                 </div>
               </div>
             </div>
 
-            <div class="hand-card hand-outline paper-noise p-4">
+            <!-- SCRAPBOOK -->
+            <div class="hand-card hand-outline paper-noise p-4 mb-4">
                 <div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div>
             </div>
-            
-            <div class="mt-4 hand-card hand-outline bg-white/70 border border-black/10 p-3">
+
+            <!-- DRAWER PREVIEW -->
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-6">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-sm font-extrabold">Saved in your drawer</div>
-                        <div class="text-xs text-black/60 mt-1">Posts you want to keep close (private).</div>
-                    </div>
+                    <div><div class="text-sm font-extrabold">Saved in your drawer</div></div>
                     <button id="openDrawer2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Open</button>
                 </div>
                 <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">${savedThumbs}</div>
             </div>
+
+            <!-- COMPACT MANAGEMENT BOXES (NEW LAYOUT) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pb-8">
+                
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4 flex items-center justify-between">
+                    <span class="text-sm font-extrabold">Hidden Posts</span>
+                    <button onclick="openRoom('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4 flex items-center justify-between">
+                    <span class="text-sm font-extrabold">Muted Neighbors</span>
+                    <button onclick="openRoom('mutes')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4 flex items-center justify-between">
+                    <span class="text-sm font-extrabold">My Reports</span>
+                    <button onclick="openRoom('reports')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+
+            </div>
         `;
         
+        // Rewire Events
         $$('.roomBtn').forEach(btn => btn.onclick = () => openRoom(btn.dataset.room));
         $$('.moodBtn2').forEach(btn => { btn.onclick = async () => { const m = btn.dataset.mood; await setMood(m); }; });
-        
         $('#openProfileSetup').onclick = openEditProfile;
         $('#newPromptPost').onclick = () => { $('#composeModal').classList.remove('hidden'); $('#composeCaption').value='What’s one kind thing you did today?\n\n'; toast('Prompt loaded.'); };
-        $('#newStory').onclick = openStoryComposeModal;
         $('#openDrawer2').onclick = () => openRoom('drawer');
         $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
         $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
     }
-
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
         const clubsHtml = MOCK_CLUBS.map(c => `
@@ -1875,37 +1954,140 @@
     }
 
     async function deletePost() {
-        await sb.from('posts').delete().eq('id', state.activePostOption);
-        $('#postOptionsModal').classList.add('hidden');
-        loadFeed();
+        const pid = state.activePostOption;
+        if(!pid) return;
+
+        // 1. Close Options Modal Immediately
+        document.getElementById('postOptionsModal').classList.add('hidden');
+
+        // 2. Visual Feedback: Fade out and remove from DOM
+        const el = document.getElementById(`post-${pid}`);
+        if(el) {
+            el.style.transition = "all 0.3s ease";
+            el.style.opacity = "0";
+            el.style.transform = "scale(0.9)";
+            setTimeout(() => el.remove(), 300);
+        }
+
+        // 3. Update Local State (Remove from memory)
+        state.posts = state.posts.filter(p => p.id !== pid);
+        
+        toast("Deleting post...");
+
+        try {
+            // 4. Delete from Supabase
+            const { error } = await sb.from('posts').delete().eq('id', pid);
+            if(error) throw error;
+            toast("Post deleted.");
+        } catch(e) {
+            console.error(e);
+            toast("Error deleting. Refreshing...");
+            // If error, reload feed to bring it back
+            loadFeed();
+        }
     }
     
     function reportPost() {
         $('#postOptionsModal').classList.add('hidden');
-        openTextModal('Report Post', 'Is this unsafe or unkind?', 'Describe what happened...', (val) => {
+        openTextModal('Report Post', 'Is this unsafe or unkind?', 'Describe what happened...', async (val) => {
             if(!val) return toast('Please describe the issue.');
-            toast('Report submitted to admins.');
+            
+            try {
+                // Save to DB
+                await sb.from('reports').insert({
+                    user_id: state.user.id,
+                    post_id: state.activePostOption,
+                    reason: val
+                });
+                toast('Report submitted.');
+                
+                // Refresh Profile if open
+                if(state.tab === 'profile') renderProfile();
+                
+            } catch(e) {
+                console.error(e);
+                toast('Error submitting report.');
+            }
             return true;
         });
     }
 
     async function sharePost() {
-        const p = state.posts.find(x => x.id === state.activePostOption);
+        const pid = state.activePostOption;
+        const p = state.posts.find(x => x.id === pid);
         if(!p) return;
+        
+        // 1. Create the Deep Link
+        // We use window.location.origin + pathname to get the base URL (e.g., cozygram.com/)
+        // Then we append ?p=POST_ID
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareUrl = `${baseUrl}?p=${pid}`;
+        
         const uname = p.profiles?.username || 'Someone';
-        const text = `Cozy post by ${uname}: ${p.caption}`;
-        const url = window.location.href; 
+        const text = `Check out this cozy post by ${uname} ✨`;
+        
+        // 2. Close Options
+        document.getElementById('postOptionsModal').classList.add('hidden');
         
         try {
+            // 3. Try Native Share (Mobile)
             if(navigator.share) {
-                await navigator.share({ title: 'CozyGram', text, url });
-                toast('Shared!');
+                await navigator.share({ 
+                    title: 'CozyGram', 
+                    text: text, 
+                    url: shareUrl 
+                });
+                toast('Opened share menu.');
             } else {
-                await safeCopy(text + ' ' + url);
-                toast('Link copied to clipboard.');
+                // 4. Fallback to Clipboard (Desktop)
+                await safeCopy(shareUrl);
+                toast('Link copied to clipboard!');
             }
-        } catch(e) { }
-        $('#postOptionsModal').classList.add('hidden');
+        } catch(e) { 
+            // Fallback if share is cancelled or fails
+            await safeCopy(shareUrl);
+            toast('Link copied to clipboard!');
+        }
+    }
+
+    // --- DEEP LINKING LOGIC ---
+
+    async function checkDeepLink() {
+        // 1. Parse URL for '?p=ID'
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('p');
+        
+        if (!postId) return;
+
+        // 2. Fetch the Post
+        toast("Loading shared post...");
+        const { data, error } = await sb.from('posts')
+            .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+            .eq('id', postId)
+            .single();
+
+        if (error || !data) {
+            toast("Post not found (maybe deleted?)");
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        // 3. Open Spotlight
+        const modal = document.getElementById('spotlightModal');
+        const body = document.getElementById('spotlightBody');
+        
+        if (modal && body) {
+            // Render the post using existing helper, but strip the wrapper margin if needed
+            body.innerHTML = getPostHTML(data);
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function closeSpotlight() {
+        document.getElementById('spotlightModal').classList.add('hidden');
+        // Clean URL so refreshing doesn't re-open it
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     function openOptions(pid, uid) { 
@@ -2397,8 +2579,8 @@
             });
         }
     }
-    function removeComposeMedia() {
-        // 1. Clear Memory (prevent leaks)
+    function removeComposeMedia(silent = false) {
+        // 1. Clear Memory
         if (state.compose.mediaPreviewUrl) {
             try { URL.revokeObjectURL(state.compose.mediaPreviewUrl); } catch(e) {}
         }
@@ -2408,14 +2590,15 @@
         state.compose.mediaPreviewUrl = null;
         state.compose.mediaKind = null;
         
-        // 3. Reset the physical Input element
-        // (This allows selecting the same file again if needed)
+        // 3. Reset Input
         const input = document.getElementById('mediaInput');
         if (input) input.value = '';
 
         // 4. Refresh UI
         updateComposeView();
-        toast("Media removed.");
+        
+        // 5. Toast only if NOT silent
+        if (!silent) toast("Media removed.");
     }
     
     function getPlantSVG(pct) {
@@ -2510,15 +2693,84 @@
 
     // UPDATED ROOM LOGIC (Shelf uses IDs now)
     async function openRoom(room) {
-        // Handle "closing" if clicking the same room or close button (optional logic, but good for safety)
-        const titleMap = { shelf: 'Your Shelf', plant: 'Your Plant', window: 'Your Window', drawer: 'Your Drawer' };
+        const titleMap = { 
+            shelf: 'Your Shelf', plant: 'Your Plant', window: 'Your Window', drawer: 'Your Drawer',
+            hidden: 'Hidden Posts', mutes: 'Muted Neighbors', reports: 'My Reports'
+        };
         $('#roomTitle').innerText = titleMap[room] || `Your ${room}`;
         
+        // Show Loading State
+        $('#roomBody').innerHTML = `<div class="p-8 text-center text-black/40 animate-pulse">Loading...</div>`;
+        $('#roomModal').classList.remove('hidden');
+
         let content = '';
         
-        if (room === 'shelf') {
-            if (state.savedPrompts.length === 0) {
-                // Polished Empty State with TWO starter options (from Design file)
+        // --- LOGIC FOR MANAGEMENT BOXES ---
+        
+        if (room === 'hidden') {
+            const { data } = await sb.from('hidden_posts').select('post_id, posts!post_id(caption, media, seed, palette)').eq('user_id', state.user.id);
+            if(!data || data.length === 0) {
+                content = `<div class="p-6 text-center text-black/50 italic text-sm">No hidden posts.</div>`;
+            } else {
+                content = `<div class="space-y-2">${data.map(h => `
+                <div class="flex items-center justify-between p-2 border-b border-black/5 last:border-0">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-[10px] overflow-hidden border border-black/10 bg-gray-100 shrink-0">${postMediaHTML({ media: h.posts.media, seed: h.posts.seed, palette: h.posts.palette })}</div>
+                        <div class="text-xs text-black/70 line-clamp-2">${html(h.posts.caption)}</div>
+                    </div>
+                    <button onclick="doUnhide('${h.post_id}')" class="text-[10px] font-bold px-3 py-1.5 rounded-[8px] bg-[#fffaf1] border border-[#f4a37a]/30 text-[#f4a37a] shrink-0 ml-2">Unhide</button>
+                </div>`).join('')}</div>`;
+            }
+        }
+        else if (room === 'mutes') {
+            const { data } = await sb.from('mutes').select('muted_user_id, profiles!muted_user_id(username, seed, avatar_url)').eq('user_id', state.user.id);
+            if(!data || data.length === 0) {
+                content = `<div class="p-6 text-center text-black/50 italic text-sm">No muted neighbors.</div>`;
+            } else {
+                content = `<div class="space-y-2">${data.map(m => `
+                <div class="flex items-center justify-between p-2 border-b border-black/5 last:border-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-[14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarHTML(m.profiles || { username: 'Unknown', seed: 1 })}</div>
+                        <div class="text-sm font-bold text-black/80">${html(m.profiles?.username)}</div>
+                    </div>
+                    <button onclick="doUnmute('${m.muted_user_id}')" class="text-[10px] font-bold px-3 py-1.5 rounded-[8px] bg-[#fffaf1] border border-[#f4a37a]/30 text-[#f4a37a] shrink-0">Unmute</button>
+                </div>`).join('')}</div>`;
+            }
+        }
+        else if (room === 'reports') {
+            // FIX: Now fetching 'media, seed, palette' to show the image
+            const { data } = await sb.from('reports')
+                .select('id, reason, post_id, posts!post_id(caption, media, seed, palette)')
+                .eq('user_id', state.user.id);
+
+            if(!data || data.length === 0) {
+                content = `<div class="p-6 text-center text-black/50 italic text-sm">No active reports.</div>`;
+            } else {
+                content = `<div class="space-y-2">${data.map(r => {
+                const p = r.posts || { caption: 'Deleted Post' };
+                return `
+                <div class="flex items-center justify-between p-2 border-b border-black/5 last:border-0">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <!-- Image -->
+                        <div class="w-10 h-10 rounded-[10px] overflow-hidden border border-black/10 bg-gray-100 shrink-0">
+                            ${postMediaHTML({ media: p.media, seed: p.seed, palette: p.palette })}
+                        </div>
+                        <!-- Text Details -->
+                        <div class="min-w-0">
+                            <div class="text-xs font-extrabold text-black/80 line-clamp-1">${html(p.caption)}</div>
+                            <div class="text-[10px] text-red-400 italic truncate">Reason: ${html(r.reason)}</div>
+                        </div>
+                    </div>
+                    <!-- Withdraw Button -->
+                    <button onclick="doWithdrawReport('${r.id}')" class="text-[10px] font-bold px-3 py-1.5 rounded-[8px] bg-[#fffaf1] border border-[#f4a37a]/30 text-[#f4a37a] shrink-0 ml-2">Withdraw</button>
+                </div>`;
+                }).join('')}</div>`;
+            }
+        }
+        
+        // --- EXISTING ROOMS (Shelf, Plant, Window, Drawer) ---
+        else if (room === 'shelf') {
+             if (state.savedPrompts.length === 0) {
                 content = `
                 <div class="hand-card bg-white/70 border border-black/10 p-4">
                     <div class="font-extrabold mb-1">Your shelf is empty.</div>
@@ -2541,31 +2793,18 @@
         } 
         else if (room === 'window') {
             const mood = state.profile.mood || 'sunset';
-            // Live Preview Art
             const preview = artSVG(44, mood); 
-            
             content = `
             <div class="hand-card bg-white/70 border border-black/10 p-4 mb-4">
                 <div class="text-sm font-extrabold">A little light</div>
                 <div class="text-sm text-black/70 mt-1">Choose a vibe. It recolors your corner (private).</div>
-                
-                <!-- The Preview Box -->
-                <div class="mt-3 rounded-[18px_16px_22px_14px] overflow-hidden border border-black/10 bg-white/50 transition-all duration-500" style="aspect-ratio: 4/2">
-                    ${preview}
-                </div>
-                
-                <!-- Mood Buttons -->
+                <div class="mt-3 rounded-[18px_16px_22px_14px] overflow-hidden border border-black/10 bg-white/50 transition-all duration-500" style="aspect-ratio: 4/2">${preview}</div>
                 <div class="mt-3 flex flex-wrap gap-2">
-                    ${['sunset','sage','berry','clay'].map(m => `
-                        <button onclick="setMood('${m}')" class="px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 text-xs font-extrabold wobbly capitalize ${mood===m ? 'bg-white/80 ring-2 ring-black/10' : 'bg-white/70'}">
-                            ${m}
-                        </button>
-                    `).join('')}
+                    ${['sunset','sage','berry','clay'].map(m => `<button onclick="setMood('${m}')" class="px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 text-xs font-extrabold wobbly capitalize ${mood===m ? 'bg-white/80 ring-2 ring-black/10' : 'bg-white/70'}">${m}</button>`).join('')}
                 </div>
             </div>`;
         } 
         else if (room === 'plant') {
-            // (Keep existing plant logic)
             const today = new Date().toDateString();
             const h = state.habits[today] || {};
             const habitsList = [{id: 'water', label: '💧 Drink Water'}, {id: 'stretch', label: '🧘 Stretch (20s)'}, {id: 'sun', label: '☀️ See Daylight'}, {id: 'kind', label: '💌 Send a Kind Text'}, {id: 'tidy', label: '🧹 Tidy 5 mins'}];
@@ -2599,7 +2838,6 @@
         if (room === 'shelf') {
             $$('.shelfUse').forEach(b => b.onclick = () => { $('#roomModal').classList.add('hidden'); $('#composeModal').classList.remove('hidden'); $('#composeCaption').value = b.dataset.text + '\n\n'; });
             $$('.shelfRemove').forEach(b => b.onclick = () => removeFromShelf(b.dataset.id));
-            // New: Handle multiple seed buttons
             $$('.seedPrompt').forEach(b => b.onclick = () => saveToShelf(b.dataset.text));
         }
         if (room === 'plant') {
@@ -2741,12 +2979,12 @@
                 container.insertAdjacentHTML('afterbegin', html);
             }
 
-            toast("Posted to Cloud!"); 
+            toast("Posted"); 
             
             // 6. Cleanup
             document.getElementById('composeModal').classList.add('hidden'); 
             document.getElementById('composeCaption').value = ''; 
-            removeComposeMedia(); // Resets the file input and view
+            removeComposeMedia(true); // Resets the file input and view
 
         } catch(e) {
             console.error("FULL ERROR:", e);
@@ -2780,6 +3018,29 @@
         } catch(e) {}
         
         if(state.kindness) toast("Sticker sent with love.");
+    }
+
+    // --- TEXT MODAL HELPERS ---
+
+    function openTextModal(title, subtitle, placeholder, callback) {
+        // 1. Setup UI
+        document.getElementById('textModalTitle').innerText = title;
+        document.getElementById('textModalSubtitle').innerText = subtitle;
+        const input = document.getElementById('textModalInput');
+        input.placeholder = placeholder;
+        input.value = ''; // Reset input
+        
+        // 2. Store the callback in state so we know what to do when "Save" is clicked
+        state.textModal.onSave = callback;
+        
+        // 3. Show Modal
+        document.getElementById('textModal').classList.remove('hidden');
+        input.focus();
+    }
+
+    function closeTextModal() {
+        document.getElementById('textModal').classList.add('hidden');
+        state.textModal.onSave = null; // Clean up
     }
 
     // RESTORED: Wire Events Function
@@ -2913,7 +3174,7 @@
 
         // --- POST ACTIONS ---
         safeWire('#hidePostBtn', hidePost);
-        safeWire('#deletePostBtn', async () => { if(confirm("Delete this?")) { await deletePost(); } });
+        safeWire('#deletePostBtn', deletePost);        
         safeWire('#copyCaptionBtn', () => { const p = state.posts.find(x => x.id === state.activePostOption); if(p) { safeCopy(p.caption); toast('Copied.'); } $('#postOptionsModal').classList.add('hidden'); });
         safeWire('#reportPostBtn', reportPost);
         safeWire('#sharePostBtn', sharePost);
@@ -3029,14 +3290,35 @@
         });
 
         // --- MODALS & UTILS ---
-        safeWire('#textModalSave', () => {
-            const val = $('#textModalInput').value;
-            if(state.textModal.onSave) {
-               const success = state.textModal.onSave(val);
-               if(success) closeTextModal();
+// --- TEXT MODAL SAVE BUTTON ---
+safeWire('#textModalSave', async () => {
+            const val = document.getElementById('textModalInput').value;
+            
+            if (state.textModal.onSave) {
+                const btn = document.getElementById('textModalSave');
+                const originalText = btn.innerText;
+                
+                // Show loading state
+                btn.innerText = "Sending...";
+                btn.disabled = true;
+
+                try {
+                    // Run the specific action (Report, Reply, etc.)
+                    // We await it in case it's an async database call
+                    const shouldClose = await state.textModal.onSave(val);
+                    
+                    if (shouldClose) {
+                        closeTextModal();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    toast("Something went wrong.");
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
             }
         });
-
         // --- ONBOARDING (This was likely crashing before) ---
         safeWire('#onboardBack', () => { if(state.onboardingStep > 0) { state.onboardingStep--; renderOnboarding(); } });
         safeWire('#onboardNext', () => { if(state.onboardingStep < 4) { state.onboardingStep++; renderOnboarding(); } });
