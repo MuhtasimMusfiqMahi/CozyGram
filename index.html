@@ -645,34 +645,14 @@
     ];
 
     // 2. Function to generate the abstract art SVGs
-    function artSVG(seed=1, palette='sunset'){
+// 2. Function to generate the abstract art SVGs
+function artSVG(seed=1, palette='sunset'){
       const palettes = { 
         sunset: ['#f4a37a','#f7c59f','#fbf5ea','#dba1a8'], 
         sage: ['#86a68b','#b7cbb7','#fbf5ea','#f7c59f'], 
         berry: ['#dba1a8','#c77d93','#fbf5ea','#6f6a86'], 
         clay: ['#b87d66','#f4a37a','#fbf5ea','#86a68b'] 
       };
-
-      function getSketchBackground(seed) {
-  // Use the seed to pick 3 random sketches from our list
-  const idx1 = seed % SKETCH_PATHS.length;
-  const idx2 = (seed * 3) % SKETCH_PATHS.length;
-  const idx3 = (seed * 7) % SKETCH_PATHS.length;
-
-  // We create a data-uri SVG that contains these shapes scattered
-  const svgString = `
-    <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <style>path, circle { stroke: rgba(43,43,53,0.15); fill: none; color: rgba(43,43,53,0.15); }</style>
-      <g transform="translate(${seed % 20}, ${seed % 10})">${SKETCH_PATHS[idx1]}</g>
-      <g transform="rotate(${seed % 90} 50 50)">${SKETCH_PATHS[idx2]}</g>
-      <g transform="translate(${(seed * 2) % 30}, ${(seed * 5) % 30}) scale(0.8)">${SKETCH_PATHS[idx3]}</g>
-    </svg>
-  `.replace(/\s+/g, ' ').trim(); // Minify slightly
-
-  // Encode it for CSS
-  const encoded = encodeURIComponent(svgString);
-  return `background-image: url('data:image/svg+xml;utf8,${encoded}'); background-size: 100px 100px;`;
-}
       
       const [a,b,c,d] = palettes[palette] || palettes.sunset;
       
@@ -785,6 +765,175 @@
       spark: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M24 10l3 8 8 3-8 3-3 8-3-8-8-3 8-3 3-8Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
       cocoa: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M16 18h16v14a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6V18Z" fill="rgba(247,197,159,.35)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M32 20h4a4 4 0 0 1 0 8h-4" fill="none" stroke="rgba(43,43,53,.35)" stroke-width="2" stroke-linecap="round"/></svg>`
     };
+
+    const SKETCH_PATHS = [
+  // ==========================================
+  // 1. CLASSIC FAVORITES (The Originals)
+  // ==========================================
+  `<circle cx="25" cy="25" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M25 10L25 5 M25 40L25 45 M10 25L5 25 M40 25L45 25" stroke="currentColor"/>`, // Sun
+  `<path d="M10 30 Q25 5 40 30 M13 30 Q25 12 37 30 M5 30 Q5 25 10 25 Q10 20 15 25 Q20 25 20 30 M30 30 Q30 25 35 25 Q35 20 40 25 Q45 25 45 30" stroke="currentColor" stroke-width="1.5"/>`, // Rainbow
+  `<path d="M20 35 L20 20 Q20 10 25 10 Q30 10 30 20 L30 35" stroke="currentColor" stroke-width="1.5"/><path d="M30 25 Q35 25 35 20 Q35 15 30 18" stroke="currentColor"/><path d="M20 28 Q15 28 15 22 Q15 18 20 20" stroke="currentColor"/><path d="M18 35 L32 35 L30 45 L20 45 Z" stroke="currentColor"/>`, // Cactus
+  `<rect x="10" y="15" width="30" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="6" stroke="currentColor"/><rect x="30" y="12" width="6" height="3" fill="currentColor"/>`, // Camera
+  `<path d="M10 15 L40 15 L40 35 L10 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 15 L25 28 L40 15" stroke="currentColor"/>`, // Envelope
+  `<path d="M18 10 Q18 5 25 5 Q32 5 32 10 L32 30 Q32 32 25 32 Q18 32 18 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M22 32 L22 40 Q22 43 25 43 Q28 43 28 40 L28 32" stroke="currentColor"/>`, // Ice Cream
+  `<ellipse cx="25" cy="30" rx="10" ry="14" stroke="currentColor" stroke-width="1.5"/><path d="M25 16 L20 10 M25 16 L25 8 M25 16 L30 10" stroke="currentColor"/><path d="M18 25 L32 35 M18 35 L32 25" stroke="currentColor" opacity="0.5"/>`, // Pineapple
+
+  // ==========================================
+  // 2. SEWING & CRAFTS (From the new image)
+  // ==========================================
+  `<circle cx="20" cy="20" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="30" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M23 23 L27 27 M17 17 L13 13 M33 33 L37 37" stroke="currentColor" stroke-width="1.5"/>`, // Scissors handles
+  `<path d="M35 15 L15 35 M15 15 L35 35" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="3" stroke="currentColor"/><circle cx="35" cy="35" r="3" stroke="currentColor"/>`, // Scissors X
+  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="22" r="1" fill="currentColor"/><circle cx="28" cy="22" r="1" fill="currentColor"/><circle cx="22" cy="28" r="1" fill="currentColor"/><circle cx="28" cy="28" r="1" fill="currentColor"/>`, // Button
+  `<path d="M20 10 L30 10 L35 40 L15 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L35 15 M16 20 L34 20 M17 25 L33 25 M18 30 L32 30 M19 35 L31 35" stroke="currentColor" stroke-width="1"/>`, // Spool of Thread
+  `<path d="M15 30 Q15 10 25 10 Q35 10 35 30" stroke="currentColor" stroke-width="1.5"/><path d="M10 40 L40 40 L40 30 L10 30 Z" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="5" width="6" height="5" stroke="currentColor"/>`, // Sewing Machine (Simple)
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 Q20 18 25 25 Q30 32 25 37" stroke="currentColor"/><path d="M15 20 Q25 20 35 30" stroke="currentColor"/>`, // Yarn Ball
+  `<path d="M10 20 L40 20" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 L10 25 M15 20 L15 25 M20 20 L20 25 M25 20 L25 25 M30 20 L30 25 M35 20 L35 25 M40 20 L40 25" stroke="currentColor"/>`, // Ruler/Tape
+  `<path d="M20 15 L30 15 L28 35 L22 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 15 Q25 5 30 15" stroke="currentColor"/>`, // Thimble
+  `<path d="M35 15 L15 35" stroke="currentColor" stroke-width="1.5"/><circle cx="37" cy="13" r="2" fill="currentColor"/>`, // Needle
+  `<path d="M10 25 L20 25 L25 35 L15 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 35 Q30 35 30 30 L30 20 Q30 15 25 15 L15 15" stroke="currentColor" stroke-width="1.5"/>`, // Safety Pin
+
+  // ==========================================
+  // 3. EARTH DAY & ECO (From new images)
+  // ==========================================
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 Q15 20 18 30 M30 15 Q25 25 35 28" stroke="currentColor"/>`, // Globe/Earth
+  `<path d="M25 5 L25 45 M10 25 L40 25" stroke="currentColor"/><circle cx="25" cy="25" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M25 5 L20 15 M25 5 L30 15" stroke="currentColor"/>`, // Wind Turbine
+  `<path d="M15 25 L25 10 L35 25" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 Q25 35 35 25" stroke="currentColor" stroke-width="1.5"/><path d="M35 25 L32 28 M15 25 L18 28" stroke="currentColor"/>`, // Recycle Arrows
+  `<path d="M25 40 Q40 40 40 25 Q40 10 25 5 Q10 10 10 25 Q10 40 25 40 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="18" cy="22" r="1.5" fill="currentColor"/><circle cx="32" cy="22" r="1.5" fill="currentColor"/><path d="M20 30 Q25 35 30 30" stroke="currentColor"/>`, // Happy Earth
+  `<path d="M25 10 Q35 25 25 40 Q15 25 25 10 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 10 L25 15" stroke="currentColor"/>`, // Water Drop
+  `<rect x="10" y="20" width="30" height="20" stroke="currentColor" stroke-width="1.5"/><path d="M15 20 L20 10 L30 10 L35 20" stroke="currentColor" stroke-width="1.5"/><path d="M20 30 L22 28 L24 30 L26 28 L28 30" stroke="currentColor"/>`, // Recycling Bin
+  `<rect x="10" y="15" width="30" height="20" transform="rotate(-10 25 25)" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L15 35 M20 15 L20 35 M25 15 L25 35 M30 15 L30 35" transform="rotate(-10 25 25)" stroke="currentColor"/>`, // Solar Panel
+  `<path d="M15 35 Q15 25 25 25 Q35 25 35 35" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L25 15" stroke="currentColor"/><path d="M25 15 L20 10 M25 15 L30 10" stroke="currentColor"/>`, // Sprout in soil
+  `<path d="M20 20 L15 15 Q20 5 30 15 L25 20" stroke="currentColor" stroke-width="1.5"/><path d="M30 30 L35 35 Q30 45 20 35 L25 30" stroke="currentColor" stroke-width="1.5"/><rect x="18" y="18" width="14" height="14" stroke="currentColor"/>`, // Plug / Energy
+  `<path d="M10 25 Q25 40 40 25 Q40 10 25 15 Q10 10 10 25" stroke="currentColor" stroke-width="1.5"/><path d="M25 15 L25 35 M10 25 L40 25" stroke="currentColor" opacity="0.5"/>`, // Leaf Veins
+
+  // ==========================================
+  // 4. LIFESTYLE & SELF-CARE (From Image 5)
+  // ==========================================
+  `<path d="M10 30 Q10 40 25 40 Q40 40 40 30 L40 25 L10 25 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 Q15 20 18 20 Q21 20 21 25 M25 25 Q25 15 30 15 Q35 15 35 25" stroke="currentColor"/>`, // Bathtub with bubbles
+  `<rect x="20" y="20" width="10" height="15" stroke="currentColor" stroke-width="1.5"/><path d="M25 20 L25 15" stroke="currentColor"/><path d="M25 15 Q28 10 25 5 Q22 10 25 15" stroke="currentColor" fill="currentColor" opacity="0.3"/>`, // Candle
+  `<rect x="10" y="30" width="30" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="12" y="25" width="26" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="20" width="20" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>`, // Stack of Books
+  `<path d="M15 15 L35 15 L30 30 L20 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M35 15 Q45 15 40 25 L32 22" stroke="currentColor" stroke-width="1.5"/>`, // Tea Cup
+  `<path d="M25 10 L25 20" stroke="currentColor"/><rect x="20" y="20" width="10" height="12" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L25 25 L30 20" stroke="currentColor"/>`, // Tea Bag
+  `<circle cx="25" cy="20" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 L25 40 M15 40 L35 40" stroke="currentColor" stroke-width="1.5"/>`, // Mirror
+  `<path d="M15 30 Q15 10 35 10 Q35 30 35 30" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="30" width="10" height="10" rx="2" stroke="currentColor"/><rect x="30" y="30" width="10" height="10" rx="2" stroke="currentColor"/>`, // Headphones
+  `<rect x="20" y="25" width="10" height="15" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 L20 20 Q25 15 30 20 L30 25" stroke="currentColor" stroke-width="1.5"/>`, // Lipstick
+  `<path d="M15 20 Q25 15 35 20 L35 30 Q25 25 15 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 25 L5 25 M45 25 L40 25" stroke="currentColor"/>`, // Sleep Mask
+  `<rect x="15" y="15" width="20" height="20" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L20 10 L30 10 L35 15" stroke="currentColor" stroke-width="1.5"/><path d="M23 20 L23 30 M27 20 L27 30" stroke="currentColor"/>`, // Shopping Bag
+
+  // ==========================================
+  // 5. MAGIC & SPOOKY (From Image 6)
+  // ==========================================
+  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M15 35 L35 35 L30 25 L20 25 Z" stroke="currentColor" stroke-width="1.5"/><path d="M22 22 Q25 18 28 22" stroke="currentColor" opacity="0.5"/>`, // Crystal Ball
+  `<path d="M15 25 Q15 10 25 10 Q35 10 35 25 L35 30 Q35 35 25 35 Q15 35 15 30 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="22" r="2" stroke="currentColor"/><circle cx="30" cy="22" r="2" stroke="currentColor"/><path d="M23 30 L27 30" stroke="currentColor"/>`, // Skull
+  `<path d="M15 40 L15 20 Q15 10 25 10 Q35 10 35 20 L35 40 L30 35 L25 40 L20 35 L15 40" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="1.5" fill="currentColor"/><circle cx="30" cy="20" r="1.5" fill="currentColor"/>`, // Ghost
+  `<path d="M20 25 Q25 10 30 25" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 Q10 25 10 30 Q10 35 25 35 Q40 35 40 30 Q40 25 30 25" stroke="currentColor" stroke-width="1.5"/>`, // UFO
+  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L30 20 M20 30 L25 25" stroke="currentColor"/><circle cx="22" cy="22" r="1" fill="currentColor"/><circle cx="28" cy="28" r="1" fill="currentColor"/>`, // 8-Ball
+  `<path d="M20 10 L30 10 L35 40 L15 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M18 25 L32 25" stroke="currentColor"/><path d="M20 10 Q25 5 30 10" stroke="currentColor"/>`, // Potion Bottle
+  `<path d="M25 10 Q35 10 35 25 Q35 40 20 40 Q25 35 25 25 Q25 15 30 10" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L22 22 L24 20" stroke="currentColor"/>`, // Moon Face
+  `<path d="M25 5 L27 15 L35 15 L28 20 L30 30 L25 24 L20 30 L22 20 L15 15 L23 15 Z" stroke="currentColor" stroke-width="1.5"/>`, // Magic Star
+  `<path d="M20 20 L30 20 L25 10 Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L15 30 L35 30 L30 20" stroke="currentColor" stroke-width="1.5"/>`, // Pyramid/Crystal
+  `<path d="M25 10 L25 40 M15 20 Q25 15 35 20 M15 30 Q25 25 35 30" stroke="currentColor" stroke-width="1.5"/>`, // Snake line
+
+  // ==========================================
+  // 6. ABSTRACT & DOODLES (From Images 2 & 3)
+  // ==========================================
+  `<path d="M10 25 L15 20 L20 30 L25 20 L30 30 L35 20 L40 25" stroke="currentColor" stroke-width="1.5" fill="none"/>`, // ZigZag
+  `<path d="M25 25 M15 25 Q15 15 25 15 Q35 15 35 25 Q35 35 25 35 Q20 35 20 28" stroke="currentColor" stroke-width="1.5" fill="none"/>`, // Swirl
+  `<circle cx="15" cy="15" r="1.5" fill="currentColor"/><circle cx="35" cy="15" r="1.5" fill="currentColor"/><circle cx="25" cy="25" r="1.5" fill="currentColor"/><circle cx="15" cy="35" r="1.5" fill="currentColor"/><circle cx="35" cy="35" r="1.5" fill="currentColor"/>`, // Dots
+  `<path d="M10 10 L15 15 M15 10 L10 15 M35 35 L40 40 M40 35 L35 40" stroke="currentColor" stroke-width="1.5"/>`, // Crosses
+  `<path d="M10 25 L35 25 M30 20 L35 25 L30 30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`, // Arrow
+  `<path d="M10 15 L35 15 Q40 15 40 20 L40 30 Q40 35 35 35 L20 35 L15 40 L15 35 L10 35 Q5 35 5 30 L5 20 Q5 15 10 15" stroke="currentColor" stroke-width="1.5"/>`, // Speech Bubble
+  `<path d="M10 30 L10 20 L18 25 L25 15 L32 25 L40 20 L40 30 Z" stroke="currentColor" stroke-width="1.5"/>`, // Crown
+  `<path d="M25 5 L15 25 L25 25 L20 45 L35 20 L25 20 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`, // Lightning
+  `<path d="M10 25 Q25 10 40 25 Q25 40 10 25" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/>`, // Eye
+  `<path d="M25 10 L15 30 L35 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 15 L20 25 L30 25 Z" stroke="currentColor" stroke-width="1"/>`, // Triangle
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 L25 37 M25 25 L16 34 M25 25 L34 34" stroke="currentColor" stroke-width="1.5"/>`, // Peace
+  `<path d="M25 25 M22 25 Q22 20 25 20 Q28 20 28 25 Q28 30 25 30" stroke="currentColor" stroke-width="1.5"/><path d="M25 10 L25 5 M25 40 L25 45 M10 25 L5 25 M40 25 L45 25" stroke="currentColor"/>`, // Spiral Sun
+  `<path d="M15 15 L35 15 L35 35 L15 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L20 10 L40 10 L40 30 L35 35 M40 10 L35 15" stroke="currentColor" stroke-width="1.5"/>`, // Cube
+  `<path d="M20 20 L30 30 M30 20 L20 30" stroke="currentColor" stroke-width="1.5"/>`, // X Mark
+  `<circle cx="25" cy="25" r="8" stroke="currentColor" stroke-width="1.5"/>`, // O Mark
+
+  // ==========================================
+  // 7. FOOD & PARTY (From Image 9)
+  // ==========================================
+  `<path d="M25 40 L10 10 Q25 5 40 10 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="20" r="2" stroke="currentColor"/><circle cx="20" cy="15" r="2" stroke="currentColor"/><circle cx="30" cy="15" r="2" stroke="currentColor"/>`, // Pizza
+  `<path d="M10 20 L15 35 L35 35 L40 20 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 Q15 10 25 10 Q35 10 40 20" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="8" r="2" fill="currentColor"/>`, // Cupcake
+  `<circle cx="25" cy="20" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 L25 45" stroke="currentColor" stroke-width="1.5"/><path d="M18 20 Q22 25 25 20" stroke="currentColor"/>`, // Lollipop
+  `<rect x="15" y="15" width="20" height="25" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="10" width="6" height="5" stroke="currentColor"/><circle cx="25" cy="28" r="5" stroke="currentColor"/>`, // Soda Can
+  `<path d="M15 40 L10 20 L40 20 L35 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 Q15 10 20 20 Q25 10 30 20 Q35 10 40 20" stroke="currentColor"/>`, // Popcorn
+  `<path d="M25 10 L15 35 Q25 40 35 35 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="10" r="2" stroke="currentColor"/>`, // Party Hat
+  `<path d="M10 20 Q10 15 15 15 L35 15 Q40 15 40 20 L40 30 Q40 35 35 35 L15 35 Q10 35 10 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 L5 25 L10 30 M40 20 L45 25 L40 30" stroke="currentColor"/>`, // Candy Wrapper
+  `<path d="M10 20 Q25 10 40 20" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="22" width="30" height="4" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M10 28 Q25 32 40 28" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="32" width="30" height="5" rx="2" stroke="currentColor" stroke-width="1.5"/>`, // Burger
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M18 18 L16 16 M32 18 L34 16 M25 32 L25 34" stroke="currentColor"/>`, // Donut
+  `<path d="M15 15 Q10 20 25 40 Q40 20 35 15 Q25 15 15 15" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L18 10 M35 15 L32 10 M25 15 L25 10" stroke="currentColor"/>`, // Strawberry
+
+  // ==========================================
+  // 8. ANIMALS & NATURE (Misc)
+  // ==========================================
+  `<path d="M15 20 L15 10 L20 15 L30 15 L35 10 L35 20 Q35 30 25 30 Q15 30 15 20" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="1" fill="currentColor"/><circle cx="30" cy="20" r="1" fill="currentColor"/>`, // Cat
+  `<path d="M15 15 Q10 25 15 35 Q25 40 35 35 Q40 25 35 15 Q25 10 15 15" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L10 20 M35 15 L40 20" stroke="currentColor"/><circle cx="20" cy="25" r="1" fill="currentColor"/><circle cx="30" cy="25" r="1" fill="currentColor"/>`, // Dog
+  `<path d="M10 25 Q15 15 25 25 Q35 15 40 25" stroke="currentColor" stroke-width="1.5"/><path d="M10 25 Q15 35 25 25 Q35 35 40 25" stroke="currentColor" stroke-width="1.5"/>`, // Bird Wings
+  `<path d="M10 25 Q15 10 25 10 Q35 10 35 25 Q35 40 25 40 Q15 40 15 25" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 L10 25 Q5 30 10 35 L15 30" stroke="currentColor"/>`, // Snail
+  `<path d="M10 25 L35 25 M35 25 L40 20 M35 25 L40 30 M10 25 L5 20 L5 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 L15 20 M20 25 L20 18 M25 25 L25 20" stroke="currentColor"/>`, // Fish
+  `<path d="M20 30 Q25 25 30 30 Q35 35 25 40 Q15 35 20 30" fill="currentColor" opacity="0.5"/><circle cx="15" cy="20" r="3" fill="currentColor" opacity="0.5"/><circle cx="25" cy="15" r="3" fill="currentColor" opacity="0.5"/><circle cx="35" cy="20" r="3" fill="currentColor" opacity="0.5"/>`, // Paw Print
+  `<path d="M25 40 Q25 20 40 5" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 Q15 25 15 20 Q15 25 25 30 M28 20 Q38 15 38 10 Q38 15 28 20" stroke="currentColor" stroke-width="1.5"/>`, // Leaf Branch
+  `<circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M25 21 L25 10 M29 25 L40 25 M25 29 L25 40 M21 25 L10 25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`, // Simple Flower
+  `<path d="M25 25 L25 35 M25 25 Q15 15 15 25 Q15 35 25 30 M25 25 Q35 15 35 25 Q35 35 25 30" stroke="currentColor" stroke-width="1.5"/>`, // Butterfly
+  `<path d="M10 30 Q10 20 20 20 Q25 10 35 15 Q40 15 40 25 Q45 30 40 35 L15 35 Q10 35 10 30" stroke="currentColor" stroke-width="1.5"/>`, // Cloud
+
+  // ==========================================
+  // 9. TEXT & SYMBOLS
+  // ==========================================
+  `<path d="M10 15 L10 35 M30 15 L30 35 M10 25 L30 25" stroke="currentColor" stroke-width="1.5"/><path d="M40 15 L40 35" stroke="currentColor" stroke-width="1.5"/><circle cx="40" cy="12" r="2" fill="currentColor"/>`, // "Hi"
+  `<path d="M10 25 L15 35 L20 15" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L30 20 L35 25 L30 30 L25 25" stroke="currentColor" stroke-width="1.5"/><path d="M40 15 L40 35 L45 35 L45 25" stroke="currentColor" stroke-width="1.5"/>`, // "Wow"
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 18 L25 28 M25 32 L25 34" stroke="currentColor" stroke-width="1.5"/>`, // Exclamation
+  `<path d="M20 15 Q25 10 30 15 Q30 20 25 25 L25 30" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="35" r="1.5" fill="currentColor"/>`, // Question
+  `<path d="M15 15 L25 25 L35 15 M15 35 L25 25 L35 35" stroke="currentColor" stroke-width="1.5"/>` // X Shape
+];
+
+function getSketchBackground(seed) {
+  let str = '';
+  
+  // Grid settings
+  const cols = 4;
+  const rows = 4;
+  const cellW = 100 / cols; 
+  const cellH = 100 / rows; 
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      
+      const rnd = (seed * 13 + r * 7 + c * 43); 
+      const jitterX = (rnd % 7) - 3; 
+      const jitterY = ((rnd * 3) % 7) - 3;
+      
+      const x = (c * cellW) + jitterX;
+      const y = (r * cellH) + jitterY;
+
+      const idx = rnd % SKETCH_PATHS.length;
+      const rot = (rnd * 23) % 360;
+      const scale = 0.35 + ((rnd % 3) / 20); 
+
+      // UPDATED OPACITY: Ranges from 0.8 to 1.0 (Almost fully opaque)
+      const op = 0.8 + ((rnd % 3) / 10);
+
+      str += `<g transform="translate(${x}, ${y}) rotate(${rot} 25 25) scale(${scale})" opacity="${op}">${SKETCH_PATHS[idx]}</g>`;
+    }
+  }
+
+  // UPDATED CSS: 
+  // 1. Changed stroke color to rgba(43,43,53, 0.65) -> Much darker ink
+  // 2. Added stroke-linecap="round" for smoother pen-like ends
+  const svgString = `
+    <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <style>path, circle, rect, ellipse { stroke: rgba(43,43,53,0.65); fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }</style>
+      ${str}
+    </svg>
+  `.replace(/\s+/g, ' ').trim();
+
+  const encoded = encodeURIComponent(svgString);
+  return `background-image: url('data:image/svg+xml;utf8,${encoded}'); background-size: 100px 100px;`;
+}
 
     // --- NEW ART ASSETS: SKETCHY PATTERNS ---
 
@@ -927,7 +1076,31 @@
     }
     async function loadNotifications() {
         if (!state.user) return;
-        try { const { data } = await sb.from('notifications').select('*').eq('user_id', state.user.id).order('created_at', { ascending: false }); if (data) state.notifications = data; } catch (e) { }
+        
+        try {
+            const { data, error } = await sb
+                .from('notifications')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .order('created_at', { ascending: false }) // Newest first
+                .limit(50);
+
+            if (error) throw error;
+
+            if (data) {
+                state.notifications = data;
+                
+                // Update Badge
+                const hasNotifs = state.notifications.length > 0;
+                const nav = document.getElementById('nav-notifs');
+                if(nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', hasNotifs);
+                
+                // If we are currently on the Lantern page, refresh the UI
+                if(state.tab === 'notifs') renderNotifs();
+            }
+        } catch (e) {
+            console.error("Lantern Error:", e);
+        }
     }
     async function loadThreads() {
         if (!state.user) return;
@@ -1298,8 +1471,11 @@
                 }
             })
 
-            // --- 2. NEW STICKERS ---
+ // --- 2. NEW STICKERS ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, (payload) => {
+                // FIX: Ignore stickers I just sent (because sendSticker already updated the UI)
+                if (payload.new.user_id === state.user.id) return;
+
                 const pid = payload.new.post_id;
                 const type = payload.new.sticker_type;
                 
@@ -1371,8 +1547,21 @@
                     if(list) list.insertAdjacentHTML('afterbegin', getStoryHTML(s, 0));
                  }
             })
-
             // --- 5. NOTIFICATIONS ---
+            // This listens for any notification where 'user_id' equals MY ID.
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${state.user.id}` }, (payload) => {
+                console.log("Lantern: New Notification!", payload.new); // Debug log
+                state.notifications.unshift(payload.new);
+                
+                // 1. Update the Tab Icon (Red Dot)
+                document.getElementById('nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', true);
+                
+                // 2. Show a Toast
+                toast("Lantern: " + (payload.new.content || "New glow"));
+                
+                // 3. If we are LOOKING at the list, refresh it immediately
+                if(state.tab === 'notifs') renderNotifs();
+            })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${state.user.id}` }, (payload) => {
                 state.notifications.unshift(payload.new);
                 document.getElementById('nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', true);
@@ -1430,174 +1619,7 @@
  // --- RICH DOODLE ASSETS (Updated with Whales, Houses, Gameboys, etc.) ---
 // --- ULTIMATE DOODLE ASSETS (60+ Items: School, Space, Nature, Food, Abstract) ---
 // --- THE ULTIMATE DOODLE LIBRARY (200+ Items) ---
-const SKETCH_PATHS = [
-  // ==========================================
-  // 1. CLASSIC FAVORITES (The Originals)
-  // ==========================================
-  `<circle cx="25" cy="25" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M25 10L25 5 M25 40L25 45 M10 25L5 25 M40 25L45 25" stroke="currentColor"/>`, // Sun
-  `<path d="M10 30 Q25 5 40 30 M13 30 Q25 12 37 30 M5 30 Q5 25 10 25 Q10 20 15 25 Q20 25 20 30 M30 30 Q30 25 35 25 Q35 20 40 25 Q45 25 45 30" stroke="currentColor" stroke-width="1.5"/>`, // Rainbow
-  `<path d="M20 35 L20 20 Q20 10 25 10 Q30 10 30 20 L30 35" stroke="currentColor" stroke-width="1.5"/><path d="M30 25 Q35 25 35 20 Q35 15 30 18" stroke="currentColor"/><path d="M20 28 Q15 28 15 22 Q15 18 20 20" stroke="currentColor"/><path d="M18 35 L32 35 L30 45 L20 45 Z" stroke="currentColor"/>`, // Cactus
-  `<rect x="10" y="15" width="30" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="6" stroke="currentColor"/><rect x="30" y="12" width="6" height="3" fill="currentColor"/>`, // Camera
-  `<path d="M10 15 L40 15 L40 35 L10 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 15 L25 28 L40 15" stroke="currentColor"/>`, // Envelope
-  `<path d="M18 10 Q18 5 25 5 Q32 5 32 10 L32 30 Q32 32 25 32 Q18 32 18 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M22 32 L22 40 Q22 43 25 43 Q28 43 28 40 L28 32" stroke="currentColor"/>`, // Ice Cream
-  `<ellipse cx="25" cy="30" rx="10" ry="14" stroke="currentColor" stroke-width="1.5"/><path d="M25 16 L20 10 M25 16 L25 8 M25 16 L30 10" stroke="currentColor"/><path d="M18 25 L32 35 M18 35 L32 25" stroke="currentColor" opacity="0.5"/>`, // Pineapple
 
-  // ==========================================
-  // 2. SEWING & CRAFTS (From the new image)
-  // ==========================================
-  `<circle cx="20" cy="20" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="30" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M23 23 L27 27 M17 17 L13 13 M33 33 L37 37" stroke="currentColor" stroke-width="1.5"/>`, // Scissors handles
-  `<path d="M35 15 L15 35 M15 15 L35 35" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="3" stroke="currentColor"/><circle cx="35" cy="35" r="3" stroke="currentColor"/>`, // Scissors X
-  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="22" r="1" fill="currentColor"/><circle cx="28" cy="22" r="1" fill="currentColor"/><circle cx="22" cy="28" r="1" fill="currentColor"/><circle cx="28" cy="28" r="1" fill="currentColor"/>`, // Button
-  `<path d="M20 10 L30 10 L35 40 L15 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L35 15 M16 20 L34 20 M17 25 L33 25 M18 30 L32 30 M19 35 L31 35" stroke="currentColor" stroke-width="1"/>`, // Spool of Thread
-  `<path d="M15 30 Q15 10 25 10 Q35 10 35 30" stroke="currentColor" stroke-width="1.5"/><path d="M10 40 L40 40 L40 30 L10 30 Z" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="5" width="6" height="5" stroke="currentColor"/>`, // Sewing Machine (Simple)
-  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 Q20 18 25 25 Q30 32 25 37" stroke="currentColor"/><path d="M15 20 Q25 20 35 30" stroke="currentColor"/>`, // Yarn Ball
-  `<path d="M10 20 L40 20" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 L10 25 M15 20 L15 25 M20 20 L20 25 M25 20 L25 25 M30 20 L30 25 M35 20 L35 25 M40 20 L40 25" stroke="currentColor"/>`, // Ruler/Tape
-  `<path d="M20 15 L30 15 L28 35 L22 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 15 Q25 5 30 15" stroke="currentColor"/>`, // Thimble
-  `<path d="M35 15 L15 35" stroke="currentColor" stroke-width="1.5"/><circle cx="37" cy="13" r="2" fill="currentColor"/>`, // Needle
-  `<path d="M10 25 L20 25 L25 35 L15 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 35 Q30 35 30 30 L30 20 Q30 15 25 15 L15 15" stroke="currentColor" stroke-width="1.5"/>`, // Safety Pin
-
-  // ==========================================
-  // 3. EARTH DAY & ECO (From new images)
-  // ==========================================
-  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 Q15 20 18 30 M30 15 Q25 25 35 28" stroke="currentColor"/>`, // Globe/Earth
-  `<path d="M25 5 L25 45 M10 25 L40 25" stroke="currentColor"/><circle cx="25" cy="25" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M25 5 L20 15 M25 5 L30 15" stroke="currentColor"/>`, // Wind Turbine
-  `<path d="M15 25 L25 10 L35 25" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 Q25 35 35 25" stroke="currentColor" stroke-width="1.5"/><path d="M35 25 L32 28 M15 25 L18 28" stroke="currentColor"/>`, // Recycle Arrows
-  `<path d="M25 40 Q40 40 40 25 Q40 10 25 5 Q10 10 10 25 Q10 40 25 40 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="18" cy="22" r="1.5" fill="currentColor"/><circle cx="32" cy="22" r="1.5" fill="currentColor"/><path d="M20 30 Q25 35 30 30" stroke="currentColor"/>`, // Happy Earth
-  `<path d="M25 10 Q35 25 25 40 Q15 25 25 10 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 10 L25 15" stroke="currentColor"/>`, // Water Drop
-  `<rect x="10" y="20" width="30" height="20" stroke="currentColor" stroke-width="1.5"/><path d="M15 20 L20 10 L30 10 L35 20" stroke="currentColor" stroke-width="1.5"/><path d="M20 30 L22 28 L24 30 L26 28 L28 30" stroke="currentColor"/>`, // Recycling Bin
-  `<rect x="10" y="15" width="30" height="20" transform="rotate(-10 25 25)" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L15 35 M20 15 L20 35 M25 15 L25 35 M30 15 L30 35" transform="rotate(-10 25 25)" stroke="currentColor"/>`, // Solar Panel
-  `<path d="M15 35 Q15 25 25 25 Q35 25 35 35" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L25 15" stroke="currentColor"/><path d="M25 15 L20 10 M25 15 L30 10" stroke="currentColor"/>`, // Sprout in soil
-  `<path d="M20 20 L15 15 Q20 5 30 15 L25 20" stroke="currentColor" stroke-width="1.5"/><path d="M30 30 L35 35 Q30 45 20 35 L25 30" stroke="currentColor" stroke-width="1.5"/><rect x="18" y="18" width="14" height="14" stroke="currentColor"/>`, // Plug / Energy
-  `<path d="M10 25 Q25 40 40 25 Q40 10 25 15 Q10 10 10 25" stroke="currentColor" stroke-width="1.5"/><path d="M25 15 L25 35 M10 25 L40 25" stroke="currentColor" opacity="0.5"/>`, // Leaf Veins
-
-  // ==========================================
-  // 4. LIFESTYLE & SELF-CARE (From Image 5)
-  // ==========================================
-  `<path d="M10 30 Q10 40 25 40 Q40 40 40 30 L40 25 L10 25 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 Q15 20 18 20 Q21 20 21 25 M25 25 Q25 15 30 15 Q35 15 35 25" stroke="currentColor"/>`, // Bathtub with bubbles
-  `<rect x="20" y="20" width="10" height="15" stroke="currentColor" stroke-width="1.5"/><path d="M25 20 L25 15" stroke="currentColor"/><path d="M25 15 Q28 10 25 5 Q22 10 25 15" stroke="currentColor" fill="currentColor" opacity="0.3"/>`, // Candle
-  `<rect x="10" y="30" width="30" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="12" y="25" width="26" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="20" width="20" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>`, // Stack of Books
-  `<path d="M15 15 L35 15 L30 30 L20 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M35 15 Q45 15 40 25 L32 22" stroke="currentColor" stroke-width="1.5"/>`, // Tea Cup
-  `<path d="M25 10 L25 20" stroke="currentColor"/><rect x="20" y="20" width="10" height="12" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L25 25 L30 20" stroke="currentColor"/>`, // Tea Bag
-  `<circle cx="25" cy="20" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 L25 40 M15 40 L35 40" stroke="currentColor" stroke-width="1.5"/>`, // Mirror
-  `<path d="M15 30 Q15 10 35 10 Q35 30 35 30" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="30" width="10" height="10" rx="2" stroke="currentColor"/><rect x="30" y="30" width="10" height="10" rx="2" stroke="currentColor"/>`, // Headphones
-  `<rect x="20" y="25" width="10" height="15" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 L20 20 Q25 15 30 20 L30 25" stroke="currentColor" stroke-width="1.5"/>`, // Lipstick
-  `<path d="M15 20 Q25 15 35 20 L35 30 Q25 25 15 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 25 L5 25 M45 25 L40 25" stroke="currentColor"/>`, // Sleep Mask
-  `<rect x="15" y="15" width="20" height="20" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L20 10 L30 10 L35 15" stroke="currentColor" stroke-width="1.5"/><path d="M23 20 L23 30 M27 20 L27 30" stroke="currentColor"/>`, // Shopping Bag
-
-  // ==========================================
-  // 5. MAGIC & SPOOKY (From Image 6)
-  // ==========================================
-  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M15 35 L35 35 L30 25 L20 25 Z" stroke="currentColor" stroke-width="1.5"/><path d="M22 22 Q25 18 28 22" stroke="currentColor" opacity="0.5"/>`, // Crystal Ball
-  `<path d="M15 25 Q15 10 25 10 Q35 10 35 25 L35 30 Q35 35 25 35 Q15 35 15 30 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="22" r="2" stroke="currentColor"/><circle cx="30" cy="22" r="2" stroke="currentColor"/><path d="M23 30 L27 30" stroke="currentColor"/>`, // Skull
-  `<path d="M15 40 L15 20 Q15 10 25 10 Q35 10 35 20 L35 40 L30 35 L25 40 L20 35 L15 40" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="1.5" fill="currentColor"/><circle cx="30" cy="20" r="1.5" fill="currentColor"/>`, // Ghost
-  `<path d="M20 25 Q25 10 30 25" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 Q10 25 10 30 Q10 35 25 35 Q40 35 40 30 Q40 25 30 25" stroke="currentColor" stroke-width="1.5"/>`, // UFO
-  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L30 20 M20 30 L25 25" stroke="currentColor"/><circle cx="22" cy="22" r="1" fill="currentColor"/><circle cx="28" cy="28" r="1" fill="currentColor"/>`, // 8-Ball
-  `<path d="M20 10 L30 10 L35 40 L15 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M18 25 L32 25" stroke="currentColor"/><path d="M20 10 Q25 5 30 10" stroke="currentColor"/>`, // Potion Bottle
-  `<path d="M25 10 Q35 10 35 25 Q35 40 20 40 Q25 35 25 25 Q25 15 30 10" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L22 22 L24 20" stroke="currentColor"/>`, // Moon Face
-  `<path d="M25 5 L27 15 L35 15 L28 20 L30 30 L25 24 L20 30 L22 20 L15 15 L23 15 Z" stroke="currentColor" stroke-width="1.5"/>`, // Magic Star
-  `<path d="M20 20 L30 20 L25 10 Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L15 30 L35 30 L30 20" stroke="currentColor" stroke-width="1.5"/>`, // Pyramid/Crystal
-  `<path d="M25 10 L25 40 M15 20 Q25 15 35 20 M15 30 Q25 25 35 30" stroke="currentColor" stroke-width="1.5"/>`, // Snake line
-
-  // ==========================================
-  // 6. ABSTRACT & DOODLES (From Images 2 & 3)
-  // ==========================================
-  `<path d="M10 25 L15 20 L20 30 L25 20 L30 30 L35 20 L40 25" stroke="currentColor" stroke-width="1.5" fill="none"/>`, // ZigZag
-  `<path d="M25 25 M15 25 Q15 15 25 15 Q35 15 35 25 Q35 35 25 35 Q20 35 20 28" stroke="currentColor" stroke-width="1.5" fill="none"/>`, // Swirl
-  `<circle cx="15" cy="15" r="1.5" fill="currentColor"/><circle cx="35" cy="15" r="1.5" fill="currentColor"/><circle cx="25" cy="25" r="1.5" fill="currentColor"/><circle cx="15" cy="35" r="1.5" fill="currentColor"/><circle cx="35" cy="35" r="1.5" fill="currentColor"/>`, // Dots
-  `<path d="M10 10 L15 15 M15 10 L10 15 M35 35 L40 40 M40 35 L35 40" stroke="currentColor" stroke-width="1.5"/>`, // Crosses
-  `<path d="M10 25 L35 25 M30 20 L35 25 L30 30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`, // Arrow
-  `<path d="M10 15 L35 15 Q40 15 40 20 L40 30 Q40 35 35 35 L20 35 L15 40 L15 35 L10 35 Q5 35 5 30 L5 20 Q5 15 10 15" stroke="currentColor" stroke-width="1.5"/>`, // Speech Bubble
-  `<path d="M10 30 L10 20 L18 25 L25 15 L32 25 L40 20 L40 30 Z" stroke="currentColor" stroke-width="1.5"/>`, // Crown
-  `<path d="M25 5 L15 25 L25 25 L20 45 L35 20 L25 20 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`, // Lightning
-  `<path d="M10 25 Q25 10 40 25 Q25 40 10 25" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/>`, // Eye
-  `<path d="M25 10 L15 30 L35 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 15 L20 25 L30 25 Z" stroke="currentColor" stroke-width="1"/>`, // Triangle
-  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 L25 37 M25 25 L16 34 M25 25 L34 34" stroke="currentColor" stroke-width="1.5"/>`, // Peace
-  `<path d="M25 25 M22 25 Q22 20 25 20 Q28 20 28 25 Q28 30 25 30" stroke="currentColor" stroke-width="1.5"/><path d="M25 10 L25 5 M25 40 L25 45 M10 25 L5 25 M40 25 L45 25" stroke="currentColor"/>`, // Spiral Sun
-  `<path d="M15 15 L35 15 L35 35 L15 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L20 10 L40 10 L40 30 L35 35 M40 10 L35 15" stroke="currentColor" stroke-width="1.5"/>`, // Cube
-  `<path d="M20 20 L30 30 M30 20 L20 30" stroke="currentColor" stroke-width="1.5"/>`, // X Mark
-  `<circle cx="25" cy="25" r="8" stroke="currentColor" stroke-width="1.5"/>`, // O Mark
-
-  // ==========================================
-  // 7. FOOD & PARTY (From Image 9)
-  // ==========================================
-  `<path d="M25 40 L10 10 Q25 5 40 10 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="20" r="2" stroke="currentColor"/><circle cx="20" cy="15" r="2" stroke="currentColor"/><circle cx="30" cy="15" r="2" stroke="currentColor"/>`, // Pizza
-  `<path d="M10 20 L15 35 L35 35 L40 20 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 Q15 10 25 10 Q35 10 40 20" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="8" r="2" fill="currentColor"/>`, // Cupcake
-  `<circle cx="25" cy="20" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 L25 45" stroke="currentColor" stroke-width="1.5"/><path d="M18 20 Q22 25 25 20" stroke="currentColor"/>`, // Lollipop
-  `<rect x="15" y="15" width="20" height="25" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="10" width="6" height="5" stroke="currentColor"/><circle cx="25" cy="28" r="5" stroke="currentColor"/>`, // Soda Can
-  `<path d="M15 40 L10 20 L40 20 L35 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 Q15 10 20 20 Q25 10 30 20 Q35 10 40 20" stroke="currentColor"/>`, // Popcorn
-  `<path d="M25 10 L15 35 Q25 40 35 35 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="10" r="2" stroke="currentColor"/>`, // Party Hat
-  `<path d="M10 20 Q10 15 15 15 L35 15 Q40 15 40 20 L40 30 Q40 35 35 35 L15 35 Q10 35 10 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 L5 25 L10 30 M40 20 L45 25 L40 30" stroke="currentColor"/>`, // Candy Wrapper
-  `<path d="M10 20 Q25 10 40 20" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="22" width="30" height="4" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M10 28 Q25 32 40 28" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="32" width="30" height="5" rx="2" stroke="currentColor" stroke-width="1.5"/>`, // Burger
-  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M18 18 L16 16 M32 18 L34 16 M25 32 L25 34" stroke="currentColor"/>`, // Donut
-  `<path d="M15 15 Q10 20 25 40 Q40 20 35 15 Q25 15 15 15" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L18 10 M35 15 L32 10 M25 15 L25 10" stroke="currentColor"/>`, // Strawberry
-
-  // ==========================================
-  // 8. ANIMALS & NATURE (Misc)
-  // ==========================================
-  `<path d="M15 20 L15 10 L20 15 L30 15 L35 10 L35 20 Q35 30 25 30 Q15 30 15 20" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="1" fill="currentColor"/><circle cx="30" cy="20" r="1" fill="currentColor"/>`, // Cat
-  `<path d="M15 15 Q10 25 15 35 Q25 40 35 35 Q40 25 35 15 Q25 10 15 15" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L10 20 M35 15 L40 20" stroke="currentColor"/><circle cx="20" cy="25" r="1" fill="currentColor"/><circle cx="30" cy="25" r="1" fill="currentColor"/>`, // Dog
-  `<path d="M10 25 Q15 15 25 25 Q35 15 40 25" stroke="currentColor" stroke-width="1.5"/><path d="M10 25 Q15 35 25 25 Q35 35 40 25" stroke="currentColor" stroke-width="1.5"/>`, // Bird Wings
-  `<path d="M10 25 Q15 10 25 10 Q35 10 35 25 Q35 40 25 40 Q15 40 15 25" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 L10 25 Q5 30 10 35 L15 30" stroke="currentColor"/>`, // Snail
-  `<path d="M10 25 L35 25 M35 25 L40 20 M35 25 L40 30 M10 25 L5 20 L5 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 L15 20 M20 25 L20 18 M25 25 L25 20" stroke="currentColor"/>`, // Fish
-  `<path d="M20 30 Q25 25 30 30 Q35 35 25 40 Q15 35 20 30" fill="currentColor" opacity="0.5"/><circle cx="15" cy="20" r="3" fill="currentColor" opacity="0.5"/><circle cx="25" cy="15" r="3" fill="currentColor" opacity="0.5"/><circle cx="35" cy="20" r="3" fill="currentColor" opacity="0.5"/>`, // Paw Print
-  `<path d="M25 40 Q25 20 40 5" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 Q15 25 15 20 Q15 25 25 30 M28 20 Q38 15 38 10 Q38 15 28 20" stroke="currentColor" stroke-width="1.5"/>`, // Leaf Branch
-  `<circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M25 21 L25 10 M29 25 L40 25 M25 29 L25 40 M21 25 L10 25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`, // Simple Flower
-  `<path d="M25 25 L25 35 M25 25 Q15 15 15 25 Q15 35 25 30 M25 25 Q35 15 35 25 Q35 35 25 30" stroke="currentColor" stroke-width="1.5"/>`, // Butterfly
-  `<path d="M10 30 Q10 20 20 20 Q25 10 35 15 Q40 15 40 25 Q45 30 40 35 L15 35 Q10 35 10 30" stroke="currentColor" stroke-width="1.5"/>`, // Cloud
-
-  // ==========================================
-  // 9. TEXT & SYMBOLS
-  // ==========================================
-  `<path d="M10 15 L10 35 M30 15 L30 35 M10 25 L30 25" stroke="currentColor" stroke-width="1.5"/><path d="M40 15 L40 35" stroke="currentColor" stroke-width="1.5"/><circle cx="40" cy="12" r="2" fill="currentColor"/>`, // "Hi"
-  `<path d="M10 25 L15 35 L20 15" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L30 20 L35 25 L30 30 L25 25" stroke="currentColor" stroke-width="1.5"/><path d="M40 15 L40 35 L45 35 L45 25" stroke="currentColor" stroke-width="1.5"/>`, // "Wow"
-  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 18 L25 28 M25 32 L25 34" stroke="currentColor" stroke-width="1.5"/>`, // Exclamation
-  `<path d="M20 15 Q25 10 30 15 Q30 20 25 25 L25 30" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="35" r="1.5" fill="currentColor"/>`, // Question
-  `<path d="M15 15 L25 25 L35 15 M15 35 L25 25 L35 35" stroke="currentColor" stroke-width="1.5"/>` // X Shape
-];
-
-function getSketchBackground(seed) {
-  let str = '';
-  
-  // Grid settings
-  const cols = 4;
-  const rows = 4;
-  const cellW = 100 / cols; 
-  const cellH = 100 / rows; 
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      
-      const rnd = (seed * 13 + r * 7 + c * 43); 
-      const jitterX = (rnd % 7) - 3; 
-      const jitterY = ((rnd * 3) % 7) - 3;
-      
-      const x = (c * cellW) + jitterX;
-      const y = (r * cellH) + jitterY;
-
-      const idx = rnd % SKETCH_PATHS.length;
-      const rot = (rnd * 23) % 360;
-      const scale = 0.35 + ((rnd % 3) / 20); 
-
-      // UPDATED OPACITY: Ranges from 0.8 to 1.0 (Almost fully opaque)
-      const op = 0.8 + ((rnd % 3) / 10);
-
-      str += `<g transform="translate(${x}, ${y}) rotate(${rot} 25 25) scale(${scale})" opacity="${op}">${SKETCH_PATHS[idx]}</g>`;
-    }
-  }
-
-  // UPDATED CSS: 
-  // 1. Changed stroke color to rgba(43,43,53, 0.65) -> Much darker ink
-  // 2. Added stroke-linecap="round" for smoother pen-like ends
-  const svgString = `
-    <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <style>path, circle, rect, ellipse { stroke: rgba(43,43,53,0.65); fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }</style>
-      ${str}
-    </svg>
-  `.replace(/\s+/g, ' ').trim();
-
-  const encoded = encodeURIComponent(svgString);
-  return `background-image: url('data:image/svg+xml;utf8,${encoded}'); background-size: 100px 100px;`;
-}
 
         // --- HTML GENERATORS (For Realtime & Initial Load) ---
 
@@ -2046,33 +2068,41 @@ function getSketchBackground(seed) {
     }
 
 // --- NOTIFICATION HELPERS ---
+// --- UPDATED NOTIFICATION RENDERER ---
 function notifIcon(type) {
-        // Use our Sketch Paths! 
-        // 4 = Envelope (Reply), 1 = Rainbow (Sticker/Love), 11 = Lightbulb (System)
-        if(type === 'reply') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#f4a37a]">${SKETCH_PATHS[4]}</svg>`; // Envelope
-        if(type === 'sticker') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#86a68b]">${SKETCH_PATHS[19]}</svg>`; // Star/Sparkle
-        return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/50">${SKETCH_PATHS[10]}</svg>`; // Lightbulb
+        // FIXED: Use indices that definitely exist in your SKETCH_PATHS array
+        // Index 4 = Envelope (Reply)
+        // Index 0 = Sun (Sticker/Warmth)
+        // Index 3 = Camera/System (System)
+        
+        if(type === 'reply') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#f4a37a]">${SKETCH_PATHS[4]}</svg>`; 
+        if(type === 'sticker') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#86a68b]">${SKETCH_PATHS[0]}</svg>`;
+        return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/50">${SKETCH_PATHS[3]}</svg>`;
     }
 
     function renderNotifs() {
-        const list = $('#notifList');
+        const list = document.getElementById('notifList');
         if (!list) return;
 
-        if (state.notifications.length === 0) { 
+        // If no notifications, show empty state
+        if (!state.notifications || state.notifications.length === 0) { 
             list.innerHTML = `
-                <div class="p-8 text-center flex flex-col items-center justify-center opacity-50">
-                    <div class="w-24 h-24 mb-4 text-black/20"><svg viewBox="0 0 50 50">${SKETCH_PATHS[10]}</svg></div>
+                <div class="p-12 text-center flex flex-col items-center justify-center opacity-40">
+                    <div class="w-20 h-20 mb-4 text-black/20"><svg viewBox="0 0 50 50">${SKETCH_PATHS[10]}</svg></div>
                     <div class="font-[Fraunces] text-lg">It is quiet here.</div>
-                    <div class="text-xs">Your lantern glows when neighbors visit.</div>
+                    <div class="text-xs mt-1">Your lantern glows when neighbors visit.</div>
                 </div>`; 
             return; 
         }
 
+        // Render the list
         list.innerHTML = state.notifications.map((n) => {
-            const isNew = new Date(n.created_at).getTime() > (Date.now() - 1000 * 60 * 60); // New if < 1 hour
+            // Check if notification is less than 24 hours old
+            const isFresh = new Date(n.created_at).getTime() > (Date.now() - 1000 * 60 * 60 * 24);
+            
             return `
             <div class="hand-card hand-outline bg-white/80 border border-black/10 p-4 flex items-start gap-4 mb-2 pop-in relative overflow-hidden group">
-                ${isNew ? `<div class="absolute top-0 right-0 w-3 h-3 bg-[#f4a37a] rounded-full m-2"></div>` : ''}
+                ${isFresh ? `<div class="absolute top-2 right-2 w-2 h-2 bg-[#f4a37a] rounded-full shadow-sm"></div>` : ''}
                 
                 <div class="w-12 h-12 rounded-full bg-[#fffaf1] border border-black/10 grid place-items-center shrink-0">
                     ${notifIcon(n.type || 'sticker')}
@@ -3283,8 +3313,11 @@ function notifIcon(type) {
                  });
             }
             
-            if(state.kindness) toast("Warmth sent.");
-
+            if(state.kindness) {
+                const names = { hug: 'Warm hug', star: 'Gold star', leaf: 'Calm leaf', spark: 'Tiny spark', cocoa: 'Hot cocoa' };
+                const label = names[type] || 'Sticker';
+                toast(`${label} sent.`);
+            }
         } catch(e) {
             console.error("Sticker error:", e);
         }
