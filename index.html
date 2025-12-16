@@ -1494,37 +1494,34 @@ function getSketchBackground(seed) {
                 }
             })
             
-            // --- 3. NEW COMMENTS (Fixed: No Duplicates) ---
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
-                // Ignore comments I just sent (handled by the send button)
-                if (payload.new.user_id === state.user.id) return;
+// --- 3. NEW COMMENTS ---
+.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
+    if (payload.new.user_id === state.user.id) return;
 
-                const pid = payload.new.post_id;
-                const { data: user } = await sb.from('profiles').select('username').eq('id', payload.new.user_id).single();
-                
-                const newComment = {
-                    id: payload.new.id,
-                    user_id: payload.new.user_id,
-                    text: payload.new.text,
-                    profiles: { username: user?.username || 'Neighbor' }
-                };
+    // 1. Update Internal Data
+    const pid = payload.new.post_id;
+    const { data: user } = await sb.from('profiles').select('username').eq('id', payload.new.user_id).single();
+    
+    const newComment = {
+        id: payload.new.id,
+        user_id: payload.new.user_id,
+        text: payload.new.text,
+        profiles: { username: user?.username || 'Neighbor' }
+    };
 
-                const post = state.posts.find(p => p.id === pid);
-                if(post) {
-                    if(!post.comments) post.comments = [];
-                    post.comments.push(newComment);
-                }
+    const post = state.posts.find(p => p.id === pid);
+    if(post) {
+        if(!post.comments) post.comments = [];
+        post.comments.push(newComment);
+    }
 
-                if(state.comments.postId === pid) {
-                     renderCommentsModal();
-                }
-
-                const previewContainer = document.getElementById(`comments-${pid}`);
-                if(previewContainer) {
-                    const html = `<div class="text-sm pop-in"><span class="font-extrabold">${html(user?.username || 'Neighbor')}:</span> <span class="text-black/70">${html(payload.new.text)}</span></div>`;
-                    previewContainer.insertAdjacentHTML('afterbegin', html);
-                }
-            })
+    // 2. Only update UI if the Modal is OPEN
+    if(state.comments.postId === pid) {
+            renderCommentsModal();
+    }
+    
+    // (Deleted the code that updated previewContainer)
+})
 
             // --- 4. NEW STORIES ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, async (payload) => {
@@ -1626,71 +1623,73 @@ function getSketchBackground(seed) {
 
         // --- HTML GENERATORS (For Realtime & Initial Load) ---
 
-    function getPostHTML(p) {
-        const u = p.profiles || { username: 'Anon', seed: 1 };
-        const stickers = p.stickers || [];
-        const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
-        stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
-        
-        let art = postMediaHTML(p);
-        
-        const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
-        const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
-        const isSaved = state.savedPostIds.includes(p.id);
-        const timeStr = timeAgo(new Date(p.created_at));
-        const tags = inferTags(p.caption);
-        const tagHtml = tags.map(t => `<span class="text-[10px] opacity-50 mr-1">#${t}</span>`).join('');
-        const promptChip = p.prompt ? `<button onclick="saveToShelf('${html(p.prompt)}')" class="wobbly inline-flex items-center gap-2 px-3 py-1.5 rounded-[16px_14px_18px_12px] border border-black/10 bg-gradient-to-b from-[#fbf5ea] to-white/70 text-xs mb-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgba(244,163,122,.75)"></span>prompt: <b class="font-extrabold">${html(p.prompt)}</b><span class="text-[11px] text-black/45">save</span></button>` : '';
-        
-        // Comments preview
-        const commentsHtml = (p.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
+        function getPostHTML(p) {
+    const u = p.profiles || { username: 'Anon', seed: 1 };
+    const stickers = p.stickers || [];
+    const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
+    stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
+    
+    let art = postMediaHTML(p);
+    
+    const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
+    const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
+    const isSaved = state.savedPostIds.includes(p.id);
+    const timeStr = timeAgo(new Date(p.created_at));
+    const tags = inferTags(p.caption);
+    const tagHtml = tags.map(t => `<span class="text-[10px] opacity-50 mr-1">#${t}</span>`).join('');
+    const promptChip = p.prompt ? `<button onclick="saveToShelf('${html(p.prompt)}')" class="wobbly inline-flex items-center gap-2 px-3 py-1.5 rounded-[16px_14px_18px_12px] border border-black/10 bg-gradient-to-b from-[#fbf5ea] to-white/70 text-xs mb-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgba(244,163,122,.75)"></span>prompt: <b class="font-extrabold">${html(p.prompt)}</b><span class="text-[11px] text-black/45">save</span></button>` : '';
 
-        return `
-        <article class="hand-card hand-outline paper-noise p-4 relative mb-4 pop-in" id="post-${p.id}">
-            <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle at 30% 30%, rgba(134,166,139,.18), rgba(219,161,168,.0) 60%);"></div>
-            ${isSaved ? `<div class="absolute left-3 top-3 px-2 py-1 rounded-[14px] bg-white/75 text-[10px] font-extrabold border border-black/5">saved</div>` : ''}
-            <div class="flex items-center justify-between gap-3 mb-3">
-                <button onclick="openUserModal('${p.user_id}')" class="flex items-center gap-3 text-left wobbly">
-                    <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
-                    <div><div class="font-extrabold text-sm">${html(u.username)}</div><div class="text-xs text-black/50">${timeStr}</div></div>
-                </button>
-                <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly w-10 h-10 flex items-center justify-center sm:w-auto sm:h-auto sm:px-3 sm:py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
-            </div>
-            ${promptChip}
-<div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
-    ${tapeDeco}
-<div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-[3/2] w-full relative flex items-center justify-center" 
+    return `
+    <article class="hand-card hand-outline paper-noise p-4 relative mb-4 pop-in" id="post-${p.id}">
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle at 30% 30%, rgba(134,166,139,.18), rgba(219,161,168,.0) 60%);"></div>
+        ${isSaved ? `<div class="absolute left-3 top-3 px-2 py-1 rounded-[14px] bg-white/75 text-[10px] font-extrabold border border-black/5">saved</div>` : ''}
+        
+        <!-- HEADER -->
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <button onclick="openUserModal('${p.user_id}')" class="flex items-center gap-3 text-left wobbly">
+                <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+                <div><div class="font-extrabold text-sm">${html(u.username)}</div><div class="text-xs text-black/50">${timeStr}</div></div>
+            </button>
+            <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly w-10 h-10 flex items-center justify-center sm:w-auto sm:h-auto sm:px-3 sm:py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
+        </div>
+        ${promptChip}
+
+        <!-- MEDIA -->
+        <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
+            ${tapeDeco}
+            <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-[3/2] w-full relative flex items-center justify-center" 
                  style="background-color: #fffaf1; ${getSketchBackground(p.seed || 1)}"
                  data-postid="${p.id}" 
                  ondblclick="sendSticker('${p.id}', 'star', this)">
-                    
-                    <!-- INNER IMAGE -->
-                    <!-- 2. Changed h-[88%] to h-[94%]. This makes the photo fill almost the entire vertical space. -->
                     <div class="h-[94%] aspect-square rounded-[12px] overflow-hidden bg-white shadow-sm border border-black/5 relative">
                         ${art}
                         <div class="absolute inset-0 z-10"></div>
                     </div>
             </div>
-</div>
+        </div>
+
+        <!-- CAPTION & STICKERS -->
+        <div class="mb-1">${tagHtml}</div>
+        <div class="text-sm text-black/80 mb-3 leading-snug">${html(p.caption)}</div>
+        <div class="flex flex-wrap gap-2 mb-3" id="stickers-${p.id}">
+            ${stickerBtn(p.id, 'hug', STICKER_SVGS.hug, counts.hug)}
+            ${stickerBtn(p.id, 'star', STICKER_SVGS.star, counts.star)}
+            ${stickerBtn(p.id, 'leaf', STICKER_SVGS.leaf, counts.leaf)}
+            ${stickerBtn(p.id, 'spark', STICKER_SVGS.spark, counts.spark)}
+            ${stickerBtn(p.id, 'cocoa', STICKER_SVGS.cocoa, counts.cocoa)}
+        </div>
+
+        <!-- COMPACT STATIC FOOTER -->
+        <div class="hand-card hand-outline bg-white/70 border border-black/10 px-3 py-2 flex items-center justify-between gap-3">
+            <div class="text-xs font-bold text-black/55">
+                Supportive notes
             </div>
-            <div class="mb-1">${tagHtml}</div>
-            <div class="text-sm text-black/80 mb-3 leading-snug">${html(p.caption)}</div>
-            <div class="flex flex-wrap gap-2 mb-3" id="stickers-${p.id}">
-                ${stickerBtn(p.id, 'hug', STICKER_SVGS.hug, counts.hug)}
-                ${stickerBtn(p.id, 'star', STICKER_SVGS.star, counts.star)}
-                ${stickerBtn(p.id, 'leaf', STICKER_SVGS.leaf, counts.leaf)}
-                ${stickerBtn(p.id, 'spark', STICKER_SVGS.spark, counts.spark)}
-                ${stickerBtn(p.id, 'cocoa', STICKER_SVGS.cocoa, counts.cocoa)}
-            </div>
-            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="text-xs text-black/55">Supportive notes</div>
-                    <button onclick="openComments('${p.id}')" class="wobbly px-4 py-2 sm:px-3 sm:py-1 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
-                </div>
-                <div class="space-y-1" id="comments-${p.id}">${commentsHtml || '<div class="text-sm text-black/55">No notes yet. Leave a gentle one?</div>'}</div>
-            </div>
-        </article>`;
-    }
+            <button onclick="openComments('${p.id}')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-[10px] font-bold shrink-0">
+                Open
+            </button>
+        </div>
+    </article>`;
+}
 
     function getStoryHTML(s, idx) {
         // Handle User Object
@@ -2110,7 +2109,7 @@ function notifIcon(type) {
             if (n.post_id) {
                 seeBtn = `
                 <button onclick="openSpotlight('${n.post_id}')" class="absolute top-2 right-12 px-3 py-1 h-6 flex items-center justify-center rounded-[8px] bg-[#fffaf1] border border-black/10 text-[10px] font-bold text-black/60 hover:bg-white hover:text-black hover:border-black/30 transition-all z-20 shadow-sm">
-                    View
+                    View post
                 </button>`;
             }
 
@@ -2509,35 +2508,25 @@ function notifIcon(type) {
     }
 
     async function deleteComment(commentId) {
-        // REMOVED: if(!confirm("Delete this gentle note?")) return;
+    try {
+        const { error } = await sb.from('comments').delete().eq('id', commentId);
+        if(error) throw error;
         
-        try {
-            // 1. Delete from Supabase
-            const { error } = await sb.from('comments').delete().eq('id', commentId);
-            if(error) throw error;
-            
-            // 2. Update Local State
-            const p = state.posts.find(x => x.id === state.comments.postId);
-            if(p && p.comments) {
-                p.comments = p.comments.filter(c => c.id !== commentId);
-            }
-            
-            // 3. Refresh UI
-            renderCommentsModal();
-            
-            // Update the preview on the feed card
-            const previewContainer = document.getElementById(`comments-${state.comments.postId}`);
-            if(previewContainer && p) {
-                 const previewHtml = (p.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
-                 previewContainer.innerHTML = previewHtml || '<div class="text-sm text-black/55">No notes yet. Leave a gentle one?</div>';
-            }
-            
-            toast("Note removed.");
-        } catch(e) {
-            console.error(e);
-            toast("Could not delete note.");
+        const p = state.posts.find(x => x.id === state.comments.postId);
+        if(p && p.comments) {
+            p.comments = p.comments.filter(c => c.id !== commentId);
         }
+        
+        renderCommentsModal();
+        
+        // (Deleted the code that updated previewContainer)
+        
+        toast("Note removed.");
+    } catch(e) {
+        console.error(e);
+        toast("Could not delete note.");
     }
+}
     
     function openComments(postId) { 
         state.comments.postId = postId; 
@@ -3693,13 +3682,6 @@ function notifIcon(type) {
                 }
 
                 renderCommentsModal();
-                
-                // Update feed preview
-                const previewContainer = document.getElementById(`comments-${state.comments.postId}`);
-                if(previewContainer && post) {
-                     const previewHtml = (post.comments || []).slice(0, 2).map(c => `<div class="text-sm"><span class="font-extrabold">${html(c.profiles?.username || 'Someone')}:</span> <span class="text-black/70">${html(c.text)}</span></div>`).join('');
-                     previewContainer.innerHTML = previewHtml;
-                }
 
                 // FIX: Notify Owner with Link
                 if(post && post.user_id !== state.user.id) {
