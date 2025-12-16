@@ -1654,14 +1654,18 @@ function getSketchBackground(seed) {
         </div>
         ${promptChip}
 
-        <!-- MEDIA -->
+        <!-- MEDIA CONTAINER -->
         <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
             ${tapeDeco}
-            <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-[3/2] w-full relative flex items-center justify-center" 
+            
+            <!-- 1. CONTAINER CHANGE: aspect-square (Mobile) vs lg:aspect-[3/2] (Desktop) -->
+            <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square lg:aspect-[3/2] w-full relative flex items-center justify-center" 
                  style="background-color: #fffaf1; ${getSketchBackground(p.seed || 1)}"
                  data-postid="${p.id}" 
                  ondblclick="sendSticker('${p.id}', 'star', this)">
-                    <div class="h-[94%] aspect-square rounded-[12px] overflow-hidden bg-white shadow-sm border border-black/5 relative">
+                    
+                    <!-- 2. INNER IMAGE CHANGE: w-full h-full (Mobile) vs lg:h-[94%] (Desktop) -->
+                    <div class="w-full h-full lg:w-auto lg:h-[94%] aspect-square rounded-[12px] overflow-hidden bg-white shadow-sm border border-black/5 relative">
                         ${art}
                         <div class="absolute inset-0 z-10"></div>
                     </div>
