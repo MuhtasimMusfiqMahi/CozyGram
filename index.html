@@ -324,18 +324,15 @@
           <svg class="w-7 h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
       </div>
       
-      <!-- Text Update: Responsive Fonts -->
+      <!-- Text Content -->
       <div class="min-w-0 flex-1">
-        <!-- text-base on mobile, text-lg on desktop -->
         <div class="font-[Fraunces] text-base lg:text-lg">A Gentle Pause</div>
-        
-        <!-- text-xs on mobile, text-sm on desktop -->
         <div class="text-xs lg:text-sm text-black/70 mt-1">Trade metrics for memories. Connect through notes, not scores.</div>
         
-        <!-- Buttons -->
+        <!-- Buttons: Changed text-sm to text-xs -->
         <div class="mt-3 flex flex-wrap gap-2">
-          <button id="shuffleFeedBtn" onclick="shuffleFeed()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Shuffle cozy</button>
-          <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Meet Pippin</button>
+          <button id="shuffleFeedBtn" onclick="shuffleFeed()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">Shuffle cozy</button>
+          <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs">Meet Pippin</button>
         </div>
       </div>
     </div>
