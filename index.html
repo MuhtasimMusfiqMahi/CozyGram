@@ -418,13 +418,6 @@
       <!-- PROFILE -->
       <section id="view-profile" class="hidden space-y-4"></section>
     </main>
-
-    <!-- FAB -->
-    <button id="fab" class="fixed left-1/2 -translate-x-1/2 fab-safe wobbly hand-card hand-outline paper-noise px-4 py-3 flex items-center gap-3 z-20">
-      <span class="inline-block w-10 h-10 rounded-[18px_16px_22px_14px] bg-gradient-to-br from-[#f4a37a] via-[#fbf5ea] to-[#dba1a8] border border-black/10 grid place-items-center text-xl font-bold text-black/70">+</span>
-      <div class="text-left"><div class="text-sm font-extrabold">New cozy post</div><div class="text-xs text-black/55">Frame + a little note</div></div>
-    </button>
-
     <!-- BOTTOM NAV -->
     <nav id="bottomNav" class="fixed left-1/2 -translate-x-1/2 nav-safe w-[min(420px,calc(100%-2rem))] nav-pill px-3 py-3 z-30">
       <div class="navGrid grid grid-cols-5 gap-2">
@@ -1435,7 +1428,7 @@
             <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
                 ${tapeDeco}
                 <!-- FIX: Strictly 'aspect-square' on ALL screens to match composer -->
-                <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
+<div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square lg:w-3/4 lg:mx-auto bg-white/50 relative" data-postid="${p.id}" ondblclick="sendSticker('${p.id}', 'star', this)">
                         ${art}
                         <div class="absolute inset-0 z-10"></div>
                 </div>
@@ -2407,7 +2400,7 @@
         
         // --- 1. Frame Logic & Aspect Ratio ---
         // FIX: Strictly 'aspect-square' on ALL screens. Removed desktop overrides.
-        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square overflow-hidden relative transition-all duration-300 ';
+        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square lg:w-3/4 lg:mx-auto overflow-hidden relative transition-all duration-300 ';
         
         const oldTape = container.querySelector('.tape-deco');
         if(oldTape) oldTape.remove();
@@ -3168,7 +3161,33 @@
 
         safeWire('#openAccount', openAccountModal);
         safeWire('#openSafety', () => $('#safetyModal').classList.remove('hidden'));
-        safeWire('#kindToggle', () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; toast(`Kindness: ${state.kindness?'On':'Off'}`); renderPosts(); });
+        safeWire('#kindToggle', () => { 
+            state.kindness = !state.kindness; 
+            
+            // 1. Visual Update for Header Button
+            const btn = document.getElementById('kindToggle');
+            const label = btn.querySelector('span'); // Gets the first span (Text)
+            
+            if (state.kindness) {
+                // State: ON
+                btn.classList.remove('grayscale', 'opacity-50', 'bg-gray-100');
+                btn.classList.add('bg-white/70');
+                label.innerText = "Kind";
+            } else {
+                // State: OFF
+                btn.classList.remove('bg-white/70');
+                btn.classList.add('grayscale', 'opacity-50', 'bg-gray-100');
+                label.innerText = "Off";
+            }
+
+            // 2. Update the Safety Modal toggle (to keep them in sync)
+            const btn2 = document.getElementById('kindToggle2');
+            if(btn2) btn2.innerText = state.kindness ? 'On' : 'Off';
+
+            // 3. Logic
+            toast(`Kindness: ${state.kindness?'On':'Off'}`); 
+            renderPosts(); 
+        });
         safeWire('#kindToggle2', () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; renderPosts(); });
         safeWire('#numbersToggle', () => { state.hideNumbers = !state.hideNumbers; $('#numbersToggle').innerText = state.hideNumbers ? 'On' : 'Off'; renderPosts(); });
 
