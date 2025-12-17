@@ -481,39 +481,40 @@
             <button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
         </div>
         
-        <!-- Top Grid: Preview + Controls -->
-        <div class="grid grid-cols-2 gap-3 mb-3">
-            <!-- Left: Preview Box -->
-            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square overflow-hidden relative transition-all duration-300">
+        <!-- CHANGED: 'grid-cols-2' -> 'flex flex-col' (Stacks items so image is full width) -->
+        <div class="flex flex-col gap-3 mb-3">
+            
+            <!-- 1. Preview Box (Now Full Width) -->
+            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square w-full overflow-hidden relative transition-all duration-300">
                 <div id="composePreview" class="w-full h-full"></div>
                 <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
                 <!-- Overlay for "Tap to upload" handled by JS -->
             </div>
-  
-            <!-- Right: Controls -->
-            <div class="space-y-3">
+    
+            <!-- 2. Controls (Now Underneath) -->
+            <div class="space-y-3 w-full">
                 <!-- Frame Picker -->
                 <div>
                     <div class="text-[10px] uppercase font-bold opacity-50 mb-1">Frame</div>
                     <div class="flex gap-2 flex-wrap">
-                        <button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="wavy">Wavy</button>
-                        <button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="polaroid">Polar</button>
-                        <button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="tape">Tape</button>
+                        <button class="frameBtn px-3 py-2 bg-white border rounded-[10px] wobbly text-xs" data-f="wavy">Wavy</button>
+                        <button class="frameBtn px-3 py-2 bg-white border rounded-[10px] wobbly text-xs" data-f="polaroid">Polar</button>
+                        <button class="frameBtn px-3 py-2 bg-white border rounded-[10px] wobbly text-xs" data-f="tape">Tape</button>
                     </div>
                 </div>
-  
+    
                 <!-- Art Collection Box -->
                 <div class="hand-card hand-outline bg-white/50 border border-black/10 p-3">
                     <div class="flex justify-between items-center mb-2">
                         <div class="text-[10px] uppercase font-bold opacity-50">Cozy Art</div>
                         <button onclick="openArtModal()" class="wobbly px-2 py-1 rounded-[8px] bg-white border border-black/10 text-[10px] font-bold">Open</button>
                     </div>
-                    <!-- Mini Preview of first few items -->
+                    <!-- Mini Preview -->
                     <div id="artPreviewRow" class="flex gap-2 overflow-hidden"></div>
                 </div>
             </div>
         </div>
-  
+    
         <!-- Caption Input -->
         <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-24 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
         
@@ -523,7 +524,6 @@
         <!-- Main Action Button -->
         <button id="postNowBtn" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Post to Cloud</button>
     </div>
-  </div>
   <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">New Page</h3><button onclick="$('#storyComposeModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
@@ -2882,13 +2882,13 @@ function updateComposeView() {
     
     if(!container || !content) return; 
     
-    // Render the mini art row if it exists (run once)
     if(document.getElementById('artPreviewRow') && document.getElementById('artPreviewRow').innerHTML === "") {
         renderArtMiniPreview();
     }
 
     // --- 1. Frame Logic ---
-    let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square lg:w-3/4 lg:mx-auto overflow-hidden relative transition-all duration-300 ';
+    // CHANGED: Fixed classes to ensure full width on all devices
+    let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square w-full overflow-hidden relative transition-all duration-300 ';
     
     const oldTape = container.querySelector('.tape-deco');
     if(oldTape) oldTape.remove();
@@ -2917,7 +2917,6 @@ function updateComposeView() {
     }
 
     if (hasMedia) {
-            // === MEDIA MODE ===
             if(fileInput) fileInput.classList.add('hidden'); 
             
             let mediaEl;
@@ -2939,7 +2938,6 @@ function updateComposeView() {
                 mediaEl.className = mediaClasses;
                 mediaEl.style.cssText = posStyle;
                 mediaEl.draggable = false; 
-                // Ensure external images load (CORS)
                 mediaEl.crossOrigin = "anonymous"; 
             }
             
@@ -2948,7 +2946,6 @@ function updateComposeView() {
             
             content.appendChild(mediaEl);
 
-            // Drag Logic (Standard)
             let isDown = false;
             let startX = 0, startY = 0;
             const handleMove = (clientX, clientY) => {
@@ -2988,11 +2985,9 @@ function updateComposeView() {
             renderOverlayButtons();
 
     } else {
-            // === EMPTY STATE ===
             if(fileInput) fileInput.classList.remove('hidden');
             if(!state.editingId) state.compose.mediaPos = { x: 50, y: 50 }; 
 
-            // Clean Empty State UI
             content.innerHTML = `
             <div class="flex flex-col items-center justify-center opacity-40">
                 <svg class="w-12 h-12 mb-2 text-black/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" y1="5" x2="22" y2="5"/><line x1="19" y1="2" x2="19" y2="8"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
