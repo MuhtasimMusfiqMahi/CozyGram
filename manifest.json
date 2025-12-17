@@ -1,0 +1,22 @@
+{
+  "name": "CozyGram",
+  "short_name": "CozyGram",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf5ea",
+  "theme_color": "#fbf5ea",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2550/2550223.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2550/2550223.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
