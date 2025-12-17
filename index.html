@@ -11,6 +11,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,600;800&display=swap" rel="stylesheet">
+  <!-- PWA MANIFEST LINK -->
+  <link rel="manifest" href="./manifest.json" />
+
+  <!-- APPLE / IOS OPTIMIZATION -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CozyGram" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2550/2550223.png" />
 
   <style>
     /* --- COZY DESIGN SYSTEM --- */
@@ -4243,6 +4251,16 @@ window.openSpotlight = openSpotlight;
 
 init(); // Your existing init call
 
+  </script>
+  <!-- REGISTER SERVICE WORKER -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then((reg) => console.log('CozyGram PWA Registered!', reg.scope))
+          .catch((err) => console.log('PWA Registration failed:', err));
+      });
+    }
   </script>
 </body>
 </html>
