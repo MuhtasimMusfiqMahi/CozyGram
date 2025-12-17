@@ -313,22 +313,21 @@
     <main id="main" class="flex-1 px-4 main-safe-pad">
 <!-- FEED SECTION -->
 <!-- FEED SECTION -->
+<!-- FEED SECTION -->
+<!-- FEED SECTION -->
 <section id="view-feed" class="space-y-3 lg:space-y-4">
   
     <!-- 2. LOW PRESSURE BANNER (Responsive) -->
     <div class="hand-card hand-outline paper-noise p-3 lg:p-4">
       <div class="flex items-start gap-3">
-        <!-- Icon scales -->
         <div class="w-9 h-9 lg:w-12 lg:h-12 rounded-[14px] lg:rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
             <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
             <svg class="w-5 h-5 lg:w-7 lg:h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
         </div>
         <div class="min-w-0 flex-1">
-          <!-- Text scales -->
           <div class="font-[Fraunces] text-sm lg:text-lg">A Gentle Pause</div>
           <div class="text-xs lg:text-sm text-black/70 mt-0.5 lg:mt-1">Trade metrics for memories. Connect through notes.</div>
           <div class="mt-2 lg:mt-3 flex flex-wrap gap-2">
-            <!-- Buttons scale -->
             <button id="shuffleFeedBtn" onclick="shuffleFeed()" class="wobbly px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-[10px] lg:text-sm font-extrabold">Shuffle cozy</button>
             <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-[10px] lg:text-sm">Meet Pippin</button>
           </div>
@@ -336,7 +335,7 @@
       </div>
     </div>
   
-    <!-- 3. FILTERS (Responsive) -->
+    <!-- 3. FILTERS (Responsive - Restored) -->
     <div id="userFilterBanner" class="hand-card hand-outline bg-white/70 border border-black/10 p-2 lg:p-3 mb-2 hidden flex justify-between items-center">
         <span class="text-[10px] lg:text-xs font-bold opacity-60">Filtering by User</span>
         <button onclick="clearUserFilter()" class="text-[10px] lg:text-[10px] font-bold underline">Clear</button>
@@ -346,20 +345,18 @@
         <!-- JS injects buttons here -->
     </div>
   
-    <!-- 4. NEW POST BUTTON (Responsive) -->
+    <!-- 4. NEW POST BUTTON (Responsive - Restored) -->
     <button id="newPostTrigger" class="w-full text-left hand-card hand-outline bg-gradient-to-r from-white/80 to-[#fffaf1] border border-black/10 p-2.5 lg:p-3 wobbly flex items-center gap-3 lg:gap-4 group">
-       <!-- Icon box scales -->
        <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-[10px] lg:rounded-[14px] bg-[#f4a37a]/15 border border-[#f4a37a]/20 grid place-items-center text-sm lg:text-xl group-hover:scale-110 transition-transform">
          ✨
        </div>
        <div>
-         <!-- Text scales -->
          <div class="text-xs lg:text-sm font-extrabold text-black/80">Make a cozy post</div>
          <div class="text-[10px] lg:text-xs text-black/50">Share a moment, a doodle, or a thought...</div>
        </div>
     </button>
 
-    <!-- 5. FEED CONTENT (Posts appear here) -->
+    <!-- 5. FEED CONTENT -->
     <div id="feed-container" class="space-y-4">
         <div class="p-6 text-center animate-pulse text-black/50 font-[Fraunces]">Connecting to the clouds...</div>
     </div>
@@ -475,21 +472,55 @@
       <div class="flex items-center justify-between"><button id="prevStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Prev</button><button id="nextStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Next</button></div>
     </div>
   </div>
-  <div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+<!-- Inside #composeModal .grid -->
+<!-- COMPOSE MODAL (Main Post Creator) -->
+<div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Make a cozy post</h3><button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-[Fraunces] text-lg">Make a cozy post</h3>
+            <button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
+        </div>
+        
+        <!-- Top Grid: Preview + Controls -->
         <div class="grid grid-cols-2 gap-3 mb-3">
-            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-[4/3] overflow-hidden relative"><div id="composePreview" class="w-full h-full"></div><input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" /><div class="absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-[10px] pointer-events-none font-bold">Tap to upload</div></div>
-            <div class="space-y-2">
-                <div class="text-[10px] uppercase font-bold opacity-50">Frame</div>
-                <div class="flex gap-2 flex-wrap"><button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="wavy">Wavy</button><button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="polaroid">Polar</button><button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="tape">Tape</button></div>
-                <div class="text-[10px] uppercase font-bold opacity-50">Vibe</div>
-                <div class="flex gap-1 flex-wrap"><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#f4a37a" data-v="sunset"></button><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#86a68b" data-v="sage"></button><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#dba1a8" data-v="berry"></button><button class="vibeBtn w-8 h-8 sm:w-6 sm:h-6 rounded-full border wobbly" style="background:#b87d66" data-v="clay"></button></div>
-                <div class="text-[10px] uppercase font-bold opacity-50">Illustration</div><div id="artPicker" class="flex gap-2 flex-wrap mt-1"></div>
+            <!-- Left: Preview Box -->
+            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square overflow-hidden relative transition-all duration-300">
+                <div id="composePreview" class="w-full h-full"></div>
+                <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
+                <!-- Overlay for "Tap to upload" handled by JS -->
+            </div>
+  
+            <!-- Right: Controls -->
+            <div class="space-y-3">
+                <!-- Frame Picker -->
+                <div>
+                    <div class="text-[10px] uppercase font-bold opacity-50 mb-1">Frame</div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="wavy">Wavy</button>
+                        <button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="polaroid">Polar</button>
+                        <button class="frameBtn px-3 py-2 sm:px-2 sm:py-1 bg-white border rounded-[10px] wobbly text-xs" data-f="tape">Tape</button>
+                    </div>
+                </div>
+  
+                <!-- Art Collection Box -->
+                <div class="hand-card hand-outline bg-white/50 border border-black/10 p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-[10px] uppercase font-bold opacity-50">Cozy Art</div>
+                        <button onclick="openArtModal()" class="wobbly px-2 py-1 rounded-[8px] bg-white border border-black/10 text-[10px] font-bold">Open</button>
+                    </div>
+                    <!-- Mini Preview of first few items -->
+                    <div id="artPreviewRow" class="flex gap-2 overflow-hidden"></div>
+                </div>
             </div>
         </div>
+  
+        <!-- Caption Input -->
         <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-24 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
+        
+        <!-- Tags Preview -->
         <div id="composeTags" class="flex gap-2 mt-2 mb-2"></div>
+        
+        <!-- Main Action Button -->
         <button id="postNowBtn" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Post to Cloud</button>
     </div>
   </div>
@@ -507,7 +538,22 @@
         <div id="roomBody" class="space-y-4"></div>
       </div>
   </div>
-  <div id="postOptionsModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+  <!-- ART SELECTION MODAL -->
+<div id="artModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
+    <div class="w-full max-w-md h-[80vh] hand-card hand-outline paper-noise bg-white flex flex-col pop-in shadow-2xl">
+        <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md">
+            <h3 class="font-[Fraunces] text-lg">Art Collection</h3>
+            <button onclick="$('#artModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div id="artGrid" class="grid grid-cols-3 gap-3">
+                <!-- Art injected via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Find this modal div -->
+<div id="postOptionsModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
         <h3 class="font-bold mb-3 text-center">Options</h3>
         <button id="savePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Save to Drawer</button>
@@ -515,6 +561,10 @@
         <button id="hidePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Hide Post</button>
         <button id="muteUserBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Mute User</button>
         <button id="copyCaptionBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Copy Caption</button>
+        
+        <!-- NEW: Edit Button (Hidden by default) -->
+        <button id="editPostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly hidden">Edit Post</button>
+        
         <button id="deletePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] bg-red-100 text-red-600 font-bold wobbly hidden">Delete Post</button>
         <button id="reportPostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Report</button>
         <button onclick="$('#postOptionsModal').classList.add('hidden')" class="w-full py-3 rounded-[18px_16px_22px_14px] border border-black/10 text-black/50 wobbly">Cancel</button>
@@ -752,6 +802,7 @@ function artSVG(seed=1, palette='sunset'){
             vibe: 'sunset', 
             file: null, 
             mediaKind: null,      // 'image' or 'video'
+            editingId: null,
             mediaPreviewUrl: null, // The blob:url for the preview
             seed: Math.floor(Math.random()*100), 
             mediaPos: { x: 50, y: 50 },
@@ -782,6 +833,38 @@ function artSVG(seed=1, palette='sunset'){
       spark: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M24 10l3 8 8 3-8 3-3 8-3-8-8-3 8-3 3-8Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
       cocoa: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M16 18h16v14a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6V18Z" fill="rgba(247,197,159,.35)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M32 20h4a4 4 0 0 1 0 8h-4" fill="none" stroke="rgba(43,43,53,.35)" stroke-width="2" stroke-linecap="round"/></svg>`
     };
+
+    const COZY_ART = [
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/227556f5eb9ac89d1804767667a68162.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/2769821-HSC00001-7.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/9123979-FUMDCOBR-32.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/Draw-a-Cute-Penguin-Web-791x1024.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/e3dbe056a3cc18196b16a0eb17a1032d.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(1).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(10).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(11).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(12).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(13).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(14).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(15).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(16).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(17).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(2).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(3).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(4).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(5).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(6).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(7).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(8).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(9).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image.png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/images%20(1).jpeg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/images%20(2).jpeg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/images%20(3).jpeg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/images%20(4).jpeg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/images.jpeg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/oil-painting-romance-love-loving-600nw-2354343753.webp"
+];
 
     const SKETCH_PATHS = [
   // ==========================================
@@ -2240,6 +2323,66 @@ function notifIcon(type) {
             toast("Post might have been deleted.");
         }
     }
+
+    function openArtModal() {
+    const grid = document.getElementById('artGrid');
+    if(grid) {
+        grid.innerHTML = COZY_ART.map(url => {
+            // OPTIMIZATION: Use wsrv.nl to create a tiny 250px thumbnail on the fly
+            // This makes the grid load instantly without downloading the huge original file
+            const thumbUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=250&h=333&fit=cover&output=webp`;
+            
+            return `
+            <button onclick="selectArt('${url}')" class="wobbly aspect-[3/4] rounded-[12px] overflow-hidden border border-black/10 bg-gray-100 relative group transition-transform">
+                <img src="${thumbUrl}" class="w-full h-full object-cover" loading="lazy" decoding="async" />
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="text-white font-bold text-xs">Pick</span>
+                </div>
+            </button>
+        `}).join('');
+    }
+    $('#artModal').classList.remove('hidden');
+}
+
+function selectArt(url) {
+    // 1. Update State
+    state.compose.file = null; 
+    state.compose.mediaPreviewUrl = url; // Keep original URL for the database
+    state.compose.mediaKind = 'image';
+    state.compose.mediaPos = { x: 50, y: 50 }; 
+    
+    // 2. Hide input helper
+    $('#mediaInput').classList.add('hidden');
+    
+    // 3. Update View
+    updateComposeView();
+    $('#artModal').classList.add('hidden');
+    
+    // 4. Update Button Text
+    $('#postNowBtn').innerText = "Post to Cloud";
+
+    // 5. Preload the high-res version in the background
+    const img = new Image();
+    img.src = url;
+}
+
+// Initial Render for the mini preview box in the composer
+// Initial Render for the mini preview box in the composer
+function renderArtMiniPreview() {
+    const row = document.getElementById('artPreviewRow');
+    if(!row) return;
+    
+    // Show first 4 images with extreme optimization (100px width)
+    row.innerHTML = COZY_ART.slice(0, 4).map(url => {
+        const thumbUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=100&h=100&fit=cover&output=webp`;
+        return `
+        <button onclick="selectArt('${url}')" class="w-10 h-10 rounded-[8px] overflow-hidden border border-black/10 shrink-0 wobbly">
+            <img src="${thumbUrl}" class="w-full h-full object-cover" loading="lazy" />
+        </button>
+    `}).join('');
+}
+
+
     async function deleteNotification(id) {
         // 1. Optimistic Update (Remove from screen immediately)
         state.notifications = state.notifications.filter(n => n.id !== id);
@@ -2519,24 +2662,28 @@ function notifIcon(type) {
     }
 
     function openOptions(pid, uid) { 
-        state.activePostOption = pid; state.activePostUser = uid; 
-        $('#postOptionsModal').classList.remove('hidden'); 
-        
-        const isSaved = state.savedPostIds.includes(pid);
-        const saveBtn = $('#savePostBtn');
-        if(saveBtn) {
-            saveBtn.innerText = isSaved ? "Remove from Drawer" : "Save to Drawer";
-            if(isSaved) saveBtn.classList.add('text-red-500'); else saveBtn.classList.remove('text-red-500');
-        }
-        
-        const isMuted = state.mutedUsers.includes(uid);
-        $('#muteUserBtn').innerText = isMuted ? "Unmute User" : "Mute User";
-        
-        const isHidden = state.hiddenPosts.includes(pid);
-        $('#hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
-
-        $('#deletePostBtn').classList.toggle('hidden', uid !== state.user.id); 
+    state.activePostOption = pid; state.activePostUser = uid; 
+    $('#postOptionsModal').classList.remove('hidden'); 
+    
+    // ... existing button logic ...
+    const isSaved = state.savedPostIds.includes(pid);
+    const saveBtn = $('#savePostBtn');
+    if(saveBtn) {
+        saveBtn.innerText = isSaved ? "Remove from Drawer" : "Save to Drawer";
+        if(isSaved) saveBtn.classList.add('text-red-500'); else saveBtn.classList.remove('text-red-500');
     }
+    
+    const isMuted = state.mutedUsers.includes(uid);
+    $('#muteUserBtn').innerText = isMuted ? "Unmute User" : "Mute User";
+    
+    const isHidden = state.hiddenPosts.includes(pid);
+    $('#hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
+
+    // --- NEW: Toggle Edit Button (Show only if I am the owner) ---
+    $('#editPostBtn').classList.toggle('hidden', uid !== state.user.id);
+
+    $('#deletePostBtn').classList.toggle('hidden', uid !== state.user.id); 
+}
 
     function clearUserFilter() {
         state.filter.search = '';
@@ -2622,118 +2769,29 @@ function notifIcon(type) {
         });
         $('#editProfileModal').classList.remove('hidden'); 
     }
-    function closeCompose(){ $('#composeModal').classList.add('hidden'); state.compose.file = null; $('#mediaInput').value = ''; }
-
-    async function openUserModal(userId) {
-        const modal = document.getElementById('userModal');
-        const body = document.getElementById('userModalBody');
-        
-        // 1. Show Loading State
-        body.innerHTML = `<div class="p-8 text-center opacity-50 animate-pulse">Knocking on door...</div>`;
-        modal.classList.remove('hidden');
-
-        // 2. Fetch Fresh Data
-        let user = state.allUsers.find(u => u.id === userId);
-        try {
-            const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
-            if (data) user = data;
-        } catch(e) {}
-
-        // Fallback if user barely exists
-        user = user || { username: 'Neighbor', seed: 5, bio: '', pronouns: '', mood: 'sunset' };
-
-        const meId = state.user.id;
-        const isMe = userId === meId;
-        const isMuted = state.mutedUsers.includes(userId);
-        
-        // 3. Get Recent Posts
-        const recent = state.posts.filter(p => p.user_id === userId).slice(0, 6);
-        
-        // 4. Render
-        body.innerHTML = `
-            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-3">
-              <div class="flex items-start gap-3">
-                <div class="w-14 h-14 rounded-[20px_18px_26px_16px] border border-black/10 overflow-hidden shrink-0 bg-white">
-                    ${avatarHTML(user)}
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div class="font-extrabold truncate text-lg">${html(user.username)}</div>
-                    <div class="text-xs text-black/45">${html(user.pronouns||'')}</div>
-                  </div>
-                  <div class="text-xs text-black/60 line-clamp-3 leading-snug mt-1">${html(user.bio||'A cozy corner.')}</div>
-                  <div class="text-[10px] text-black/40 mt-2 font-bold uppercase tracking-wider">Mood: ${html(user.mood||'sunset')}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 mb-3">
-              ${!isMe ? `
-              <button id="userMsgBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] font-extrabold text-white text-left shadow-sm">
-                Message
-                <div class="text-[10px] font-normal opacity-90">Send a note</div>
-              </button>
-              <button id="userMuteBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
-                ${isMuted ? 'Unmute' : 'Mute'}
-                <div class="text-[10px] font-normal text-black/50">${isMuted ? 'Allow posts' : 'Hide posts'}</div>
-              </button>
-              ` : `<div class="col-span-2 text-center text-xs text-black/40 py-2">This is your corner.</div>`}
-              
-              <button id="userFilterBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
-                Filter
-                <div class="text-[10px] font-normal text-black/50">Show only this</div>
-              </button>
-              <button id="userBioBtn" class="wobbly px-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 font-extrabold text-left">
-                Copy Bio
-                <div class="text-[10px] font-normal text-black/50">Save to clipboard</div>
-              </button>
-            </div>
-
-            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3">
-              <div class="flex items-center justify-between mb-2">
-                <div class="text-xs font-extrabold opacity-50">RECENT SCRAPBOOK BITS</div>
-              </div>
-              <div class="grid grid-cols-3 gap-2">
-                ${recent.map(p => `
-                  <div class="wobbly rounded-[12px] overflow-hidden border border-black/10 bg-white aspect-square" onclick="toast('Use the feed to see full post')">
-                    ${postMediaHTML(p)}
-                  </div>
-                `).join('') || `<div class="col-span-3 text-xs text-black/40 text-center py-4">No posts yet.</div>`}
-              </div>
-            </div>
-        `;
-        
-        // Wire buttons
-        const msgBtn = document.getElementById('userMsgBtn');
-        if(msgBtn) msgBtn.onclick = () => { modal.classList.add('hidden'); openThread(userId); };
-
-        const filterBtn = document.getElementById('userFilterBtn');
-        if(filterBtn) filterBtn.onclick = () => {
-            state.filter.search = user.username;
-            document.getElementById('searchInput').value = user.username;
-            modal.classList.add('hidden');
-            renderPosts();
-            toast(`Filtering by ${user.username}`);
-        };
-
-        const bioBtn = document.getElementById('userBioBtn');
-        if(bioBtn) bioBtn.onclick = () => { safeCopy(user.bio); toast('Bio copied.'); };
-
-        const muteBtn = document.getElementById('userMuteBtn');
-        if(muteBtn) muteBtn.onclick = async () => {
-            modal.classList.add('hidden');
-            if (isMuted) {
-                await unmuteUser(userId);
-            } else {
-                state.mutedUsers.push(userId);
-                toast('User muted.');
-                await sb.from('mutes').insert({ user_id: meId, muted_user_id: userId });
-                renderPosts();
-            }
-        };
-
-        modal.classList.remove('hidden');
-    }
+    function closeCompose() { 
+    $('#composeModal').classList.add('hidden'); 
+    
+    // Reset Edit State
+    state.editingId = null;
+    
+    // Reset Data
+    state.compose.file = null;
+    state.compose.mediaPreviewUrl = null;
+    state.compose.mediaKind = null;
+    state.compose.seed = Math.floor(Math.random()*100);
+    state.compose.illustSeed = null;
+    state.compose.mediaPos = {x:50, y:50};
+    
+    // Reset UI
+    $('#composeCaption').value = ''; 
+    $('#mediaInput').value = ''; 
+    $('#postNowBtn').innerText = "Post to Cloud";
+    document.querySelector('#composeModal h3').innerText = "Make a cozy post";
+    
+    // Render empty/random state for next time
+    updateComposeView();
+}
     
     function openAccountModal() {
         const p = state.profile || { username: 'Neighbor', seed: 0, pronouns: '', bio: '' };
@@ -2815,188 +2873,135 @@ function notifIcon(type) {
     }
 
     // --- PART 6: DYNAMIC COMPOSER VIEW ---
-    function updateComposeView() {
-        const container = document.getElementById('composePreviewContainer');
-        const content = document.getElementById('composePreview');
-        const artPicker = document.getElementById('artPicker');
-        const fileInput = document.getElementById('mediaInput');
-        
-        if(!container || !content) return; 
-        
-        // --- 1. Frame Logic & Aspect Ratio ---
-        // FIX: Strictly 'aspect-square' on ALL screens. Removed desktop overrides.
-        let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square lg:w-3/4 lg:mx-auto overflow-hidden relative transition-all duration-300 ';
-        
-        const oldTape = container.querySelector('.tape-deco');
-        if(oldTape) oldTape.remove();
-
-        if (state.compose.frame === 'polaroid') {
-            classes += 'bg-white p-4 pb-10 shadow-sm';
-        } else if (state.compose.frame === 'tape') {
-            classes += 'bg-white/80 p-2';
-            const tape = document.createElement('div');
-            tape.className = 'tape-deco absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f7c59f]/80 rotate-[-2deg] border border-black/5 z-20 shadow-sm';
-            container.appendChild(tape);
-        } else {
-             classes += 'bg-white/40';
-        }
-        container.className = classes;
-
-        // --- 2. Content Rendering ---
-        content.innerHTML = ''; 
-        const hasMedia = !!(state.compose.file && state.compose.mediaPreviewUrl);
-        
-        // Ensure Overlay Exists
-        let overlay = container.querySelector('.overlay-ctrl');
-        if(!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/90 px-2 py-1.5 rounded-[8px] text-[10px] font-bold transition-opacity z-50 shadow-sm border border-black/5';
-            container.appendChild(overlay);
-        }
-
-        if (hasMedia) {
-             // === MEDIA MODE ===
-             if(fileInput) fileInput.classList.add('hidden'); 
-             
-             // Create Image/Video Element
-             let mediaEl;
-             const posStyle = `object-position: ${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
-             const mediaClasses = "w-full h-full object-cover rounded-[12px] cursor-move select-none touch-none"; 
-             
-             if(state.compose.mediaKind === 'video') {
-                 mediaEl = document.createElement('video');
-                 mediaEl.src = state.compose.mediaPreviewUrl;
-                 mediaEl.className = mediaClasses;
-                 mediaEl.style.cssText = posStyle;
-                 mediaEl.playsInline = true;
-                 mediaEl.controls = false; 
-             } else {
-                 mediaEl = document.createElement('img');
-                 mediaEl.src = state.compose.mediaPreviewUrl;
-                 mediaEl.className = mediaClasses;
-                 mediaEl.style.cssText = posStyle;
-                 mediaEl.draggable = false; 
-             }
-             
-             mediaEl.style.webkitUserSelect = "none";
-             mediaEl.style.touchAction = "none"; 
-             
-             content.appendChild(mediaEl);
-
-             // === DRAG LOGIC ===
-             let isDown = false;
-             let startX = 0;
-             let startY = 0;
-             
-             const handleMove = (clientX, clientY) => {
-                 if(!isDown) return;
-                 const deltaX = (startX - clientX) * 0.4; 
-                 const deltaY = (startY - clientY) * 0.4;
-                 
-                 state.compose.mediaPos.x = Math.max(0, Math.min(100, state.compose.mediaPos.x + deltaX));
-                 state.compose.mediaPos.y = Math.max(0, Math.min(100, state.compose.mediaPos.y + deltaY));
-                 
-                 mediaEl.style.objectPosition = `${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
-                 startX = clientX; 
-                 startY = clientY;
-             };
-
-             // Mouse
-             mediaEl.onmousedown = (e) => {
-                 isDown = true; startX = e.clientX; startY = e.clientY;
-                 mediaEl.style.transition = 'none';
-                 overlay.innerText = "Dragging...";
-                 window.addEventListener('mousemove', onMouseMove);
-                 window.addEventListener('mouseup', onMouseUp);
-             };
-             const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
-             const onMouseUp = () => {
-                 isDown = false; mediaEl.style.transition = 'object-position 0.2s ease';
-                 renderOverlayButtons();
-                 window.removeEventListener('mousemove', onMouseMove);
-                 window.removeEventListener('mouseup', onMouseUp);
-             };
-
-             // Touch
-             mediaEl.ontouchstart = (e) => {
-                 if(e.cancelable) e.preventDefault(); 
-                 isDown = true; 
-                 startX = e.touches[0].clientX; 
-                 startY = e.touches[0].clientY;
-                 mediaEl.style.transition = 'none';
-                 overlay.innerText = "Dragging...";
-                 window.addEventListener('touchmove', onTouchMove, { passive: false });
-                 window.addEventListener('touchend', onTouchEnd);
-             };
-             const onTouchMove = (e) => {
-                 if(e.cancelable) e.preventDefault(); 
-                 handleMove(e.touches[0].clientX, e.touches[0].clientY);
-             };
-             const onTouchEnd = () => {
-                 isDown = false; mediaEl.style.transition = 'object-position 0.2s ease';
-                 renderOverlayButtons();
-                 window.removeEventListener('touchmove', onTouchMove);
-                 window.removeEventListener('touchend', onTouchEnd);
-             };
-
-             // === BUTTON RENDERER ===
-             function renderOverlayButtons() {
-                 overlay.classList.remove('pointer-events-none');
-                 overlay.classList.remove('opacity-0');
-                 overlay.innerHTML = `
-                    <div class="flex gap-2 items-center">
-                        <span class="text-[9px] opacity-50 select-none">Drag to adjust</span>
-                        <button id="removeMediaBtn" class="bg-red-50 text-red-600 px-3 py-2 rounded-[8px] text-[10px] font-extrabold shadow-sm border border-red-100 cursor-pointer active:scale-95 transition-transform">Remove</button>
-                    </div>`;
-                 
-                 const btn = document.getElementById('removeMediaBtn');
-                 if(btn) {
-                     const handleRemove = (e) => {
-                         e.preventDefault();
-                         e.stopPropagation();
-                         removeComposeMedia();
-                     };
-                     btn.addEventListener('click', handleRemove);
-                     btn.addEventListener('touchend', handleRemove);
-                     btn.addEventListener('touchstart', (e) => e.stopPropagation());
-                     btn.addEventListener('mousedown', (e) => e.stopPropagation());
-                 }
-             }
-             renderOverlayButtons();
-
-        } else {
-             // === EMPTY/ART MODE ===
-             if(fileInput) fileInput.classList.remove('hidden');
-             state.compose.mediaPos = { x: 50, y: 50 }; 
-
-             const currentSeed = state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed;
-             content.innerHTML = artSVG(currentSeed, state.compose.vibe);
-             
-             overlay.classList.add('pointer-events-none');
-             overlay.innerHTML = `Tap to upload`;
-        }
-        
-        // 3. Art Picker UI
-        if (artPicker) {
-            artPicker.innerHTML = illustChoices.map(ch => {
-                const isSelected = (ch.seed == null && state.compose.illustSeed == null) || (state.compose.illustSeed === ch.seed);
-                const seed = ch.seed != null ? ch.seed : state.compose.seed;
-                return `
-                <button type="button" class="artBtn wobbly px-2.5 py-2 rounded-[18px_16px_22px_14px] border border-black/10 ${isSelected ? 'bg-white/85 ring-2 ring-black/10' : 'bg-white/70'} ${hasMedia ? 'opacity-40 cursor-not-allowed grayscale' : ''}" data-seed="${ch.seed || ''}">
-                  <div class="w-12 h-9 rounded-[14px_12px_16px_10px] overflow-hidden border border-black/10 bg-white/40 pointer-events-none" style="aspect-ratio: 4/3">${artSVG(seed, state.compose.vibe)}</div>
-                  <div class="mt-1 text-[11px] font-extrabold text-black/70 pointer-events-none">${html(ch.label)}</div>
-                </button>`;
-            }).join('');
-            
-            artPicker.querySelectorAll('.artBtn').forEach(b => {
-                b.onclick = () => {
-                    if (hasMedia) { toast('Remove photo to use art.'); return; }
-                    state.compose.illustSeed = b.dataset.seed ? parseInt(b.dataset.seed) : null;
-                    updateComposeView();
-                };
-            });
-        }
+// --- PART 6: DYNAMIC COMPOSER VIEW (FIXED) ---
+function updateComposeView() {
+    const container = document.getElementById('composePreviewContainer');
+    const content = document.getElementById('composePreview');
+    const fileInput = document.getElementById('mediaInput');
+    
+    if(!container || !content) return; 
+    
+    // Render the mini art row if it exists (run once)
+    if(document.getElementById('artPreviewRow') && document.getElementById('artPreviewRow').innerHTML === "") {
+        renderArtMiniPreview();
     }
+
+    // --- 1. Frame Logic ---
+    let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square lg:w-3/4 lg:mx-auto overflow-hidden relative transition-all duration-300 ';
+    
+    const oldTape = container.querySelector('.tape-deco');
+    if(oldTape) oldTape.remove();
+
+    if (state.compose.frame === 'polaroid') {
+        classes += 'bg-white p-4 pb-10 shadow-sm';
+    } else if (state.compose.frame === 'tape') {
+        classes += 'bg-white/80 p-2';
+        const tape = document.createElement('div');
+        tape.className = 'tape-deco absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f7c59f]/80 rotate-[-2deg] border border-black/5 z-20 shadow-sm';
+        container.appendChild(tape);
+    } else {
+            classes += 'bg-white/40';
+    }
+    container.className = classes;
+
+    // --- 2. Content Rendering ---
+    content.innerHTML = ''; 
+    const hasMedia = !!state.compose.mediaPreviewUrl;
+    
+    let overlay = container.querySelector('.overlay-ctrl');
+    if(!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/90 px-2 py-1.5 rounded-[8px] text-[10px] font-bold transition-opacity z-50 shadow-sm border border-black/5';
+        container.appendChild(overlay);
+    }
+
+    if (hasMedia) {
+            // === MEDIA MODE ===
+            if(fileInput) fileInput.classList.add('hidden'); 
+            
+            let mediaEl;
+            const posX = state.compose.mediaPos?.x ?? 50;
+            const posY = state.compose.mediaPos?.y ?? 50;
+            const posStyle = `object-position: ${posX}% ${posY}%`;
+            const mediaClasses = "w-full h-full object-cover rounded-[12px] cursor-move select-none touch-none"; 
+            
+            if(state.compose.mediaKind === 'video') {
+                mediaEl = document.createElement('video');
+                mediaEl.src = state.compose.mediaPreviewUrl;
+                mediaEl.className = mediaClasses;
+                mediaEl.style.cssText = posStyle;
+                mediaEl.playsInline = true;
+                mediaEl.controls = false; 
+            } else {
+                mediaEl = document.createElement('img');
+                mediaEl.src = state.compose.mediaPreviewUrl;
+                mediaEl.className = mediaClasses;
+                mediaEl.style.cssText = posStyle;
+                mediaEl.draggable = false; 
+                // Ensure external images load (CORS)
+                mediaEl.crossOrigin = "anonymous"; 
+            }
+            
+            mediaEl.style.webkitUserSelect = "none";
+            mediaEl.style.touchAction = "none"; 
+            
+            content.appendChild(mediaEl);
+
+            // Drag Logic (Standard)
+            let isDown = false;
+            let startX = 0, startY = 0;
+            const handleMove = (clientX, clientY) => {
+                if(!isDown) return;
+                const deltaX = (startX - clientX) * 0.4; 
+                const deltaY = (startY - clientY) * 0.4;
+                state.compose.mediaPos.x = Math.max(0, Math.min(100, state.compose.mediaPos.x + deltaX));
+                state.compose.mediaPos.y = Math.max(0, Math.min(100, state.compose.mediaPos.y + deltaY));
+                mediaEl.style.objectPosition = `${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
+                startX = clientX; startY = clientY;
+            };
+            mediaEl.onmousedown = (e) => { isDown=true; startX=e.clientX; startY=e.clientY; mediaEl.style.transition='none'; overlay.innerText="Dragging..."; window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp); };
+            const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
+            const onMouseUp = () => { isDown=false; mediaEl.style.transition='object-position 0.2s ease'; renderOverlayButtons(); window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
+            
+            mediaEl.ontouchstart = (e) => { if(e.cancelable)e.preventDefault(); isDown=true; startX=e.touches[0].clientX; startY=e.touches[0].clientY; mediaEl.style.transition='none'; overlay.innerText="Dragging..."; window.addEventListener('touchmove', onTouchMove, {passive:false}); window.addEventListener('touchend', onTouchEnd); };
+            const onTouchMove = (e) => { if(e.cancelable)e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); };
+            const onTouchEnd = () => { isDown=false; mediaEl.style.transition='object-position 0.2s ease'; renderOverlayButtons(); window.removeEventListener('touchmove', onTouchMove); window.removeEventListener('touchend', onTouchEnd); };
+
+            function renderOverlayButtons() {
+                overlay.classList.remove('pointer-events-none');
+                overlay.classList.remove('opacity-0');
+                overlay.innerHTML = `
+                <div class="flex gap-2 items-center">
+                    <span class="text-[9px] opacity-50 select-none">Drag to adjust</span>
+                    <button id="removeMediaBtn" class="bg-red-50 text-red-600 px-3 py-2 rounded-[8px] text-[10px] font-extrabold shadow-sm border border-red-100 cursor-pointer active:scale-95 transition-transform">Remove</button>
+                </div>`;
+                const btn = document.getElementById('removeMediaBtn');
+                if(btn) {
+                    const handleRemove = (e) => { e.preventDefault(); e.stopPropagation(); removeComposeMedia(); };
+                    btn.addEventListener('click', handleRemove);
+                    btn.addEventListener('touchend', handleRemove);
+                    btn.addEventListener('touchstart', (e)=>e.stopPropagation());
+                    btn.addEventListener('mousedown', (e)=>e.stopPropagation());
+                }
+            }
+            renderOverlayButtons();
+
+    } else {
+            // === EMPTY STATE ===
+            if(fileInput) fileInput.classList.remove('hidden');
+            if(!state.editingId) state.compose.mediaPos = { x: 50, y: 50 }; 
+
+            // Clean Empty State UI
+            content.innerHTML = `
+            <div class="flex flex-col items-center justify-center opacity-40">
+                <svg class="w-12 h-12 mb-2 text-black/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" y1="5" x2="22" y2="5"/><line x1="19" y1="2" x2="19" y2="8"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <div class="text-xs font-bold text-center">Tap to upload<br>or pick art</div>
+            </div>`;
+            
+            overlay.classList.add('pointer-events-none');
+            overlay.classList.add('opacity-0');
+    }
+}
     function removeComposeMedia(silent = false) {
         // 1. Clear Memory
         if (state.compose.mediaPreviewUrl) {
@@ -3326,92 +3331,171 @@ function notifIcon(type) {
     }
     
     async function createPost() {
-        const caption = document.getElementById('composeCaption').value; 
-        if (!caption && !state.compose.file) return toast("Write a tiny note or add art.");
+    const caption = document.getElementById('composeCaption').value; 
+    // Validation: Must have caption OR visual
+    const hasVisual = state.compose.file || state.compose.mediaPreviewUrl || state.compose.illustSeed !== null;
+    if (!caption && !hasVisual) return toast("Write a note or add art.");
+    
+    const btn = document.getElementById('postNowBtn');
+    const originalText = btn.innerText;
+    btn.innerText = state.editingId ? "Updating..." : "Publishing...";
+    btn.disabled = true;
+    
+    let imageUrl = null;
+    let mediaType = state.compose.mediaKind || 'image'; // Default to image
+
+    try {
+        // --- MEDIA LOGIC ---
         
-        const btn = document.getElementById('postNowBtn');
-        const originalText = btn.innerText;
-        btn.innerText = "Publishing...";
-        btn.disabled = true;
-        
-        let imageUrl = null;
-        let mediaType = null;
-
-        try {
-            // 1. Upload Media (if any)
-            if (state.compose.file) {
-                btn.innerText = "Compressing...";
-                const file = state.compose.file;
-                const isVideo = file.type.startsWith('video/');
-                mediaType = isVideo ? 'video' : 'image';
-                const fileToUpload = await compressImageToBlob(file);
-                
-                btn.innerText = "Uploading...";
-                const ext = isVideo ? 'mp4' : 'jpg';
-                const name = `${state.user.id}/${Date.now()}.${ext}`;
-                const { error } = await sb.storage.from('cozy-media').upload(name, fileToUpload);
-                if (error) throw error;
-                const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
-                imageUrl = data.publicUrl;
-            }
-
-            // 2. Insert into DB and RETURN the new row (.select().single())
-            btn.innerText = "Saving...";
-            const { data: newPostData, error: insertError } = await sb.from('posts').insert({ 
-                user_id: state.user.id, 
-                caption, 
-                image_url: imageUrl, 
-                media: imageUrl ? { 
-                    type: mediaType, 
-                    mediaId: imageUrl, 
-                    position: state.compose.mediaPos 
-                } : null,
-                frame: state.compose.frame, 
-                palette: state.compose.vibe, 
-                seed: state.compose.seed 
-            }).select().single();
-
-            if (insertError) throw insertError;
-
-            // 3. Construct the Full Post Object for the UI
-            // We mix the DB result with your local Profile data
-            const fullPost = {
-                ...newPostData,
-                profiles: state.profile, // Use your local profile for instant display
-                stickers: [],            // No stickers yet
-                comments: []             // No comments yet
-            };
-
-            // 4. Update Local State
-            state.posts.unshift(fullPost);
-
-            // 5. Render & Inject Immediately
-            const html = getPostHTML(fullPost);
-            const container = document.getElementById('feed-container');
-            const banner = container.querySelector('.hand-card'); // The "Low Pressure" banner
+        // Case A: User uploaded a NEW file (from device)
+        if (state.compose.file) {
+            btn.innerText = "Compressing...";
+            const file = state.compose.file;
+            const isVideo = file.type.startsWith('video/');
+            mediaType = isVideo ? 'video' : 'image';
+            const fileToUpload = await compressImageToBlob(file);
             
-            // Inject right after the banner (or at top if no banner)
-            if(banner) {
-                banner.insertAdjacentHTML('afterend', html);
-            } else {
-                container.insertAdjacentHTML('afterbegin', html);
-            }
-
-            toast("Posted"); 
-            
-            // 6. Cleanup
-            document.getElementById('composeModal').classList.add('hidden'); 
-            document.getElementById('composeCaption').value = ''; 
-            removeComposeMedia(true); // Resets the file input and view
-
-        } catch(e) {
-            console.error("FULL ERROR:", e);
-            toast("Error: " + (e.message || "Upload failed"));
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
+            btn.innerText = "Uploading...";
+            const ext = isVideo ? 'mp4' : 'jpg';
+            const name = `${state.user.id}/${Date.now()}.${ext}`;
+            const { error } = await sb.storage.from('cozy-media').upload(name, fileToUpload);
+            if (error) throw error;
+            const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
+            imageUrl = data.publicUrl;
+        } 
+        // Case B: Art Collection OR Editing existing post
+        // FIX: We simply check if there is a preview URL available. 
+        // If 'selectArt' was used, this contains the Art URL.
+        else if (state.compose.mediaPreviewUrl) {
+            imageUrl = state.compose.mediaPreviewUrl;
         }
+
+        // Prepare Data Object
+        const postData = { 
+            caption, 
+            image_url: imageUrl, // Legacy support
+            media: imageUrl ? { 
+                type: mediaType, 
+                mediaId: imageUrl, 
+                position: state.compose.mediaPos 
+            } : null,
+            frame: state.compose.frame, 
+            palette: state.compose.vibe, 
+            seed: state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed 
+        };
+
+        let resultData;
+
+        // --- DB ACTION ---
+        if (state.editingId) {
+            // UPDATE EXISTING
+            btn.innerText = "Saving...";
+            const { data, error } = await sb.from('posts')
+                .update(postData)
+                .eq('id', state.editingId)
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .single();
+            if (error) throw error;
+            resultData = data;
+
+            // Update Local State (Replace the old post object)
+            const idx = state.posts.findIndex(p => p.id === state.editingId);
+            if (idx !== -1) {
+                resultData.stickers = state.posts[idx].stickers || [];
+                resultData.comments = state.posts[idx].comments || [];
+                state.posts[idx] = resultData;
+            }
+
+            // Update DOM (Re-render just this post)
+            const oldEl = document.getElementById(`post-${state.editingId}`);
+            if (oldEl) oldEl.outerHTML = getPostHTML(resultData);
+            
+            toast("Post updated.");
+        } 
+        else {
+            // INSERT NEW
+            const { data, error } = await sb.from('posts')
+                .insert({ ...postData, user_id: state.user.id })
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .single();
+            if (error) throw error;
+            resultData = data;
+
+            // Add to Local State
+            state.posts.unshift(resultData);
+
+            // Update DOM
+            const html = getPostHTML(resultData);
+            const container = document.getElementById('feed-container');
+            const banner = container.querySelector('.hand-card'); 
+            if(banner) banner.insertAdjacentHTML('afterend', html);
+            else container.insertAdjacentHTML('afterbegin', html);
+            
+            toast("Posted.");
+        }
+        
+        // --- CLEANUP ---
+        closeCompose(); 
+
+    } catch(e) {
+        console.error("FULL ERROR:", e);
+        toast("Error: " + (e.message || "Action failed"));
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
+}
+
+function editPost() {
+    const pid = state.activePostOption;
+    const post = state.posts.find(p => p.id === pid);
+    
+    $('#postOptionsModal').classList.add('hidden');
+    if (!post) return;
+
+    // 1. Set Edit Mode
+    state.editingId = pid;
+
+    // 2. Resolve Media URL & Position
+    // Handle cases where 'media' object exists, or fallback to 'image_url'
+    const mediaUrl = post.media?.mediaId || post.image_url || null;
+    const mediaType = post.media?.type || 'image';
+    
+    // BUG FIX: Load position safely. Default to 50/50 if missing.
+    const savedPos = post.media?.position || {x: 50, y: 50};
+
+    // 3. Populate State
+    state.compose = {
+        frame: post.frame || 'wavy',
+        vibe: post.palette || 'sunset',
+        seed: post.seed || 1,
+        
+        // Load the Visuals
+        mediaPreviewUrl: mediaUrl,
+        mediaKind: mediaType,
+        mediaPos: { x: savedPos.x, y: savedPos.y }, // Explicit copy
+        
+        illustSeed: null,
+        file: null // No new file yet
+    };
+    
+    // If it was art-only (no mediaUrl), set the illust seed
+    if (!mediaUrl) {
+        state.compose.illustSeed = post.seed;
+    }
+
+    // 4. Pre-fill Caption
+    const captionInput = document.getElementById('composeCaption');
+    if(captionInput) captionInput.value = post.caption || '';
+    
+    // 5. Update UI
+    document.getElementById('postNowBtn').innerText = "Save Changes";
+    document.querySelector('#composeModal h3').innerText = "Edit Post";
+
+    // 6. Render
+    updateComposeView();
+    $('#composeModal').classList.remove('hidden');
+}
 
     async function sendSticker(pid, type, el) {
         // 1. Animation
@@ -3461,21 +3545,27 @@ function notifIcon(type) {
 
     // --- TEXT MODAL HELPERS ---
 
-    function openTextModal(title, subtitle, placeholder, callback) {
-        // 1. Setup UI
-        document.getElementById('textModalTitle').innerText = title;
-        document.getElementById('textModalSubtitle').innerText = subtitle;
-        const input = document.getElementById('textModalInput');
-        input.placeholder = placeholder;
-        input.value = ''; // Reset input
-        
-        // 2. Store the callback in state so we know what to do when "Save" is clicked
-        state.textModal.onSave = callback;
-        
-        // 3. Show Modal
-        document.getElementById('textModal').classList.remove('hidden');
-        input.focus();
-    }
+// Updated helper to support pre-filling text
+function openTextModal(title, subtitle, placeholder, callback, initialValue = '') {
+    // 1. Setup UI
+    document.getElementById('textModalTitle').innerText = title;
+    document.getElementById('textModalSubtitle').innerText = subtitle;
+    
+    const input = document.getElementById('textModalInput');
+    input.placeholder = placeholder;
+    input.value = initialValue; // Set the existing text
+    
+    // Update Character Count immediately
+    const countEl = document.getElementById('textModalCount');
+    if(countEl) countEl.innerText = initialValue.length;
+    
+    // 2. Store callback
+    state.textModal.onSave = callback;
+    
+    // 3. Show Modal
+    document.getElementById('textModal').classList.remove('hidden');
+    input.focus();
+}
 
     function closeTextModal() {
         document.getElementById('textModal').classList.add('hidden');
@@ -3531,6 +3621,16 @@ function notifIcon(type) {
         
         safeWire('#closeCompose', () => $('#composeModal').classList.add('hidden'));
         safeWire('#postNowBtn', createPost);
+        safeWire('#editPostBtn', editPost);
+
+        const textInput = document.getElementById('textModalInput');
+    if(textInput) {
+        textInput.oninput = (e) => {
+            const len = e.target.value.length;
+            const countEl = document.getElementById('textModalCount');
+            if(countEl) countEl.innerText = len;
+        };
+    }
         
 // FIX: Use onchange for files, because safeWire only does onclick!
         const mediaInput = document.getElementById('mediaInput');
