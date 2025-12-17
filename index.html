@@ -378,33 +378,57 @@
           </div>
       </section>
       
-      <!-- MESSAGES -->
-      <section id="view-messages" class="hidden space-y-4">
-          <div class="hand-card hand-outline paper-noise p-4">
-            <div class="flex items-start justify-between gap-3">
-                <div><h2 class="font-[Fraunces] text-lg">Passing Notes</h2><p class="text-sm text-black/70 mt-1">Chats feel like folded paper.</p></div>
-                <button onclick="$('#newThreadModal').classList.remove('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New note</button>
+<!-- MESSAGES -->
+<section id="view-messages" class="hidden space-y-4">
+    <div class="hand-card hand-outline paper-noise p-4">
+      <div class="flex items-start justify-between gap-3">
+          <div><h2 class="font-[Fraunces] text-lg">Passing Notes</h2><p class="text-sm text-black/70 mt-1">Chats feel like folded paper.</p></div>
+          <button onclick="$('#newThreadModal').classList.remove('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New note</button>
+      </div>
+    </div>
+    
+    <div class="desktop-two-col">
+        <!-- Sidebar List -->
+        <div id="threadList" class="space-y-2"></div>
+        
+        <!-- 
+           CHAT BOX UPDATE:
+           1. Added 'relative' and 'overflow-hidden' to clip the image.
+           2. Added 'p-0' to remove any internal padding that causes gaps.
+           3. Height: 80vh on mobile, 600px on desktop.
+        -->
+        <div class="hand-card hand-outline border border-black/10 flex flex-col h-[80vh] lg:h-[600px] relative overflow-hidden p-0"
+             style="
+                background-color: #2b2b35; 
+                background-image: url('https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/Chat%20wallpaper/Minimal%20Floral%20Galaxy%20Design%20Mobile%20Phone%20Wallpaper%20Vector%20Set.jpg'); 
+                background-size: cover; 
+                background-position: center bottom;
+             ">
+             
+            <!-- Darker Overlay for text readability -->
+            <div class="absolute inset-0 bg-black/30 pointer-events-none z-0"></div>
+  
+            <!-- HEADER (Floating on Top) -->
+            <!-- z-20 to stay above messages. bg-white/20 for glass effect. -->
+            <div id="chatHeader" class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/20 backdrop-blur-md">
+                <div class="font-extrabold text-sm text-white/90 drop-shadow-sm">Select a note to read</div>
             </div>
-          </div>
-          <div class="desktop-two-col">
-              <div id="threadList" class="space-y-2"></div>
-              <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex flex-col h-[500px]">
-                  <div id="chatHeader" class="flex items-center justify-between border-b border-black/5 pb-2 mb-2"><div class="font-extrabold text-sm opacity-50">Select a note to read</div></div>
-                  <div id="chatMessages" class="flex-1 overflow-y-auto space-y-2 p-1 mb-2"></div>
-                  <div id="chatInputArea" class="hidden">
-                      <div class="flex flex-wrap gap-2 mb-2">
-                          <button class="quickReply text-[10px] px-2 py-1 bg-white border rounded-[8px] wobbly" onclick="$('#chatInput').value='Sending a warm hug 🤗'; $('#chatInput').focus();">Warm hug</button>
-                          <button class="quickReply text-[10px] px-2 py-1 bg-white border rounded-[8px] wobbly" onclick="$('#chatInput').value='Thinking of you 🌿'; $('#chatInput').focus();">Thinking of you</button>
-                      </div>
-                      <div class="flex gap-2">
-                          <input id="chatInput" class="flex-1 px-3 py-2 rounded-[12px] border border-black/10 text-base sm:text-sm focus:outline-none" placeholder="Write a gentle note..." />
-                          <button id="chatSendBtn" class="px-3 py-2 bg-[#f4a37a] text-white font-bold rounded-[12px] wobbly text-xs">Send</button>
-                      </div>
-                      <div id="kindHint" class="mt-2 text-xs text-black/55 hidden">Tip: “Do you want comfort or solutions?” helps a lot.</div>
-                  </div>
-              </div>
-          </div>
-      </section>
+  
+            <!-- MESSAGES AREA (Scrollable) -->
+            <!-- z-10. Added pt-16 and pb-20 so text isn't hidden behind header/footer. -->
+            <div id="chatMessages" class="absolute inset-0 z-10 overflow-y-auto pt-16 pb-20 px-3 space-y-3"></div>
+  
+            <!-- INPUT AREA (Floating on Bottom) -->
+            <!-- z-20. Removed quick replies. Glass effect. -->
+            <div id="chatInputArea" class="absolute bottom-0 left-0 right-0 z-20 p-3 bg-white/20 backdrop-blur-md border-t border-white/10 hidden">
+                <div class="flex gap-2">
+                    <input id="chatInput" class="flex-1 px-4 py-3 rounded-[16px] border border-white/20 bg-white/80 text-black placeholder:text-black/50 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a37a] shadow-lg" placeholder="Write a gentle note..." />
+                    <button id="chatSendBtn" class="px-4 py-3 bg-[#f4a37a] text-white font-bold rounded-[16px] wobbly text-xs shadow-lg border border-white/20">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
       
       <!-- NOTIFICATIONS -->
       <section id="view-notifs" class="hidden space-y-4">
@@ -460,6 +484,34 @@
         </div>
       </div>
   </div>
+<!-- SCRAPBOOK MODAL (Responsive: 1 Col Mobile, 2 Cols Desktop) -->
+<div id="scrapbookModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <!-- 
+       UPDATES: 
+       1. Added 'lg:max-w-3xl' -> Makes the card wider on desktop to fit 2 posts side-by-side.
+    -->
+    <div class="w-full max-w-md lg:max-w-7xl hand-card hand-outline paper-noise p-4 pop-in modal-card flex flex-col h-[85vh]" role="dialog">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4 shrink-0">
+            <h3 class="font-[Fraunces] text-lg">My Scrapbook</h3>
+            <button onclick="closeScrapbook()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+        
+        <!-- Scrollable Body -->
+        <!-- 
+           UPDATES:
+           1. Removed 'space-y-4' (Vertical stack).
+           2. Added 'grid grid-cols-1' (Mobile default).
+           3. Added 'lg:grid-cols-2' (Desktop 2 columns).
+           4. Added 'gap-4' (Space between grid items).
+           5. Added 'content-start' (Prevents stretching if few items).
+        -->
+        <div id="scrapbookBody" class="flex-1 overflow-y-auto pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4 content-start">
+            <!-- Posts will be injected here -->
+        </div>
+    </div>
+</div>
   <div id="storyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
       <div class="flex items-center justify-between mb-4">
@@ -517,6 +569,7 @@
         <!-- Button -->
         <button id="postNowBtn" class="w-full mt-1 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shrink-0">Post to Cloud</button>
     </div>
+</div>
   <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">New Page</h3><button onclick="$('#storyComposeModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
@@ -546,7 +599,7 @@
     </div>
 </div>
 <!-- Find this modal div -->
-<div id="postOptionsModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+<div id="postOptionsModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
         <h3 class="font-bold mb-3 text-center">Options</h3>
         <button id="savePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Save to Drawer</button>
@@ -599,7 +652,7 @@
         <button id="saveProfileSetup" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Save</button>
     </div>
   </div>
-  <div id="commentsModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+  <div id="commentsModal" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Supportive Notes</h3><button onclick="$('#commentsModal').classList.add('hidden')" class="text-sm font-bold opacity-50">Close</button></div>
         <div id="commentsList" class="space-y-2 mb-4 text-sm text-black/70"></div>
@@ -621,11 +674,11 @@
    <!-- Hidden File Input for Avatars -->
  <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
  <!-- SINGLE POST SPOTLIGHT MODAL -->
- <div id="spotlightModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>
+ <div id="spotlightModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>    
     <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
       <!-- Header -->
       <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
-          <h3 class="font-[Fraunces] text-lg">Shared Moment</h3>
+          <h3 class="font-[Fraunces] text-lg">The Post</h3>
           <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
       </div>
       <!-- Content Container -->
@@ -1737,7 +1790,13 @@ function getSketchBackground(seed) {
         // --- HTML GENERATORS (For Realtime & Initial Load) ---
 
         function getPostHTML(p) {
-    const u = p.profiles || { username: 'Anon', seed: 1 };
+    // Safety check: If p is null (e.g. deleted post), return a placeholder
+    if (!p) return `<div class="p-4 text-center opacity-50">Post unavailable</div>`;
+
+    // Safety check: Handle missing profile (e.g. deleted user)
+    const u = p.profiles || { username: 'Ghost Neighbor', seed: 0, avatar_url: null };
+    
+    // Safety check: Handle missing stickers
     const stickers = p.stickers || [];
     const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
     stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
@@ -1747,11 +1806,10 @@ function getSketchBackground(seed) {
     const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
     const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
     const isSaved = state.savedPostIds.includes(p.id);
-    const tags = inferTags(p.caption);
+    const tags = inferTags(p.caption || '');
     const tagHtml = tags.map(t => `<span class="text-[10px] opacity-50 mr-1">#${t}</span>`).join('');
     const promptChip = p.prompt ? `<button onclick="saveToShelf('${html(p.prompt)}')" class="wobbly inline-flex items-center gap-2 px-3 py-1.5 rounded-[16px_14px_18px_12px] border border-black/10 bg-gradient-to-b from-[#fbf5ea] to-white/70 text-xs mb-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgba(244,163,122,.75)"></span>prompt: <b class="font-extrabold">${html(p.prompt)}</b><span class="text-[11px] text-black/45">save</span></button>` : '';
 
-    // LIVE TIME LOGIC
     const rawTime = new Date(p.created_at).getTime();
     const timeStr = timeAgo(new Date(p.created_at));
 
@@ -1766,7 +1824,6 @@ function getSketchBackground(seed) {
                 <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
                 <div>
                     <div class="font-extrabold text-sm">${html(u.username)}</div>
-                    <!-- LIVE TIMER CLASS ADDED HERE -->
                     <div class="text-xs text-black/50 live-time" data-ts="${rawTime}">${timeStr}</div>
                 </div>
             </button>
@@ -1806,6 +1863,7 @@ function getSketchBackground(seed) {
         </div>
     </article>`;
 }
+
 
 function getStoryHTML(s, idx) {
     const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
@@ -1945,6 +2003,96 @@ function shuffleFeed() {
         openRoom('reports'); 
         toast("Report withdrawn.");
     }
+
+    async function openUserModal(targetId) {
+        // 1. If I clicked myself, just go to the Profile tab
+        if (targetId === state.user.id) {
+            showView('profile');
+            return;
+        }
+
+        const modal = document.getElementById('userModal');
+        const body = document.getElementById('userModalBody');
+        
+        // 2. Open Modal with Loading State
+        modal.classList.remove('hidden');
+        body.innerHTML = `<div class="p-8 text-center text-black/40 animate-pulse">Knocking...</div>`;
+
+        // 3. Find User Data
+        // Try local memory first
+        let user = state.allUsers.find(u => u.id === targetId);
+        
+        // If not in memory, fetch from cloud
+        if (!user) {
+            try {
+                const { data } = await sb.from('profiles').select('*').eq('id', targetId).single();
+                user = data;
+            } catch(e) {}
+        }
+
+        if (!user) {
+            body.innerHTML = `<div class="p-8 text-center text-black/40">Neighbor moved away.</div>`;
+            return;
+        }
+
+        // 4. Get their recent posts (from your local feed cache)
+        const recentPosts = state.posts.filter(p => p.user_id === targetId).slice(0, 6);
+
+        // 5. Determine Mood Color (Fallback to white if none)
+        const moodMap = {
+            sunset: 'linear-gradient(135deg, #fff5ea 0%, #fbf5ea 100%)',
+            sage:   'linear-gradient(135deg, #f6fff8 0%, #fbf5ea 100%)',
+            berry:  'linear-gradient(135deg, #fff3f6 0%, #fbf5ea 100%)',
+            clay:   'linear-gradient(135deg, #fff7f1 0%, #fbf5ea 100%)'
+        };
+        const moodBg = moodMap[user.mood || 'sunset'];
+
+        // 6. Render the Profile Card
+        body.innerHTML = `
+            <div class="relative rounded-[22px] border border-black/10 overflow-hidden p-4 mb-4 shadow-sm" style="background: ${moodBg}">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-[20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
+                        ${avatarHTML(user)}
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-[Fraunces] text-xl leading-tight truncate">${html(user.username)}</div>
+                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">${html(user.pronouns || 'Neighbor')}</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-sm text-black/80 leading-relaxed">
+                    ${html(user.bio || 'Just visiting.')}
+                </div>
+                
+<!-- Action Buttons -->
+<div class="mt-4 flex gap-2">
+    <!-- NEW BUTTON using startChat -->
+    <button onclick="startChat('${user.id}')" class="flex-1 py-3 rounded-[14px] bg-[#2b2b35] text-white text-xs font-bold wobbly shadow-md">
+        Send a Note
+    </button>
+                    <!-- Pass null as postId to indicate this is a User Action only -->
+                    <button onclick="openOptions(null, '${user.id}');" class="px-4 py-3 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold wobbly">
+                        •••
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mini Scrapbook -->
+            <div class="flex items-center justify-between px-1 mb-2">
+                <div class="text-xs font-bold text-black/40 uppercase tracking-widest">Recent Shares</div>
+            </div>
+            
+            ${recentPosts.length > 0 ? `
+                <div class="grid grid-cols-3 gap-2 pb-2">
+                    ${recentPosts.map(p => `
+                        <button onclick="openSpotlight('${p.id}')" class="aspect-square rounded-[12px] overflow-hidden border border-black/10 bg-white wobbly relative group">
+                            ${postMediaHTML(p)}
+                        </button>
+                    `).join('')}
+                </div>
+            ` : `<div class="p-6 text-center text-sm text-black/40 italic bg-black/5 rounded-[18px]">Quiet so far.</div>`}
+        `;
+    }
+
     async function renderProfile() {
         if(!state.profile) return;
         const p = state.profile;
@@ -2010,9 +2158,13 @@ function shuffleFeed() {
               </div>
             </div>
 
-            <!-- SCRAPBOOK -->
+            <!-- SCRAPBOOK SECTION -->
             <div class="hand-card hand-outline paper-noise p-4 mb-4">
-                <div class="font-[Fraunces] text-lg mb-3">Your scrapbook</div>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="font-[Fraunces] text-lg">My scrapbook</div>
+                    <!-- NEW OPEN BUTTON -->
+                    <button onclick="openScrapbookModal()" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold shadow-sm hover:bg-[#fffaf1]">Open</button>
+                </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div>
             </div>
 
@@ -2055,6 +2207,35 @@ function shuffleFeed() {
         $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
         $$('.savedPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, 'other'));
     }
+
+    // --- SCRAPBOOK FUNCTIONS ---
+function openScrapbookModal() {
+    // 1. Filter only my posts
+    const myPosts = state.posts.filter(p => p.user_id === state.user.id);
+    const container = document.getElementById('scrapbookBody');
+    
+    // 2. Render content
+    if (myPosts.length === 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-40 opacity-50">
+                <div class="text-3xl mb-2">🍃</div>
+                <div class="text-sm">No posts yet.</div>
+            </div>`;
+    } else {
+        // We reuse getPostHTML to show full posts
+        container.innerHTML = myPosts.map(p => getPostHTML(p)).join('');
+    }
+
+    // 3. Show Modal
+    document.getElementById('scrapbookModal').classList.remove('hidden');
+}
+
+function closeScrapbook() {
+    document.getElementById('scrapbookModal').classList.add('hidden');
+}
+// Make global for onclick access
+window.openScrapbookModal = openScrapbookModal;
+window.closeScrapbook = closeScrapbook;
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
         const clubsHtml = MOCK_CLUBS.map(c => `
@@ -2147,6 +2328,19 @@ function shuffleFeed() {
         `).join('') : '<div class="text-sm opacity-50 p-2">No other users found yet.</div>';
     }
 
+    // A bridge function to smoothly take you to the chat
+    window.startChat = function(uid) {
+    toast("Opening note...");
+    document.getElementById('userModal').classList.add('hidden');
+    showView('messages');
+    
+    setTimeout(() => {
+        openThread(uid);
+        // Scroll to the chat box on mobile so they don't just see the list
+        const chatBox = document.querySelector('#view-messages .hand-card');
+        if(chatBox) chatBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+};
     async function openThread(targetId) {
         // --- 1. TOGGLE LOGIC (Clicking same user closes chat) ---
         if (state.activeThreadId === targetId) {
@@ -2186,9 +2380,18 @@ function shuffleFeed() {
         let user = state.allUsers.find(u => u.id === targetId);
         
         // Header
-        if(user) {
-            $('#chatHeader').innerHTML = `<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarHTML(user)}</div><div class="font-extrabold text-sm">${html(user.username)}</div></div>`;
-        }
+// NEW
+if(user) {
+    $('#chatHeader').innerHTML = `
+    <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-[12px] border border-white/30 overflow-hidden bg-white/90 shadow-sm">
+            ${avatarHTML(user)}
+        </div>
+        <div class="font-extrabold text-sm text-white drop-shadow-md">
+            ${html(user.username)}
+        </div>
+    </div>`;
+}
 
         // Messages
         if(thread && thread.messages.length > 0) {
@@ -2204,13 +2407,22 @@ function shuffleFeed() {
     }
 
     function renderChatMessages(thread) {
-        const container = $('#chatMessages');
-        container.innerHTML = (thread.messages || []).map(m => {
-            const isMe = m.from === 'me';
-            return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/35 to-white/75' : 'bg-white/75'}"><div class="text-sm text-black/80">${html(m.text)}</div></div></div>`;
-        }).join('');
-        container.scrollTop = container.scrollHeight;
-    }
+    const container = $('#chatMessages');
+    container.innerHTML = (thread.messages || []).map(m => {
+        const isMe = m.from === 'me';
+        // UPDATES:
+        // 1. Added 'font-bold' to the text.
+        // 2. Changed 'text-black/80' to 'text-black' (solid black).
+        // 3. Increased bubble opacity (bg-white/90 instead of /75) for better contrast.
+        return `
+        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+            <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/40 to-white/90' : 'bg-white/90'} shadow-sm">
+                <div class="text-sm font-bold text-black leading-snug">${html(m.text)}</div>
+            </div>
+        </div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+}
 
 // --- NOTIFICATION HELPERS ---
 // --- UPDATED NOTIFICATION RENDERER ---
@@ -2231,92 +2443,139 @@ function notifIcon(type) {
     if (!list) return;
 
     if (!state.notifications || state.notifications.length === 0) { 
-        list.innerHTML = `
-            <div class="p-12 text-center flex flex-col items-center justify-center opacity-40">
-                <div class="w-20 h-20 mb-4 text-black/20"><svg viewBox="0 0 50 50">${SKETCH_PATHS[10]}</svg></div>
-                <div class="font-[Fraunces] text-lg">It is quiet here.</div>
-                <div class="text-xs mt-1">Your lantern glows when neighbors visit.</div>
-            </div>`; 
+        list.innerHTML = `<div class="p-12 text-center opacity-40">It is quiet here.</div>`; 
         return; 
     }
 
     list.innerHTML = state.notifications.map((n) => {
-        if(!n.post_id) console.log("Notification missing post_id:", n);
-
-        const isFresh = new Date(n.created_at).getTime() > (Date.now() - 1000 * 60 * 60 * 24);
-        const iconHtml = notifIcon(n.type || 'system'); 
+        // 1. Clean the ID
+        const rawId = n.post_id || "";
+        // Handle if Supabase sends it as an object (rare edge case) or string
+        const pid = (typeof rawId === 'object') ? rawId.id : String(rawId);
         
-        // LIVE TIMER VARS
-        const rawTime = new Date(n.created_at).getTime();
+        const hasLink = pid && pid.length > 5;
+        const iconHtml = notifIcon(n.type || 'system'); 
         const timeStr = timeAgo(new Date(n.created_at));
         
-        // BUTTON LOGIC
-        let seeBtn = '';
-        if (n.post_id) {
-            seeBtn = `
-            <button onclick="openSpotlight('${n.post_id}')" class="absolute top-2 right-12 px-3 py-1 h-6 flex items-center justify-center rounded-[8px] bg-[#fffaf1] border border-black/10 text-[10px] font-bold text-black/60 hover:bg-white hover:text-black hover:border-black/30 transition-all z-20 shadow-sm">
-                View Post
-            </button>`;
+        // 2. Button Logic (We use a real <button> for accessibility and reliability)
+        let actionArea = "";
+        
+        if (hasLink) {
+            // We pass the ID directly to a specific handler function
+            actionArea = `
+            <button onclick="handleNotifClick('${pid}')" class="absolute inset-0 w-full h-full z-10 cursor-pointer opacity-0" aria-label="View post"></button>
+            <div class="absolute top-3 right-3 pointer-events-none">
+                <span class="text-[10px] font-bold text-[#f4a37a] bg-[#fffaf1] px-2 py-1 rounded border border-[#f4a37a]/20">View Post</span>
+            </div>`;
+        } else {
+            actionArea = `<div class="absolute top-3 right-3 pointer-events-none opacity-30 text-[10px]">No Link</div>`;
         }
 
         return `
-        <div class="hand-card hand-outline bg-white/80 border border-black/10 p-4 flex items-start gap-4 mb-2 pop-in relative overflow-hidden group">
+        <div class="hand-card hand-outline bg-white/80 border border-black/10 p-4 flex items-start gap-4 mb-2 pop-in relative overflow-hidden group hover:bg-white transition-colors">
             
-            <!-- DELETE BUTTON -->
+            <!-- THE INVISIBLE CLICK OVERLAY -->
+            ${actionArea}
+
+            <!-- Delete Button (z-20 to sit ABOVE the invisible click overlay) -->
             <button onclick="deleteNotification('${n.id}')" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors z-20">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                &times;
             </button>
 
-            <!-- SEE POST BUTTON -->
-            ${seeBtn}
-
-            <!-- FRESH DOT -->
-            ${isFresh ? `<div class="absolute top-3 right-24 w-2 h-2 bg-[#f4a37a] rounded-full shadow-sm"></div>` : ''}
-            
             <div class="w-12 h-12 rounded-full bg-[#fffaf1] border border-black/10 grid place-items-center shrink-0">
                 ${iconHtml}
             </div>
             
-            <div class="flex-1 min-w-0 pt-1 pr-20">
+            <div class="flex-1 min-w-0 pt-1 pr-8">
                 <div class="text-sm font-bold text-black/80 leading-snug">${html(n.content)}</div>
                 <div class="text-[10px] text-black/40 mt-1 font-bold uppercase tracking-widest flex items-center gap-2">
-                    <span class="live-time" data-ts="${rawTime}">${timeStr}</span>
-                    <span class="opacity-0 group-hover:opacity-100 transition-opacity text-[#f4a37a]">• ${n.type || 'alert'}</span>
+                    <span>${timeStr}</span>
+                    <span class="text-[#f4a37a] opacity-60">• ${n.type || 'alert'}</span>
                 </div>
             </div>
         </div>`;
     }).join('');
 }
 
-    async function openSpotlight(postId) {
-        toast("Fetching post...");
-        
-        // Try to find it in memory first
-        let post = state.posts.find(p => p.id === postId);
-        
-        if (!post) {
-            // If not in memory, fetch from cloud
+// --- FIXED SPOTLIGHT FUNCTION ---
+// --- SELF-HEALING SPOTLIGHT FUNCTION ---
+async function openSpotlight(postId) {
+    console.log("🔦 openSpotlight started for:", postId);
+    if (!postId) return console.error("No ID passed");
+    
+    // 1. AUTO-REPAIR: If modal is missing, create it
+    if (!document.getElementById('spotlightModal')) {
+        console.warn("⚠️ Modal missing from HTML. Injecting it now...");
+        const modalHTML = `
+        <div id="spotlightModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>
+            <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
+                <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
+                    <h3 class="font-[Fraunces] text-lg">Shared Moment</h3>
+                    <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+                </div>
+                <div id="spotlightBody" class="p-4 overflow-y-auto"></div>
+                <div class="p-4 border-t border-black/5 bg-white/50 text-center">
+                    <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly">Go to Feed</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    toast("Loading post...");
+
+    // 2. Fetch Data
+    let post = state.posts.find(p => p.id === postId);
+    
+    if (!post) {
+        try {
             const { data, error } = await sb.from('posts')
                 .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
                 .eq('id', postId)
                 .single();
-            if (data) post = data;
-        }
-
-        if (post) {
-            // Use your existing Spotlight Modal
-            const body = document.getElementById('spotlightBody');
-            body.innerHTML = getPostHTML(post);
             
-            // Remove the margin/padding from the card inside the modal for a cleaner look
-            const card = body.querySelector('article');
-            if(card) { card.classList.remove('mb-4', 'hand-card'); card.classList.add('border-0', 'shadow-none'); }
-            
-            document.getElementById('spotlightModal').classList.remove('hidden');
-        } else {
-            toast("Post might have been deleted.");
+            if (error) throw error;
+            if (!data) return toast("Post not found.");
+            post = data;
+        } catch (e) {
+            console.error("Spotlight Crash:", e);
+            toast("Could not open post.");
+            return;
         }
     }
+
+    // 3. Render & Force Show
+    if (post) {
+        const modal = document.getElementById('spotlightModal');
+        const body = document.getElementById('spotlightBody');
+
+        if(modal && body) {
+            body.innerHTML = getPostHTML(post);
+            
+            // Clean up internal styles to fit the modal
+            const card = body.querySelector('article');
+            if (card) {
+                card.classList.remove('mb-4', 'hand-card', 'hand-outline', 'paper-noise');
+                card.classList.add('w-full', 'bg-transparent');
+                const innerViewBtn = card.querySelector('button[onclick^="window.openSpotlight"]');
+                if(innerViewBtn) innerViewBtn.remove();
+            }
+
+            // Force visibility logic
+            modal.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: [80] !important;';
+            modal.classList.remove('hidden'); 
+            
+            console.log("✨ Modal Injected & Opened");
+        }
+    }
+}
+// Ensure Global Access
+window.openSpotlight = openSpotlight;
+// Ensure it's global
+window.openSpotlight = openSpotlight;
+
+// Make sure it's attached to window to be safe
+window.openSpotlight = openSpotlight;
 
     function openArtModal() {
     const grid = document.getElementById('artGrid');
@@ -2650,33 +2909,57 @@ function renderArtMiniPreview() {
     }
 
     function closeSpotlight() {
-        document.getElementById('spotlightModal').classList.add('hidden');
-        // Clean URL so refreshing doesn't re-open it
-        window.history.replaceState({}, document.title, window.location.pathname);
+    const modal = document.getElementById('spotlightModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = ''; 
+        modal.style.zIndex = '';
+        modal.style.opacity = '';
     }
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
 
-    function openOptions(pid, uid) { 
-    state.activePostOption = pid; state.activePostUser = uid; 
-    $('#postOptionsModal').classList.remove('hidden'); 
+function openOptions(pid, uid) { 
+    state.activePostOption = pid; 
+    state.activePostUser = uid; 
     
-    // ... existing button logic ...
-    const isSaved = state.savedPostIds.includes(pid);
-    const saveBtn = $('#savePostBtn');
-    if(saveBtn) {
-        saveBtn.innerText = isSaved ? "Remove from Drawer" : "Save to Drawer";
-        if(isSaved) saveBtn.classList.add('text-red-500'); else saveBtn.classList.remove('text-red-500');
+    const modal = document.getElementById('postOptionsModal');
+    modal.classList.remove('hidden'); 
+    
+    // --- 1. Post Specific Buttons (Hide if pid is null) ---
+    const hasPost = !!pid;
+    
+    // Toggle visibility of post-only actions
+    const postActions = ['savePostBtn', 'sharePostBtn', 'hidePostBtn', 'copyCaptionBtn'];
+    postActions.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.toggle('hidden', !hasPost);
+    });
+
+    // --- 2. Update Text for Save Button ---
+    if (hasPost) {
+        const isSaved = state.savedPostIds.includes(pid);
+        const saveBtn = document.getElementById('savePostBtn');
+        if(saveBtn) {
+            saveBtn.innerText = isSaved ? "Remove from Drawer" : "Save to Drawer";
+            if(isSaved) saveBtn.classList.add('text-red-500'); 
+            else saveBtn.classList.remove('text-red-500');
+        }
+        
+        const isHidden = state.hiddenPosts.includes(pid);
+        document.getElementById('hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
     }
     
+    // --- 3. User Specific Buttons ---
     const isMuted = state.mutedUsers.includes(uid);
-    $('#muteUserBtn').innerText = isMuted ? "Unmute User" : "Mute User";
-    
-    const isHidden = state.hiddenPosts.includes(pid);
-    $('#hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
+    document.getElementById('muteUserBtn').innerText = isMuted ? "Unmute User" : "Mute User";
 
-    // --- NEW: Toggle Edit Button (Show only if I am the owner) ---
-    $('#editPostBtn').classList.toggle('hidden', uid !== state.user.id);
-
-    $('#deletePostBtn').classList.toggle('hidden', uid !== state.user.id); 
+    // --- 4. Owner Buttons (Edit/Delete) ---
+    // Only show if I own the post AND there is a post
+    const isMe = uid === state.user.id;
+    document.getElementById('editPostBtn').classList.toggle('hidden', !hasPost || !isMe);
+    document.getElementById('deletePostBtn').classList.toggle('hidden', !hasPost || !isMe);
 }
 
     function clearUserFilter() {
@@ -3799,8 +4082,7 @@ function openTextModal(title, subtitle, placeholder, callback, initialValue = ''
             if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
 
             // Add my bubble (Align Right)
-            const msgHTML = `<div class="flex justify-end pop-in"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 bg-gradient-to-b from-[#86a68b]/35 to-white/75"><div class="text-sm text-black/80">${html(txt)}</div></div></div>`;
-            container.insertAdjacentHTML('beforeend', msgHTML);
+            const msgHTML = `<div class="flex justify-end pop-in"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 bg-gradient-to-b from-[#86a68b]/40 to-white/90 shadow-sm"><div class="text-sm font-bold text-black leading-snug">${html(txt)}</div></div></div>`;            container.insertAdjacentHTML('beforeend', msgHTML);
             container.scrollTop = container.scrollHeight;
 
             // 3. Update the Thread List Sidebar (Move this chat to top)
@@ -3957,7 +4239,38 @@ safeWire('#textModalSave', async () => {
         }
     }
 
-    init();
+    // --- NOTIFICATION CLICK HANDLER ---
+// --- UPDATED CLICK HANDLER (With Delay & Safety) ---
+window.handleNotifClick = function(postId) {
+    // 1. Stop the click from bubbling up (prevents immediate closing)
+    if (window.event) {
+        window.event.preventDefault();
+        window.event.stopPropagation();
+    }
+
+    console.log("🖱️ CLICKED Notification for Post:", postId);
+    
+    if (!postId || postId === "undefined") {
+        toast("Error: Link is broken.");
+        return;
+    }
+
+    // 2. Use setTimeout to decouple the open action from the click event
+    setTimeout(() => {
+        if (window.openSpotlight) {
+            window.openSpotlight(postId);
+        } else {
+            console.error("openSpotlight function not found!");
+            toast("System error: Reload page.");
+        }
+    }, 10); // 10ms delay is enough
+};
+
+// Ensure openSpotlight is global too
+window.openSpotlight = openSpotlight; 
+
+init(); // Your existing init call
+
   </script>
 </body>
 </html>
