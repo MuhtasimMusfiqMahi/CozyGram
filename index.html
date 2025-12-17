@@ -475,44 +475,47 @@
 <!-- Inside #composeModal .grid -->
 <!-- COMPOSE MODAL (Main Post Creator) -->
 <div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-3">
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card flex flex-col h-[92dvh] sm:h-auto overflow-hidden" role="dialog">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-2 shrink-0">
             <h3 class="font-[Fraunces] text-lg">Make a cozy post</h3>
             <button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
         </div>
         
-        <!-- Top Grid: Preview + Controls -->
-        <div class="flex flex-col gap-3 mb-3">
+        <!-- Middle Area -->
+        <div class="flex flex-col gap-2 mb-2 flex-1 min-h-0">
             
-            <!-- 1. Preview Box (Full Width) -->
-            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square w-full overflow-hidden relative transition-all duration-300">
+            <!-- 
+               1. Preview Box 
+               Mobile: flex-1 (Fills vertical space)
+               Desktop: sm:aspect-square (Forces it to be a big square again)
+               sm:flex-none (Stops it from trying to stretch on desktop)
+            -->
+            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center w-full flex-1 min-h-0 sm:flex-none sm:aspect-square overflow-hidden relative transition-all duration-300">
                 <div id="composePreview" class="w-full h-full"></div>
                 <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
-                <!-- Overlay for "Tap to upload" handled by JS -->
             </div>
     
             <!-- 2. Controls -->
-            <div class="w-full">
-                <!-- Art Collection Box (Frame picker removed) -->
+            <div class="w-full shrink-0">
                 <div class="hand-card hand-outline bg-white/50 border border-black/10 p-3">
                     <div class="flex justify-between items-center mb-2">
                         <div class="text-[10px] uppercase font-bold opacity-50">Cozy Art</div>
                         <button onclick="openArtModal()" class="wobbly px-2 py-1 rounded-[8px] bg-white border border-black/10 text-[10px] font-bold">Open</button>
                     </div>
-                    <!-- Mini Preview of first few items -->
                     <div id="artPreviewRow" class="flex gap-2 overflow-hidden"></div>
                 </div>
             </div>
         </div>
     
         <!-- Caption Input -->
-        <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-24 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
+        <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-20 shrink-0 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
         
-        <!-- Tags Preview -->
-        <div id="composeTags" class="flex gap-2 mt-2 mb-2"></div>
+        <!-- Tags -->
+        <div id="composeTags" class="flex gap-2 mt-1 mb-1 shrink-0 empty:hidden"></div>
         
-        <!-- Main Action Button -->
-        <button id="postNowBtn" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Post to Cloud</button>
+        <!-- Button -->
+        <button id="postNowBtn" class="w-full mt-1 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shrink-0">Post to Cloud</button>
     </div>
   <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
@@ -2865,6 +2868,8 @@ function renderArtMiniPreview() {
 
     // --- PART 6: DYNAMIC COMPOSER VIEW ---
 // --- PART 6: DYNAMIC COMPOSER VIEW (FIXED) ---
+// --- PART 6: DYNAMIC COMPOSER VIEW (NO SCROLL FIX) ---
+// --- PART 6: DYNAMIC COMPOSER VIEW (FIXED HEIGHT) ---
 function updateComposeView() {
     const container = document.getElementById('composePreviewContainer');
     const content = document.getElementById('composePreview');
@@ -2877,12 +2882,13 @@ function updateComposeView() {
     }
 
     // --- 1. Frame Logic ---
-    // CHANGED: Fixed classes to ensure full width on all devices
-    let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center aspect-square w-full overflow-hidden relative transition-all duration-300 ';
+    // NOTE: We do NOT set aspect-ratio here anymore. We let the HTML classes handle it.
+    let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center w-full h-full overflow-hidden relative transition-all duration-300 ';
     
     const oldTape = container.querySelector('.tape-deco');
     if(oldTape) oldTape.remove();
 
+    // Since we removed the Frame Buttons, this just defaults to basic style
     if (state.compose.frame === 'polaroid') {
         classes += 'bg-white p-4 pb-10 shadow-sm';
     } else if (state.compose.frame === 'tape') {
@@ -2893,7 +2899,23 @@ function updateComposeView() {
     } else {
             classes += 'bg-white/40';
     }
-    container.className = classes;
+    
+    // IMPORTANT: We only update the INNER classes. We do not touch the container's outer layout classes (flex-1, etc)
+    // Actually, to be safe, we should NOT reset container.className entirely.
+    // Let's just append the specific frame classes to the background.
+    
+    // Reset background/padding only
+    container.style.backgroundColor = '';
+    container.style.padding = '';
+    
+    if(state.compose.frame === 'polaroid') {
+        container.classList.add('bg-white', 'p-4', 'pb-10');
+        container.classList.remove('bg-white/40', 'bg-white/80', 'p-2');
+    } else {
+        container.classList.add('bg-white/40');
+        container.classList.remove('bg-white', 'p-4', 'pb-10', 'bg-white/80');
+    }
+
 
     // --- 2. Content Rendering ---
     content.innerHTML = ''; 
