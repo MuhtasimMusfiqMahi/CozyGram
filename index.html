@@ -1237,11 +1237,11 @@ function getSketchBackground(seed) {
     function showView(viewId) {
         state.tab = viewId;
 
-        // Auto-close chat if leaving messages tab
+        // 1. Auto-close chat if leaving messages tab
         if (viewId !== 'messages' && state.activeThreadId) {
             state.activeThreadId = null; 
             const chatHeader = document.getElementById('chatHeader');
-            if(chatHeader) chatHeader.innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
+            if(chatHeader) chatHeader.innerHTML = `<div class="font-extrabold text-sm opacity-50 text-white/90">Select a note to read</div>`;
             const chatMessages = document.getElementById('chatMessages');
             if(chatMessages) chatMessages.innerHTML = '';
             const chatInputArea = document.getElementById('chatInputArea');
@@ -1249,7 +1249,7 @@ function getSketchBackground(seed) {
             renderMessages();
         }
 
-        // Hide/Show sections
+        // 2. Hide/Show sections
         ['feed', 'stories', 'messages', 'notifs', 'profile'].forEach(id => {
             const el = document.getElementById(`view-${id}`);
             if (el) el.classList.add('hidden');
@@ -1257,27 +1257,27 @@ function getSketchBackground(seed) {
         const current = document.getElementById(`view-${viewId}`);
         if (current) current.classList.remove('hidden');
         
-        // --- BADGE LOGIC ---
+        // 3. Update Badge Logic
         const hasUnreadNotes = state.threads.some(t => {
             const lastReadTime = state.lastRead[t.id] || 0;
             const lastMsg = t.messages[t.messages.length-1];
             return lastMsg && lastMsg.from === 'them' && t.timestamp > lastReadTime;
         });
-
         const hasNotifs = state.notifications.length > 0;
 
-        // Update Nav Icons
+        // 4. Update Nav Icons
         $('#nav-feed').innerHTML = svgIcon('feed', viewId === 'feed');
         $('#nav-stories').innerHTML = svgIcon('stories', viewId === 'stories');
         $('#nav-messages').innerHTML = svgIcon('messages', viewId === 'messages', hasUnreadNotes);
         $('#nav-notifs').innerHTML = svgIcon('notifs', viewId === 'notifs', hasNotifs);
         $('#nav-profile').innerHTML = svgIcon('profile', viewId === 'profile');
         
-        // --- RENDERING TRIGGERS ---
+        // --- 5. RENDERING TRIGGERS (Crucial Fix) ---
         if(viewId === 'profile') renderProfile();
-        
-        // FIX: Force render notifications when entering the tab
         if(viewId === 'notifs') renderNotifs();
+        
+        // THIS IS THE MISSING LINE:
+        if(viewId === 'stories') renderStories(); 
     }
     function postMediaHTML(p){
       const m = p.media;
@@ -1579,20 +1579,24 @@ function getSketchBackground(seed) {
     }
 }
 
-    async function handleLoginSuccess(session) {
+async function handleLoginSuccess(session) {
         state.user = session.user;
         $('#onboardingModal').classList.add('hidden');
         if($('#logoutBtn')) $('#logoutBtn').classList.remove('hidden');
+        
+        // --- LOAD ALL DATA ---
         await loadProfile();
-        await loadMutedUsers(); // Load Mutes
-        await loadHiddenPosts(); // NEW: Load Hidden Posts
-        await loadShelf(); // NEW: Load Shelf
+        await loadMutedUsers(); 
+        await loadHiddenPosts(); 
+        await loadShelf(); 
         await loadFeed();
         await loadDrawer();
         await loadNotifications();
         await loadThreads();
         await loadStories(); 
-        await loadClubs()
+        
+        // --- THE FIX: Load Clubs on Startup ---
+        await loadClubs(); 
         
         renderNewThreadModal();
 
@@ -2229,23 +2233,27 @@ function shuffleFeed() {
     async function loadClubs() {
         if (!state.user) return;
         try {
-            // Find clubs where I am a member
+            // 1. Find clubs where I am a member
             const { data: myMemberships } = await sb.from('club_members')
                 .select('club_id')
                 .eq('user_id', state.user.id);
             
             if (myMemberships && myMemberships.length > 0) {
                 const clubIds = myMemberships.map(m => m.club_id);
+                
+                // 2. Get details for those clubs
                 const { data: clubs } = await sb.from('clubs')
                     .select('*')
                     .in('id', clubIds)
                     .order('created_at', { ascending: false });
                     
                 if (clubs) state.clubs = clubs;
+            } else {
+                state.clubs = []; // Ensure it's empty if no memberships
             }
         } catch (e) { console.error('Error loading clubs', e); }
         
-        // Refresh the UI if we are on the stories tab
+        // 3. IMPORTANT: Update the screen if we are looking at it
         if (state.tab === 'stories') renderStories();
     }
 
