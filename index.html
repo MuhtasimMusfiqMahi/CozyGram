@@ -10,7 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <!-- PWA MANIFEST LINK -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="mobile-web-app-capable" content="yes" />6
@@ -504,6 +504,38 @@
         </div>
       </div>
   </div>
+<!-- CLUB BUILDER MODAL (Clean Version) -->
+<!-- CLUB BUILDER MODAL (Clean Version 2.0) -->
+<div id="clubBuilderModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card flex flex-col h-[85vh]" role="dialog">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-3 shrink-0">
+            <h3 class="font-[Fraunces] text-lg">New Club</h3>
+            <button onclick="$('#clubBuilderModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mb-4 shrink-0">
+            <input id="clubSearchInput" class="w-full pl-10 pr-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-sm" placeholder="Search neighbors..." oninput="renderClubBuilderList(this.value)" />
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+
+        <!-- List Container -->
+        <div class="flex-1 overflow-y-auto">
+            <div id="clubUserList" class="space-y-2">
+                <!-- Users injected here -->
+            </div>
+        </div>
+
+        <!-- Footer Action -->
+        <div class="pt-3 mt-2 border-t border-black/5 shrink-0">
+            <button id="createClubBtn" onclick="finishClubCreation()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly opacity-50 cursor-not-allowed shadow-md transition-all" disabled>
+                Select Neighbors
+            </button>
+        </div>
+    </div>
+</div>
 <!-- SCRAPBOOK MODAL (Responsive: 1 Col Mobile, 2 Cols Desktop) -->
 <div id="scrapbookModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <!-- 
@@ -894,8 +926,8 @@ function artSVG(seed=1, palette='sunset'){
     }
 
     const state = { 
-        user: null, profile: null, posts: [], savedPostIds: [], stories: [],
-        allUsers: [], notifications: [], threads: [],
+        user: null, profile: null, posts: [], savedPostIds: [], stories: [],clubs: [], 
+        allUsers: [], notifications: [], threads: [],clubBuilder: { selected: [] },
         compose: { 
             frame: 'wavy', 
             vibe: 'sunset', 
@@ -1559,6 +1591,8 @@ function getSketchBackground(seed) {
         await loadDrawer();
         await loadNotifications();
         await loadThreads();
+        await loadStories(); 
+        await loadClubs()
         
         renderNewThreadModal();
 
@@ -1940,6 +1974,159 @@ function getStoryHTML(s, idx) {
     </button>`;
 }
 
+function openClubBuilder() {
+        // --- THE FIX: Auto-initialize the state if it's missing ---
+        if (!state.clubBuilder) {
+            state.clubBuilder = { selected: [] };
+        }
+        
+        // Reset state
+        state.clubBuilder.selected = [];
+        
+        // Reset UI
+        const input = document.getElementById('clubSearchInput');
+        if(input) input.value = '';
+        
+        renderClubBuilderList('');
+        updateClubButton(); // Reset button state
+        
+        document.getElementById('clubBuilderModal').classList.remove('hidden');
+    }
+
+    // 2. Render List with Selection Logic
+    function renderClubBuilderList(term) {
+        const listContainer = document.getElementById('clubUserList');
+        if(!listContainer) return;
+
+        const lowerTerm = term.toLowerCase().trim();
+        const matches = state.allUsers.filter(u => 
+            u.id !== state.user.id && 
+            (u.username || '').toLowerCase().includes(lowerTerm)
+        );
+
+        if (matches.length === 0) {
+            listContainer.innerHTML = `<div class="p-8 text-center opacity-50 text-sm italic">No neighbors found.</div>`;
+            return;
+        }
+
+        listContainer.innerHTML = matches.map(u => {
+            // Check if this user is currently selected
+            const isSelected = state.clubBuilder.selected.includes(u.id);
+            
+            // Dynamic Styles
+            const bgClass = isSelected ? 'bg-[#f4a37a]/10 border-[#f4a37a]' : 'bg-white/60 border-black/10';
+            const iconBox = isSelected 
+                ? `<div class="w-6 h-6 rounded-full bg-[#f4a37a] border border-[#f4a37a] grid place-items-center text-white shadow-sm"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>`
+                : `<div class="w-6 h-6 rounded-full border border-black/10 bg-white grid place-items-center group-hover:border-[#f4a37a]"><svg class="w-3 h-3 text-black/20 group-hover:text-[#f4a37a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>`;
+
+            return `
+            <div onclick="toggleClubMember('${u.id}')" class="hand-card hand-outline ${bgClass} p-2 flex items-center justify-between gap-3 wobbly transition-all cursor-pointer mb-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-[12px] border border-black/10 overflow-hidden bg-white shrink-0">
+                        ${avatarHTML(u)}
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-sm ${isSelected ? 'text-[#e08e6d]' : ''}">${html(u.username)}</div>
+                        <div class="text-[10px] text-black/50 line-clamp-1">${html(u.bio || 'Neighbor')}</div>
+                    </div>
+                </div>
+                <div class="mr-1">
+                    ${iconBox}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // 3. Toggle Logic
+    function toggleClubMember(uid) {
+        const idx = state.clubBuilder.selected.indexOf(uid);
+        
+        if (idx > -1) {
+            // Remove if already selected
+            state.clubBuilder.selected.splice(idx, 1);
+        } else {
+            // Add if not selected
+            state.clubBuilder.selected.push(uid);
+        }
+
+        // Re-render to show visual changes
+        const currentTerm = document.getElementById('clubSearchInput').value;
+        renderClubBuilderList(currentTerm);
+        updateClubButton();
+    }
+
+    // 4. Update Bottom Button
+    function updateClubButton() {
+        const btn = document.getElementById('createClubBtn');
+        const count = state.clubBuilder.selected.length;
+        
+        if (count > 0) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `Create Club (${count})`;
+        } else {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `Select Neighbors`;
+        }
+    }
+
+    // 5. Final Action (Placeholder for now)
+    async function finishClubCreation() {
+        const memberIds = state.clubBuilder.selected;
+        if (memberIds.length === 0) return toast("Select neighbors first.");
+
+        // 1. Hide the builder modal
+        $('#clubBuilderModal').classList.add('hidden');
+
+        // 2. Ask for the Club Name using your existing Text Modal
+        // We reuse the styling you already have!
+        openTextModal(
+            'Name your Club', 
+            'Give this cozy corner a title.', 
+            'e.g. The Sunday Readers...', 
+            async (name) => {
+                if(!name) return false; // Don't close if empty
+                
+                toast("Building club...");
+                
+                try {
+                    // A. Create the Club
+                    const { data: club, error } = await sb.from('clubs')
+                        .insert({ 
+                            name: name, 
+                            description: 'A quiet place for friends.',
+                            owner_id: state.user.id 
+                        })
+                        .select()
+                        .single();
+                    
+                    if(error) throw error;
+
+                    // B. Add Members (Me + Selected Friends)
+                    const allMembers = [...memberIds, state.user.id].map(uid => ({
+                        club_id: club.id,
+                        user_id: uid
+                    }));
+
+                    const { error: memberError } = await sb.from('club_members').insert(allMembers);
+                    if(memberError) throw memberError;
+
+                    toast("Club created! 🛖");
+                    
+                    // C. Refresh
+                    await loadClubs();
+                    return true; // Returns true to close the text modal
+                    
+                } catch(e) {
+                    console.error(e);
+                    toast("Could not create club.");
+                    return true; // Close anyway to avoid stuck state
+                }
+            }
+        );
+    }
+
     function renderPosts() {
         const list = document.getElementById('feed-container');
         if (!list) return;
@@ -2037,6 +2224,29 @@ function shuffleFeed() {
             hidden: hidden || [], 
             reports: reports || [] 
         };
+    }
+
+    async function loadClubs() {
+        if (!state.user) return;
+        try {
+            // Find clubs where I am a member
+            const { data: myMemberships } = await sb.from('club_members')
+                .select('club_id')
+                .eq('user_id', state.user.id);
+            
+            if (myMemberships && myMemberships.length > 0) {
+                const clubIds = myMemberships.map(m => m.club_id);
+                const { data: clubs } = await sb.from('clubs')
+                    .select('*')
+                    .in('id', clubIds)
+                    .order('created_at', { ascending: false });
+                    
+                if (clubs) state.clubs = clubs;
+            }
+        } catch (e) { console.error('Error loading clubs', e); }
+        
+        // Refresh the UI if we are on the stories tab
+        if (state.tab === 'stories') renderStories();
     }
 
     async function doUnmute(uid) {
@@ -2312,17 +2522,39 @@ window.openScrapbookModal = openScrapbookModal;
 window.closeScrapbook = closeScrapbook;
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
-        // 1. Render Clubs
-        const clubsHtml = MOCK_CLUBS.map(c => `
-            <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly" onclick="state.filter.topic = '${c.tag}'; showView('feed'); toast('Peeking into ${c.title}');">
-                <div class="font-extrabold text-sm">${c.title}</div>
-                <div class="text-[10px] text-black/60">${c.desc}</div>
-                <div class="mt-1 text-[9px] opacity-40">peek →</div>
+// 1. Render Clubs
+const container = document.getElementById('clubsContainer');
+        
+        // Generate HTML for Real Clubs
+        const realClubsHtml = state.clubs.map(c => `
+            <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly group" onclick="toast('Entering ${html(c.name)}...')">
+                <div class="flex justify-between items-start">
+                    <div class="font-extrabold text-sm group-hover:text-[#f4a37a] transition-colors">${html(c.name)}</div>
+                    <div class="text-[10px] opacity-30">CLUB</div>
+                </div>
+                <div class="text-[10px] text-black/60 mt-1 line-clamp-1">${html(c.description || 'A cozy group.')}</div>
             </button>
         `).join('');
-        document.getElementById('clubsContainer').innerHTML = `<div class="flex items-center justify-between mb-3"><div class="text-sm font-extrabold">Cozy Clubs</div></div><div class="grid grid-cols-2 gap-3">${clubsHtml}</div>`;
 
-        // 2. Render Stories List
+        container.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-sm font-extrabold">Cozy Clubs</div>
+                <button onclick="openClubBuilder()" class="wobbly px-3 py-1.5 rounded-[12px] bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-white text-[10px] font-bold shadow-sm border border-black/5 hover:opacity-90 transition-opacity">
+                    + New Club
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                ${realClubsHtml}
+                <!-- If no clubs, show a tiny hint box taking up one slot -->
+                ${state.clubs.length === 0 ? `
+                <div class="col-span-2 p-4 text-center border-2 border-dashed border-black/5 rounded-[18px] bg-white/30">
+                    <div class="text-xs text-black/40 font-bold">No clubs yet.<br>Start one above?</div>
+                </div>` : ''}
+            </div>
+        `;
+
+        // 2. Render Stories List (Unchanged)
         const listDiv = document.getElementById('storiesList');
         if (state.stories.length === 0) {
             listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No journal pages found.<br>Be the first to write one?</div>`;
@@ -2349,8 +2581,7 @@ window.closeScrapbook = closeScrapbook;
             `}).join('');
         }
 
-        // 3. REMOVED: Prompts Logic
-        // If the element still exists in HTML, hide it
+        // 3. Ensure Prompts are Hidden
         const promptsContainer = document.getElementById('promptsGrid')?.parentElement;
         if(promptsContainer) promptsContainer.style.display = 'none';
     }
