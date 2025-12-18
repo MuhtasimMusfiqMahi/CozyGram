@@ -1,127 +1,4679 @@
-const CACHE_NAME = 'cozygram-v1';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <title>CozyGram — Cloud</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- PWA MANIFEST LINK -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />6
 
-// List of files to cache immediately
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,600;800&display=swap',
-  'https://cdn-icons-png.flaticon.com/512/2550/2550223.png'
+  <!-- APPLE / IOS OPTIMIZATION -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CozyGram" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2550/2550223.png" />
+
+  <style>
+    /* --- COZY DESIGN SYSTEM --- */
+    :root {
+      --cream: #fbf5ea; --paper: #fffaf1; --ink: #2b2b35;
+      --shadow: rgba(25, 20, 35, .12); --shadow2: rgba(25, 20, 35, .06);
+      --mood-a: rgba(247,197,159,.55); --mood-b: rgba(134,166,139,.35); --mood-c: rgba(219,161,168,.22);
+      --mood-bg1: #fff5ea; --mood-bg2: #fbf5ea; --mood-bg3: #f7f0e6;
+      --safe-bottom: env(safe-area-inset-bottom, 0px); --safe-top: env(safe-area-inset-top, 0px);
+    }
+
+    /* STEP 7: PREVENT HORIZONTAL SCROLLING */
+    html {
+      width: 100%;
+      overflow-x: hidden; /* Stop root level scrolling */
+    }
+
+    body {
+      font-family: Nunito, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+
+              -webkit-tap-highlight-color: transparent;
+      
+      /* Mobile Constraints */
+      min-height: 100dvh;
+      width: 100%;       /* Force width to container */
+      max-width: 100vw;  /* Hard limit to viewport width */
+      overflow-x: hidden; /* Cut off any elements attempting to overflow */
+      position: relative;
+    }
+
+    /* NEW: FIXED BACKGROUND LAYER */
+    body::before {
+      content: "";
+      position: fixed; /* Locks it to the screen */
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%;
+      z-index: -1; /* Puts it behind content */
+      pointer-events: none; /* Lets clicks pass through */
+      
+      /* The Gradient Logic moved here */
+      background:
+        radial-gradient(1200px 800px at 25% 0%, var(--mood-a), rgba(251,245,234,0) 60%),
+        radial-gradient(900px 650px at 85% 10%, var(--mood-b), rgba(251,245,234,0) 65%),
+        radial-gradient(1000px 700px at 60% 90%, var(--mood-c), rgba(251,245,234,0) 58%),
+        linear-gradient(180deg, var(--mood-bg1) 0%, var(--mood-bg2) 35%, var(--mood-bg3) 100%);
+    }
+
+    .paper-noise {
+      background: radial-gradient(circle at 20% 10%, rgba(0,0,0,.03) 0 1px, transparent 2px),
+                  radial-gradient(circle at 70% 35%, rgba(0,0,0,.02) 0 1px, transparent 2px);
+      background-size: 120px 120px, 160px 160px;
+      background-color: var(--paper);
+    }
+
+    .hand-card {
+      border-radius: 26px 22px 28px 20px;
+      box-shadow: 0 18px 40px var(--shadow), 0 3px 10px var(--shadow2);
+      border: 1px solid rgba(43,43,53,.08);
+    }
+
+    .hand-outline { position: relative; }
+    .hand-outline:before {
+      content:""; position:absolute; inset:-2px; border-radius: 28px 22px 26px 24px;
+      border: 2px solid rgba(43,43,53,.10); transform: rotate(-0.35deg); pointer-events:none;
+    }
+
+    /* ANIMATIONS */
+    .wobbly { 
+      transition: transform .18s ease, filter .18s ease; 
+      cursor: pointer; 
+      /* Optimize for touch rendering */
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    /* ONLY apply the "Lift" effect if the user has a mouse */
+    @media (hover: hover) {
+      .wobbly:hover { 
+        transform: translateY(-2px) rotate(-0.25deg); 
+        filter: saturate(1.02); 
+      }
+    }
+    .wobbly:hover { transform: translateY(-2px) rotate(-0.25deg); filter: saturate(1.02); }
+    .wobbly:active { transform: translateY(0px) scale(.99); }
+    
+    .wiggle { animation: wiggle .7s ease; }
+    @keyframes wiggle { 
+      0% { transform: rotate(0);} 
+      30% { transform: rotate(-3deg);} 
+      70% { transform: rotate(2deg);} 
+      100% { transform: rotate(0);} 
+    }
+
+    .nav-pill {
+      border-radius: 18px 18px 22px 16px;
+      box-shadow: 0 8px 18px rgba(25,20,35,.10); border: 1px solid rgba(43,43,53,.08);
+      background: linear-gradient(180deg, rgba(255,250,241,.9), rgba(255,250,241,.75));
+      backdrop-filter: blur(10px);
+    }
+
+    .ink-line { stroke: rgba(43,43,53,.78); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .ink-line-lite { stroke: rgba(43,43,53,.55); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .badge-dot { width: 10px; height: 10px; border-radius: 999px; background: #f06d6d; box-shadow: 0 6px 14px rgba(240,109,109,.35); border: 2px solid rgba(255,250,241,.95); }
+
+    @keyframes stickerFly { 
+      0% { transform: translate(-10px, 10px) scale(.6) rotate(-8deg); opacity:0; } 
+      20% { opacity:1; } 
+      100% { transform: translate(-25px, -55px) scale(1.05) rotate(8deg); opacity:0; } 
+    }
+    .sticker-fly { position: absolute; animation: stickerFly 900ms ease-out forwards; pointer-events: none; z-index: 9999; }
+    .sticker-fly svg { width: 48px; height: 48px; drop-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+    .pop-in { animation: pop .28s ease-out; }
+    @keyframes pop { from { transform: translateY(10px) scale(.98); opacity:0;} to { transform: translateY(0) scale(1); opacity:1;} }
+    .floaty { animation: floaty 4.6s ease-in-out infinite; }
+    @keyframes floaty { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-6px);} }
+    .pageflip { transform-origin: left center; animation: pageflip .35s cubic-bezier(.2,.9,.2,1); }
+    @keyframes pageflip { from { transform: perspective(900px) rotateY(-16deg); opacity:0.0; } to { transform: perspective(900px) rotateY(0deg); opacity:1; } }
+
+    .hidden { display: none !important; }
+    /* Mobile Default: Extra space for Bottom Nav + Floating Button + Safe Area */
+.main-safe-pad { 
+  padding-bottom: calc(8.5rem + var(--safe-bottom)); 
+}
+
+/* Desktop Override: Nav is on the left, so we reset the bottom padding */
+@media (min-width: 1024px) {
+  .main-safe-pad { 
+    padding-bottom: 2rem; 
+  }
+}
+.nav-safe { 
+  /* Mobile: stick to bottom with safe area margin */
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 20px)); 
+}
+/* STEP 8: FAB POSITIONING */
+.fab-safe { 
+      /* Mobile: Sit above the Nav Pill */
+      /* 6rem gives enough clearance for the pill + shadow + spacing */
+      bottom: calc(6rem + env(safe-area-inset-bottom, 20px)); 
+    }
+.modal-safe { 
+      padding-top: calc(2rem + var(--safe-top)); 
+      padding-bottom: 0; 
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .modal-card { 
+      width: 100%;
+      /* Max height to ensure we can always reach the top close button */
+      max-height: 85vh; 
+      
+      /* Reset corners: Round top, square bottom */
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-top-left-radius: 26px;
+      border-top-right-radius: 26px;
+      
+      /* Remove bottom border/shadow so it looks like it comes from the bezel */
+      border-bottom: none;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.1); 
+      margin-bottom: 0;
+      
+      /* Scroll internally if content is long */
+      overflow-y: auto;
+      
+      /* CRITICAL: Add padding inside the card for the iPhone Home Bar */
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    /* 3. Desktop/Tablet Override (Restore the "Floaty Card" look) */
+    @media (min-width: 640px) {
+      .modal-safe {
+        padding: 2rem; /* Restore wrapper padding */
+      }
+      .modal-card {
+        width: 100%; 
+        max-height: min(820px, calc(100dvh - 4rem));
+        
+        /* Restore all-around rounded corners */
+        border-radius: 26px 22px 28px 20px; 
+        
+        /* Restore bottom border */
+        border-bottom: 1px solid rgba(43,43,53,.08);
+        
+        margin-bottom: auto; /* Center vertically */
+        padding-bottom: 1rem; /* Restore standard internal padding */
+      }
+    }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    @media (min-width: 1024px) {
+      /* Desktop Layout */
+  #app { 
+    max-width: 1200px; 
+    padding-left: 7.5rem; /* Space for Side Nav */
+    padding-right: 1.5rem; 
+    margin-left: auto; 
+    margin-right: auto;
+  }
+      #bottomNav { left: 1.25rem; right: auto; top: 50%; bottom: auto; transform: translateY(-50%); width: 120px; }
+      #bottomNav .navGrid { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+      #fab { 
+        left: auto;        /* Undo the 'left-1/2' from mobile */
+        right: 1.5rem;     /* Stick to right edge */
+        bottom: 1.5rem;    /* Stick to bottom edge (no longer 6rem up) */
+        transform: none;   /* Undo the 'translate-x-1/2' centering */
+      }
+      .desktop-two-col { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
+    }
+    
+    
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(43,43,53,.12); border-radius: 999px; }
+  </style>
+</head>
+<body>
+
+  <!-- HIDDEN INPUT FOR AVATARS (MUST BE BEFORE SCRIPT) -->
+  <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
+
+  <!-- ONBOARDING MODAL -->
+  <div id="onboardingModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+        <div class="flex items-start justify-between gap-3 mb-4">
+            <div class="flex items-start gap-3">
+                <div id="mascot" class="w-14 h-14 rounded-[22px_18px_26px_16px] bg-gradient-to-br from-[#86a68b] via-[#fbf5ea] to-[#f4a37a] border border-black/10 grid place-items-center floaty">
+                    <svg class="w-9 h-9" viewBox="0 0 64 64" aria-hidden="true"><path class="ink-line" fill="none" d="M15 34c2-12 10-20 17-20s15 8 17 20"/><path class="ink-line" fill="none" d="M20 34c0 10 5 18 12 18s12-8 12-18"/><path class="ink-line" fill="none" d="M24 22l-7-6M40 22l7-6"/><path class="ink-line" fill="none" d="M25 40c2 3 4 4 7 4s5-1 7-4"/><circle cx="26" cy="30" r="2" fill="rgba(43,43,53,.75)"/><circle cx="38" cy="30" r="2" fill="rgba(43,43,53,.75)"/></svg>
+                </div>
+                <div>
+                    <h2 class="font-[Fraunces] text-lg">Hi, I’m Pippin!</h2>
+                    <p id="onboardText" class="text-sm text-black/70 leading-snug">Welcome to CozyGram. Let me show you around.</p>
+                </div>
+            </div>
+            <button id="skipOnboarding" class="wobbly rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 px-3 py-2 text-xs font-bold text-black/50">Log In</button>
+        </div>
+        <div id="authContainer" class="hidden animate-fade-in space-y-3">
+            <div class="text-sm font-bold text-center mb-2">Ready to enter your corner?</div>
+            <input id="emailInput" type="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-base sm:text-sm" />
+            <button id="magicLinkBtn" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-r from-[#f4a37a] to-[#f7c59f] font-extrabold text-white wobbly shadow-sm">Send Magic Link</button>
+            <div id="loginMsg" class="text-center text-xs text-black/50 min-h-[1.5em]"></div>
+        </div>
+        <div id="onboardNav" class="mt-6 flex items-center justify-between">
+            <div id="onboardDots" class="flex items-center gap-2"></div>
+            <div class="flex items-center gap-2">
+                <button id="onboardBack" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm opacity-50" disabled>Back</button>
+                <button id="onboardNext" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-sm font-extrabold text-white">Next</button>
+            </div>
+        </div>
+        <div class="mt-4 text-[10px] text-center text-black/40">CozyGram Cloud • Creativity over Popularity</div>
+    </div>
+  </div>
+
+  <div id="app" class="mx-auto w-full max-w-md lg:max-w-none min-h-screen flex flex-col">
+    <!-- HEADER -->
+<!-- RESPONSIVE HEADER -->
+<header class="px-3 pt-3 pb-2 lg:px-4 lg:pt-5 lg:pb-3">
+    <div class="hand-card paper-noise hand-outline px-3 py-2 lg:px-4 lg:py-3">
+        <div class="flex items-center gap-3 flex-wrap lg:justify-between">
+        
+        <!-- LOGO SECTION -->
+        <div class="flex items-center gap-2 lg:gap-3">
+          <div class="w-9 h-9 lg:w-12 lg:h-12 rounded-[14px] lg:rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+              <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+              <!-- Icon scales from 5 to 7 -->
+              <svg class="w-5 h-5 lg:w-7 lg:h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
+          </div>
+          <div>
+              <div class="flex items-baseline gap-2">
+                <!-- Text scales from base to xl -->
+                <h1 class="font-[Fraunces] text-base lg:text-xl tracking-tight text-[#2b2b35] drop-shadow-sm">CozyGram</h1>
+              </div>
+              <p class="text-[10px] lg:text-xs text-black/60 leading-tight font-medium">Creativity over popularity</p>
+          </div>
+        </div>
+
+        <!-- TOP ACTIONS -->
+        <div class="flex items-center gap-1.5 lg:gap-2">
+          <!-- Kind Mode -->
+          <button id="kindToggle" class="wobbly inline-flex items-center gap-1 lg:gap-2 px-2 py-1.5 lg:px-3 lg:py-2 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-pressed="true" title="Kindness mode">
+            <span class="text-[10px] lg:text-xs font-semibold">Kind</span>
+            <span id="kindPetal" class="inline-block w-4 h-4 lg:w-5 lg:h-5"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 11c4-6 13-3 12 5-1 10-12 15-12 15S13 26 12 16c-1-8 8-11 12-5Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg></span>
+          </button>
+          
+          <!-- Safety -->
+          <button id="openSafety" class="wobbly inline-flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Safety">
+              <svg class="w-4 h-4 lg:w-5 lg:h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M12 2l8 4v6c0 6-4 9-8 10C8 21 4 18 4 12V6l8-4Z" fill="rgba(134,166,139,.22)"/><path class="ink-line-lite" d="M9 12l2 2 4-5" fill="none"/></svg>
+          </button>
+          
+          <!-- Account -->
+          <button id="openAccount" class="wobbly inline-flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70" aria-label="Account"><svg class="w-4 h-4 lg:w-5 lg:h-5" viewBox="0 0 24 24" aria-hidden="true"><path class="ink-line-lite" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="rgba(134,166,139,.22)"></path><path class="ink-line-lite" d="M4 22c1.5-5 6-7 8-7s6.5 2 8 7" fill="none"></path></svg></button>
+          
+          <!-- Logout -->
+          <button id="logoutBtn" class="wobbly inline-flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 hidden" aria-label="Log out"><svg class="w-4 h-4 lg:w-5 lg:h-5" viewBox="0 0 24 24"><path class="ink-line-lite" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline class="ink-line-lite" points="16 17 21 12 16 7"/><line class="ink-line-lite" x1="21" y1="12" x2="9" y2="12"/></svg></button>
+        </div>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="mt-2 lg:mt-3 relative">
+        <input id="searchInput" class="w-full pl-3 lg:pl-4 pr-10 lg:pr-12 py-2 lg:py-3 rounded-[14px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-sm lg:text-base" placeholder="Search cozy corners..." />
+        <button id="searchSubmitBtn" class="absolute right-1.5 lg:right-2 top-1/2 -translate-y-1/2 w-7 h-7 lg:w-8 lg:h-8 rounded-[10px] lg:rounded-[12px] bg-white/50 border border-black/5 text-black/40 flex items-center justify-center hover:bg-white hover:text-black/70 transition-colors wobbly" aria-label="Search">
+            <svg class="w-3.5 h-3.5 lg:w-4 lg:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </button>
+    </div>
+    </div>
+</header>
+
+    <main id="main" class="flex-1 px-4 main-safe-pad">
+<!-- FEED SECTION -->
+<!-- FEED SECTION -->
+<!-- FEED SECTION -->
+<!-- FEED SECTION -->
+<section id="view-feed" class="space-y-3 lg:space-y-4">
+  
+    <!-- 2. LOW PRESSURE BANNER (Responsive) -->
+    <div class="hand-card hand-outline paper-noise p-3 lg:p-4">
+      <div class="flex items-start gap-3">
+        <div class="w-9 h-9 lg:w-12 lg:h-12 rounded-[14px] lg:rounded-[20px] shadow-sm grid place-items-center relative overflow-hidden group wobbly">
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="logoWarmth" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f4a37a" /><stop offset="50%" stop-color="#f7c59f" /><stop offset="100%" stop-color="#dba1a8" /></linearGradient></defs><rect width="100" height="100" fill="url(#logoWarmth)"/><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(#noise)" opacity="0.15"/></svg>
+            <svg class="w-5 h-5 lg:w-7 lg:h-7 relative z-10" viewBox="0 0 48 48" fill="none" stroke="rgba(43,43,53,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 C8 10 16 8 24 8 C32 8 40 10 40 18 C40 24 36 27 32 29 L24 36 L16 29 C12 27 8 24 8 18 Z" fill="rgba(255,255,255,0.25)"/><path d="M16 18 C16 18 20 21 24 21 C28 21 32 18 32 18"/><path d="M34 10 L35 12 L37 13 L35 14 L34 16 L33 14 L31 13 L33 12 Z" fill="white" stroke="none"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="font-[Fraunces] text-sm lg:text-lg">A Gentle Pause</div>
+          <div class="text-xs lg:text-sm text-black/70 mt-0.5 lg:mt-1">Trade metrics for memories. Connect through notes.</div>
+          <div class="mt-2 lg:mt-3 flex flex-wrap gap-2">
+            <button id="shuffleFeedBtn" onclick="shuffleFeed()" class="wobbly px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-[10px] lg:text-sm font-extrabold">Shuffle cozy</button>
+            <button id="meetPippinBtn" onclick="$('#onboardingModal').classList.remove('hidden'); state.onboardingStep=0; renderOnboarding();" class="wobbly px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-[12px] lg:rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-[10px] lg:text-sm">Meet Pippin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- 3. FILTERS (Responsive - Restored) -->
+    <div id="userFilterBanner" class="hand-card hand-outline bg-white/70 border border-black/10 p-2 lg:p-3 mb-2 hidden flex justify-between items-center">
+        <span class="text-[10px] lg:text-xs font-bold opacity-60">Filtering by User</span>
+        <button onclick="clearUserFilter()" class="text-[10px] lg:text-[10px] font-bold underline">Clear</button>
+    </div>
+    
+    <div id="filterBar" class="flex flex-wrap gap-1.5 lg:gap-2 mb-3 lg:mb-4 min-h-[28px] lg:min-h-[32px]">
+        <!-- JS injects buttons here -->
+    </div>
+  
+    <!-- 4. NEW POST BUTTON (Responsive - Restored) -->
+    <button id="newPostTrigger" class="w-full text-left hand-card hand-outline bg-gradient-to-r from-white/80 to-[#fffaf1] border border-black/10 p-2.5 lg:p-3 wobbly flex items-center gap-3 lg:gap-4 group">
+       <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-[10px] lg:rounded-[14px] bg-[#f4a37a]/15 border border-[#f4a37a]/20 grid place-items-center text-sm lg:text-xl group-hover:scale-110 transition-transform">
+         ✨
+       </div>
+       <div>
+         <div class="text-xs lg:text-sm font-extrabold text-black/80">Make a cozy post</div>
+         <div class="text-[10px] lg:text-xs text-black/50">Share a moment, a doodle, or a thought...</div>
+       </div>
+    </button>
+
+    <!-- 5. FEED CONTENT -->
+    <div id="feed-container" class="space-y-4">
+        <div class="p-6 text-center animate-pulse text-black/50 font-[Fraunces]">Connecting to the clouds...</div>
+    </div>
+</section>
+
+      <!-- STORIES -->
+      <section id="view-stories" class="hidden space-y-4">
+          <div class="hand-card hand-outline paper-noise p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div><h2 class="font-[Fraunces] text-lg">Stories, but as journal pages</h2><p class="text-sm text-black/70 mt-1">Flip through pages. Respond with a sticker.</p></div>
+              <button onclick="openStoryComposeModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New page</button>
+            </div>
+          </div>
+          <div id="clubsContainer" class="hand-card hand-outline bg-white/70 border border-black/10 p-4"></div>
+          <div id="storiesList" class="space-y-3"></div>
+      </section>
+      
+<!-- MESSAGES -->
+<section id="view-messages" class="hidden space-y-4">
+    <div class="hand-card hand-outline paper-noise p-4">
+      <div class="flex items-start justify-between gap-3">
+          <div><h2 class="font-[Fraunces] text-lg">Passing Notes</h2><p class="text-sm text-black/70 mt-1">Chats feel like folded paper.</p></div>
+          <button onclick="$('#newThreadModal').classList.remove('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New note</button>
+      </div>
+    </div>
+    
+    <div class="desktop-two-col">
+        <!-- Sidebar List -->
+        <div id="threadList" class="space-y-2"></div>
+        
+        <!-- 
+           CHAT BOX UPDATE:
+           1. Added 'relative' and 'overflow-hidden' to clip the image.
+           2. Added 'p-0' to remove any internal padding that causes gaps.
+           3. Height: 80vh on mobile, 600px on desktop.
+        -->
+        <div class="hand-card hand-outline border border-black/10 flex flex-col h-[80vh] lg:h-[600px] relative overflow-hidden p-0"
+             style="
+                background-color: #2b2b35; 
+                background-image: url('https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/Chat%20wallpaper/Minimal%20Floral%20Galaxy%20Design%20Mobile%20Phone%20Wallpaper%20Vector%20Set.jpg'); 
+                background-size: cover; 
+                background-position: center bottom;
+             ">
+             
+            <!-- Darker Overlay for text readability -->
+            <div class="absolute inset-0 bg-black/30 pointer-events-none z-0"></div>
+  
+            <!-- HEADER (Floating on Top) -->
+            <!-- z-20 to stay above messages. bg-white/20 for glass effect. -->
+            <div id="chatHeader" class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/20 backdrop-blur-md">
+                <div class="font-extrabold text-sm text-white/90 drop-shadow-sm">Select a note to read</div>
+            </div>
+  
+            <!-- MESSAGES AREA (Scrollable) -->
+            <!-- z-10. Added pt-16 and pb-20 so text isn't hidden behind header/footer. -->
+            <div id="chatMessages" class="absolute inset-0 z-10 overflow-y-auto pt-16 pb-20 px-3 space-y-3"></div>
+  
+            <!-- INPUT AREA (Floating on Bottom) -->
+            <!-- z-20. Removed quick replies. Glass effect. -->
+            <div id="chatInputArea" class="absolute bottom-0 left-0 right-0 z-20 p-3 bg-white/20 backdrop-blur-md border-t border-white/10 hidden">
+                <div class="flex gap-2">
+                    <input id="chatInput" class="flex-1 px-4 py-3 rounded-[16px] border border-white/20 bg-white/80 text-black placeholder:text-black/50 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a37a] shadow-lg" placeholder="Write a gentle note..." />
+                    <button id="chatSendBtn" class="px-4 py-3 bg-[#f4a37a] text-white font-bold rounded-[16px] wobbly text-xs shadow-lg border border-white/20">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+      
+      <!-- NOTIFICATIONS -->
+      <section id="view-notifs" class="hidden space-y-4">
+          <div class="hand-card hand-outline paper-noise p-4">
+              <h2 class="font-[Fraunces] text-lg">Lantern Glow</h2>
+              <p class="text-sm text-black/70 mt-1">Updates that feel warm.</p>
+          </div>
+          <div class="flex justify-between items-center px-1"><div class="text-xs text-black/50">Recent glows</div><button class="text-xs font-bold opacity-50 hover:opacity-100" onclick="document.getElementById('notifList').innerHTML = ''; toast('Cleared.')">Clear all</button></div>
+          <div id="notifList" class="space-y-3"></div>
+      </section>
+      
+      <!-- PROFILE -->
+      <section id="view-profile" class="hidden space-y-4"></section>
+    </main>
+    <!-- BOTTOM NAV -->
+    <nav id="bottomNav" class="fixed left-1/2 -translate-x-1/2 nav-safe w-[min(420px,calc(100%-2rem))] nav-pill px-3 py-3 z-30">
+      <div class="navGrid grid grid-cols-5 gap-2">
+        <button class="navBtn wobbly" data-tab="feed" aria-label="Home feed"><div class="navItem" id="nav-feed"></div></button>
+        <button class="navBtn wobbly" data-tab="stories" aria-label="Stories journal"><div class="navItem" id="nav-stories"></div></button>
+        <button class="navBtn wobbly" data-tab="messages" aria-label="Messages mailbox"><div class="navItem" id="nav-messages"></div></button>
+        <button class="navBtn wobbly" data-tab="notifs" aria-label="Notifications lantern"><div class="navItem" id="nav-notifs"></div></button>
+        <button class="navBtn wobbly" data-tab="profile" aria-label="Profile scrapbook"><div class="navItem" id="nav-profile"></div></button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ALL MODALS -->
+  <div id="userModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Cozy Corner</h3><button onclick="$('#userModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
+        <div id="userModalBody"></div>
+      </div>
+  </div>
+  <div id="newThreadModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">New Note</h3><button onclick="$('#newThreadModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
+        <div id="userList" class="space-y-2"></div>
+      </div>
+  </div>
+  <div id="accountModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Account</h3><button onclick="$('#accountModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
+        <div id="accountBody" class="space-y-2"></div>
+      </div>
+  </div>
+  <div id="safetyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+        <div class="flex items-center justify-between mb-4"><h3 class="font-[Fraunces] text-lg">Safety & comfort</h3><button onclick="$('#safetyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Done</button></div>
+        <div class="space-y-3 text-sm">
+          <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3"><div><div class="font-extrabold">Kindness reminders</div><div class="text-xs text-black/60">Gentle prompts enabled.</div></div><button id="kindToggle2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-xs font-bold">On</button></div>
+          <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3"><div><div class="font-extrabold">Hide numbers</div><div class="text-xs text-black/60">No public counts.</div></div><button id="numbersToggle" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-xs font-bold">On</button></div>
+          <div class="hand-card bg-white/70 border border-black/10 p-3"><div class="font-extrabold">Cozy guidelines</div><ul class="mt-2 text-xs text-black/65 list-disc pl-5 space-y-1"><li>Assume good intent.</li><li>Use stickers to support, not to score.</li><li>If something feels unsafe, step away.</li></ul></div>
+        </div>
+      </div>
+  </div>
+<!-- CLUB BUILDER MODAL (Clean Version) -->
+<!-- CLUB BUILDER MODAL (Clean Version 2.0) -->
+<div id="clubBuilderModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card flex flex-col h-[85vh]" role="dialog">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-3 shrink-0">
+            <h3 class="font-[Fraunces] text-lg">New Club</h3>
+            <button onclick="$('#clubBuilderModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative mb-4 shrink-0">
+            <input id="clubSearchInput" class="w-full pl-10 pr-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-sm" placeholder="Search neighbors..." oninput="renderClubBuilderList(this.value)" />
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+
+        <!-- List Container -->
+        <div class="flex-1 overflow-y-auto">
+            <div id="clubUserList" class="space-y-2">
+                <!-- Users injected here -->
+            </div>
+        </div>
+
+        <!-- Footer Action -->
+        <div class="pt-3 mt-2 border-t border-black/5 shrink-0">
+            <button id="createClubBtn" onclick="finishClubCreation()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly opacity-50 cursor-not-allowed shadow-md transition-all" disabled>
+                Select Neighbors
+            </button>
+        </div>
+    </div>
+</div>
+<!-- SCRAPBOOK MODAL (Responsive: 1 Col Mobile, 2 Cols Desktop) -->
+<div id="scrapbookModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <!-- 
+       UPDATES: 
+       1. Added 'lg:max-w-3xl' -> Makes the card wider on desktop to fit 2 posts side-by-side.
+    -->
+    <div class="w-full max-w-md lg:max-w-7xl hand-card hand-outline paper-noise p-4 pop-in modal-card flex flex-col h-[85vh]" role="dialog">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4 shrink-0">
+            <h3 class="font-[Fraunces] text-lg">My Scrapbook</h3>
+            <button onclick="closeScrapbook()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+        
+        <!-- Scrollable Body -->
+        <!-- 
+           UPDATES:
+           1. Removed 'space-y-4' (Vertical stack).
+           2. Added 'grid grid-cols-1' (Mobile default).
+           3. Added 'lg:grid-cols-2' (Desktop 2 columns).
+           4. Added 'gap-4' (Space between grid items).
+           5. Added 'content-start' (Prevents stretching if few items).
+        -->
+        <div id="scrapbookBody" class="flex-1 overflow-y-auto pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4 content-start">
+            <!-- Posts will be injected here -->
+        </div>
+    </div>
+</div>
+  <div id="storyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3"><div id="storyAvatar" class="w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white"></div><div><div id="storyTitle" class="font-extrabold text-sm"></div><div id="storyMeta" class="text-xs text-black/55"></div></div></div>
+        <button onclick="$('#storyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
+      </div>
+      <div id="storyPage" class="hand-card hand-outline bg-white/70 border border-black/10 p-5 mb-4 min-h-[200px] flex items-center justify-center text-center font-serif text-lg leading-relaxed text-black/80 flex-col"></div>
+      <div class="flex justify-center gap-4 mb-4"><button class="wobbly text-2xl" onclick="toast('Sent a warm hug!')">🤗</button><button class="wobbly text-2xl" onclick="toast('Sent a star!')">⭐</button><button class="wobbly text-2xl" onclick="toast('Sent a calm leaf!')">🍃</button></div>
+      <button id="replyStoryBtn" class="w-full mb-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Reply with a note</button>
+      <div class="flex items-center justify-between"><button id="prevStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Prev</button><button id="nextStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Next</button></div>
+    </div>
+  </div>
+<!-- Inside #composeModal .grid -->
+<!-- COMPOSE MODAL (Main Post Creator) -->
+<div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card flex flex-col h-[92dvh] sm:h-auto overflow-hidden" role="dialog">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-2 shrink-0">
+            <h3 class="font-[Fraunces] text-lg">Make a cozy post</h3>
+            <button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
+        </div>
+        
+        <!-- Middle Area -->
+        <div class="flex flex-col gap-2 mb-2 flex-1 min-h-0">
+            
+            <!-- 
+               1. Preview Box 
+               Mobile: flex-1 (Fills vertical space)
+               Desktop: sm:aspect-square (Forces it to be a big square again)
+               sm:flex-none (Stops it from trying to stretch on desktop)
+            -->
+            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center w-full flex-1 min-h-0 sm:flex-none sm:aspect-square overflow-hidden relative transition-all duration-300">
+                <div id="composePreview" class="w-full h-full"></div>
+                <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
+            </div>
+    
+            <!-- 2. Controls -->
+            <div class="w-full shrink-0">
+                <div class="hand-card hand-outline bg-white/50 border border-black/10 p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-[10px] uppercase font-bold opacity-50">Cozy Art</div>
+                        <button onclick="openArtModal()" class="wobbly px-2 py-1 rounded-[8px] bg-white border border-black/10 text-[10px] font-bold">Open</button>
+                    </div>
+                    <div id="artPreviewRow" class="flex gap-2 overflow-hidden"></div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Caption Input -->
+        <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-20 shrink-0 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
+        
+        <!-- Tags -->
+        <div id="composeTags" class="flex gap-2 mt-1 mb-1 shrink-0 empty:hidden"></div>
+        
+        <!-- Button -->
+        <button id="postNowBtn" class="w-full mt-1 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shrink-0">Post to Cloud</button>
+    </div>
+</div>
+  <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">New Page</h3><button onclick="$('#storyComposeModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
+        <input id="storyHeading" class="w-full px-4 py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder="Title (e.g. Morning thoughts)" />
+        <textarea id="storyText" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-32 text-sm font-serif leading-relaxed" placeholder="Dear journal..."></textarea>
+        <button onclick="saveStoryPage()" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Publish Page</button>
+    </div>
+  </div>
+  <div id="roomModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+      <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg" id="roomTitle">Your Room</h3><button onclick="$('#roomModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
+        <div id="roomBody" class="space-y-4"></div>
+      </div>
+  </div>
+  <!-- ART SELECTION MODAL -->
+<div id="artModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
+    <div class="w-full max-w-md h-[80vh] hand-card hand-outline paper-noise bg-white flex flex-col pop-in shadow-2xl">
+        <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md">
+            <h3 class="font-[Fraunces] text-lg">Art Collection</h3>
+            <button onclick="$('#artModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div id="artGrid" class="grid grid-cols-3 gap-3">
+                <!-- Art injected via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Find this modal div -->
+<div id="postOptionsModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
+        <h3 class="font-bold mb-3 text-center">Options</h3>
+        <button id="savePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Save to Drawer</button>
+        <button id="sharePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-white font-extrabold wobbly">Share Post</button>
+        <button id="hidePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Hide Post</button>
+        <button id="muteUserBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Mute User</button>
+        <button id="copyCaptionBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Copy Caption</button>
+        
+        <!-- NEW: Edit Button (Hidden by default) -->
+        <button id="editPostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly hidden">Edit Post</button>
+        
+        <button id="deletePostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] bg-red-100 text-red-600 font-bold wobbly hidden">Delete Post</button>
+        <button id="reportPostBtn" class="w-full py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 font-bold wobbly">Report</button>
+        <button onclick="$('#postOptionsModal').classList.add('hidden')" class="w-full py-3 rounded-[18px_16px_22px_14px] border border-black/10 text-black/50 wobbly">Cancel</button>
+    </div>
+  </div>
+  <div id="editProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-[Fraunces] text-lg">Edit Corner</h3>
+            <button onclick="$('#editProfileModal').classList.add('hidden')" class="text-sm">Cancel</button>
+        </div>
+        
+        <!-- NEW: Avatar Picker Inside Modal -->
+        <div class="flex justify-center mb-4">
+            <div class="relative group cursor-pointer wobbly" onclick="document.getElementById('avatarFileInput').click()">
+                <div id="editProfileAvatarPreview" class="w-20 h-20 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100">
+                    <!-- Avatar injected via JS -->
+                </div>
+                <div class="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[24px_20px_26px_18px] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Change</span>
+                </div>
+                <div class="absolute -bottom-1 -right-1 bg-white border border-black/10 rounded-full p-1 shadow-sm pointer-events-none">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <input id="setupName" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-base sm:text-sm " placeholder="Name" />
+        <input id="setupPronouns" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-base sm:text-sm " placeholder="Pronouns" />
+        <textarea id="setupBio" class="w-full mb-3 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 h-24 text-base sm:text-sm " placeholder="Bio..."></textarea>
+        
+        <div class="mt-2 text-xs font-bold opacity-50">Mood Lighting</div>
+        <div class="flex gap-2 mb-4 mt-1">
+          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="sunset">Sunset</button>
+          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="sage">Sage</button>
+          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="berry">Berry</button>
+          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="clay">Clay</button>
+        </div>
+        <button id="saveProfileSetup" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Save</button>
+    </div>
+  </div>
+  <div id="commentsModal" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
+        <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Supportive Notes</h3><button onclick="$('#commentsModal').classList.add('hidden')" class="text-sm font-bold opacity-50">Close</button></div>
+        <div id="commentsList" class="space-y-2 mb-4 text-sm text-black/70"></div>
+        <textarea id="commentInput" class="w-full p-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white focus:outline-none h-20 text-base sm:text-lg" placeholder="Leave a kind note..."></textarea>
+        <button id="sendCommentBtn" class="w-full mt-2 py-2 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Send</button>
+    </div>
+  </div>
+  <div id="textModal" class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+      <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
+          <div class="flex items-start justify-between gap-3 mb-3"><div><div id="textModalTitle" class="font-[Fraunces] text-lg">Write</div><div id="textModalSubtitle" class="text-xs text-black/60">Gentle + short is perfect.</div></div><button onclick="closeTextModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
+          <div class="mt-3">
+              <textarea id="textModalInput" class="w-full min-h-[140px] px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder=""></textarea>
+              <div class="mt-2 flex items-center justify-between gap-2"><div id="textModalHint" class="text-xs text-black/55">Tip: be specific and kind.</div><div class="text-xs text-black/45"><span id="textModalCount">0</span>/<span id="textModalMax">220</span></div></div>
+          </div>
+          <div class="mt-3 flex items-center justify-between gap-2"><button onclick="closeTextModal()" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm font-extrabold">Cancel</button><button id="textModalSave" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white text-sm font-extrabold">Save</button></div>
+      </div>
+  </div>
+  <div id="toast" class="fixed bottom-32 left-1/2 -translate-x-1/2 bg-white border border-black/10 px-4 py-2 rounded-[18px_16px_22px_14px] shadow-lg text-sm font-bold hidden z-50 pop-in"><div></div></div> 
+   <!-- Hidden File Input for Avatars -->
+ <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
+ <!-- SINGLE POST SPOTLIGHT MODAL -->
+ <div id="spotlightModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>    
+    <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
+      <!-- Header -->
+      <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
+          <h3 class="font-[Fraunces] text-lg">The Post</h3>
+          <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+      </div>
+      <!-- Content Container -->
+      <div id="spotlightBody" class="p-4 overflow-y-auto">
+          <!-- Post gets injected here -->
+      </div>
+      <!-- Footer -->
+      <div class="p-4 border-t border-black/5 bg-white/50 text-center">
+          <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly">Go to Feed</button>
+      </div>
+    </div>
+</div>
+
+  <script>
+    const SUPABASE_URL = 'https://dcarzattebyvkojqflyb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXJ6YXR0ZWJ5dmtvanFmbHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTQxMTUsImV4cCI6MjA4MTEzMDExNX0.zc4LjPWrfS8OkRzN59h9YM8VFQE2JTZiRgWktPFJGHI'; 
+    let sb;
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+    const html = s => (s||'').replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const toast = (msg) => {
+      const t = $('#toast');
+      const box = $('#toast > div');
+      box.innerText = msg;
+      t.classList.remove('hidden');
+      t.classList.remove('pop-in'); 
+      void t.offsetWidth; 
+      t.classList.add('pop-in');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { t.classList.add('hidden'); }, 3000);
+    };
+    function safeCopy(text){
+      const t = String(text ?? '');
+      if(navigator.clipboard?.writeText) return navigator.clipboard.writeText(t).then(()=>true).catch(()=>false);
+      return false; 
+    }
+
+// --- LIVE TIMER ENGINE ---
+function updateAllTimers() {
+    const now = Date.now();
+    document.querySelectorAll('.live-time').forEach(el => {
+        const ts = parseInt(el.dataset.ts);
+        if (!ts) return;
+        const newText = timeAgo(new Date(ts));
+        if (el.innerText !== newText) {
+            el.innerText = newText; // Update only if changed
+        }
+    });
+}
+    function timeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + "y";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + "mo";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + "d";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + "h";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + "m";
+        return "now";
+    }
+
+    // --- MISSING HELPERS (Paste this after timeAgo) ---
+
+    // 1. Array of illustration choices for the composer
+    const illustChoices = [
+      { id: 'surprise', label: 'Surprise', seed: null },
+      { id: 'sunny', label: 'Sunny', seed: 11 },
+      { id: 'cloud', label: 'Cloud', seed: 22 },
+      { id: 'garden', label: 'Garden', seed: 33 },
+      { id: 'cozy', label: 'Cozy', seed: 44 },
+      { id: 'moon', label: 'Moon', seed: 55 },
+      { id: 'spark', label: 'Spark', seed: 66 },
+      { id: 'picnic', label: 'Picnic', seed: 77 }
+    ];
+
+    // 2. Function to generate the abstract art SVGs
+// 2. Function to generate the abstract art SVGs
+function artSVG(seed=1, palette='sunset'){
+      const palettes = { 
+        sunset: ['#f4a37a','#f7c59f','#fbf5ea','#dba1a8'], 
+        sage: ['#86a68b','#b7cbb7','#fbf5ea','#f7c59f'], 
+        berry: ['#dba1a8','#c77d93','#fbf5ea','#6f6a86'], 
+        clay: ['#b87d66','#f4a37a','#fbf5ea','#86a68b'] 
+      };
+      
+      const [a,b,c,d] = palettes[palette] || palettes.sunset;
+      
+      // Generate random-looking blobs based on the seed
+      const blobs = Array.from({length: 7}, (_,i)=>{ 
+        const x = 10 + ((seed*37 + i*11) % 80); 
+        const y = 10 + ((seed*23 + i*17) % 80); 
+        const r = 9 + ((seed*19 + i*7) % 20); 
+        const col = [a,b,d,c][i%4]; 
+        const op = 0.30 + ((seed+i)%4)*0.06; 
+        return `<circle cx="${x}" cy="${y}" r="${r}" fill="${col}" opacity="${op}" />`; 
+      }).join('');
+      
+      const doodle = `<path d="M20 70c10-18 30-18 40 0" fill="none" stroke="rgba(43,43,53,.33)" stroke-width="3" stroke-linecap="round"/><path d="M26 52c6 4 14 4 20 0" fill="none" stroke="rgba(43,43,53,.30)" stroke-width="3" stroke-linecap="round"/><path d="M54 30c6 6 6 18 0 24" fill="none" stroke="rgba(43,43,53,.26)" stroke-width="3" stroke-linecap="round"/><path d="M10 36c4-6 10-6 14 0" fill="none" stroke="rgba(43,43,53,.23)" stroke-width="3" stroke-linecap="round"/>`;
+      const gradId = `g${seed}${palette}`;
+      
+      return `<svg viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="${gradId}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}" stop-opacity=".76"/><stop offset=".55" stop-color="${b}" stop-opacity=".64"/><stop offset="1" stop-color="${c}" stop-opacity=".92"/></linearGradient></defs><rect x="0" y="0" width="100" height="100" rx="18" fill="url(#${gradId})" />${blobs}<g opacity=".95">${doodle}</g><g opacity=".33"><path d="M14 18c10 2 14-3 22-6" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="5" stroke-linecap="round"/></g></svg>`;
+    }
+
+    // 3. (Just in case you missed it earlier) Apply Mood Function
+ // 3. APPLY MOOD FUNCTION (RICH & VIBRANT)
+ // 3. APPLY MOOD FUNCTION (UPDATED: Orange Sunset & Real Clay)
+ function applyMood(moodId){
+      const themes = {
+        sunset: { 
+            // Real Sunset: Deep Orange, Golden Yellow, and Warm Red
+            a: 'rgba(255, 126, 95, 0.65)',   // Vibrant Orange
+            b: 'rgba(254, 180, 123, 0.55)',  // Golden Hour Yellow
+            c: 'rgba(255, 90, 80, 0.45)',    // Deep Sun Red
+            bg1: '#fff0e6', bg2: '#fff5ea', bg3: '#ffe8d6' 
+        },
+        sage: { 
+            // Enchanted Forest: Mint, Soft Blue, and Lime (Kept same)
+            a: 'rgba(110, 220, 180, 0.45)', 
+            b: 'rgba(130, 200, 250, 0.35)', 
+            c: 'rgba(210, 240, 160, 0.40)', 
+            bg1: '#f0fdf7', bg2: '#f6fff8', bg3: '#e8f5ee' 
+        },
+        berry: { 
+            // Cotton Candy: Rose, Lavender, and Peach (Kept same)
+            a: 'rgba(255, 140, 210, 0.45)', 
+            b: 'rgba(170, 160, 255, 0.40)', 
+            c: 'rgba(255, 180, 160, 0.35)', 
+            bg1: '#fff0f6', bg2: '#fff5fa', bg3: '#fcebf4' 
+        },
+        clay: { 
+            // Solid Clay: Warm Taupe, Muted Brown, Greige (Matches your image)
+            a: 'rgba(189, 183, 171, 0.70)',  // Darker Taupe Blob
+            b: 'rgba(214, 208, 196, 0.60)',  // Soft Greige Blob
+            c: 'rgba(160, 150, 145, 0.50)',  // Deep Clay Shadow
+            bg1: '#ebe7e0', bg2: '#f0ece6', bg3: '#e3dfd8' // Solid Clay Backgrounds
+        }
+      };
+      
+      const m = themes[moodId] || themes.sunset;
+      const r = document.documentElement.style;
+      
+      // Apply variables
+      r.setProperty('--mood-a', m.a); 
+      r.setProperty('--mood-b', m.b); 
+      r.setProperty('--mood-c', m.c);
+      r.setProperty('--mood-bg1', m.bg1); 
+      r.setProperty('--mood-bg2', m.bg2); 
+      r.setProperty('--mood-bg3', m.bg3);
+    }
+
+    // --- MEDIA COMPRESSION HELPER ---
+    async function compressImageToBlob(file, maxDim=1600, quality=0.86){
+      // If it's a video or not an image, return original
+      if (!file || !file.type.startsWith('image/')) return file;
+      
+      const imgUrl = URL.createObjectURL(file);
+      try{
+        const img = await new Promise((resolve, reject)=>{
+          const i = new Image();
+          i.onload = ()=> resolve(i);
+          i.onerror = ()=> reject(new Error('Image load failed'));
+          i.src = imgUrl;
+        });
+
+        // Calculate new dimensions (max 1600px)
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        const scale = Math.min(1, maxDim / Math.max(w, h));
+        const cw = Math.max(1, Math.round(w * scale));
+        const ch = Math.max(1, Math.round(h * scale));
+
+        // Draw to canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0,0,cw,ch); // Fill transparent backgrounds (PNG) with white
+        ctx.drawImage(img, 0,0,cw,ch);
+
+        // Convert back to file/blob
+        const mime = (file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+        const blob = await new Promise(resolve=> canvas.toBlob(resolve, mime, quality));
+        return blob || file;
+      } catch(e) {
+        console.error("Compression failed, using original", e);
+        return file;
+      } finally {
+        try{ URL.revokeObjectURL(imgUrl); }catch{}
+      }
+    }
+
+    const state = { 
+        user: null, profile: null, posts: [], savedPostIds: [], stories: [],clubs: [], 
+        allUsers: [], notifications: [], threads: [],clubBuilder: { selected: [] },
+        compose: { 
+            frame: 'wavy', 
+            vibe: 'sunset', 
+            file: null, 
+            mediaKind: null,      // 'image' or 'video'
+            editingId: null,
+            mediaPreviewUrl: null, // The blob:url for the preview
+            seed: Math.floor(Math.random()*100), 
+            mediaPos: { x: 50, y: 50 },
+            illustSeed: null 
+        },
+        filter: { search: '', topic: 'all' },
+        searchMode: 'posts',
+        kindness: true, 
+        hideNumbers: localStorage.getItem('cozyHideNumbers') !== 'false',
+        hiddenPosts: [], // DB-backed
+        mutedUsers: [], // DB-backed
+        savedPrompts: [], // DB-backed (Shelf)
+        lastRead: JSON.parse(localStorage.getItem('cozy_last_read') || '{}'),
+        habits: JSON.parse(localStorage.getItem('dailyHabits') || '{}'),
+        activePostOption: null, activePostUser: null,
+        storyIndex: 0, storyPageIndex: 0, activeThreadId: null,
+        onboardingStep: 0, onboarded: false,
+        textModal: { onSave: null, max: 220 },
+        tab: 'feed',
+        comments: { postId: null }
+    };
+
+    // --- MISSING CONSTANTS (Paste this after 'const state') ---
+
+    const STICKER_SVGS = {
+      hug: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M24 12c6-7 16-2 14 7-2 9-14 18-14 18S12 28 10 19c-2-9 8-14 14-7Z" fill="rgba(244,163,122,.45)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M17 23c2 2 4 3 7 3s5-1 7-3" fill="none" stroke="rgba(43,43,53,.45)" stroke-width="2" stroke-linecap="round"/></svg>`,
+      star: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M24 9l4 10 11 1-8 7 2 11-9-6-9 6 2-11-8-7 11-1 4-10Z" fill="rgba(247,197,159,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
+      leaf: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M12 30c10-18 20-18 24-18 0 6-2 24-20 26-5 1-6-4-4-8Z" fill="rgba(134,166,139,.5)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M18 31c6-6 12-10 18-12" fill="none" stroke="rgba(43,43,53,.45)" stroke-width="2" stroke-linecap="round"/></svg>`,
+      spark: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M24 10l3 8 8 3-8 3-3 8-3-8-8-3 8-3 3-8Z" fill="rgba(219,161,168,.55)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/></svg>`,
+      cocoa: `<svg viewBox="0 0 48 48" class="w-5 h-5 lg:w-6 lg:h-6"><path d="M16 18h16v14a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6V18Z" fill="rgba(247,197,159,.35)" stroke="rgba(43,43,53,.55)" stroke-width="2" stroke-linejoin="round"/><path d="M32 20h4a4 4 0 0 1 0 8h-4" fill="none" stroke="rgba(43,43,53,.35)" stroke-width="2" stroke-linecap="round"/></svg>`
+    };
+
+    const COZY_ART = [
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/9123979-FUMDCOBR-32.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/Draw-a-Cute-Penguin-Web-791x1024.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/e3dbe056a3cc18196b16a0eb17a1032d.jpg",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(1).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(10).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(11).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(12).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(13).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(14).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(15).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(16).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(17).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(3).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(4).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(5).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(7).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(9).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(19).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(22).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(23).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(24).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(25).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(26).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(27).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(28).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(33).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(30).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(34).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/image%20(32).png",
+  "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/cozy%20art%20collections/oil-painting-romance-love-loving-600nw-2354343753.webp"
 ];
 
-// 1. Install Service Worker & Cache Assets
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching assets');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-});
+    const SKETCH_PATHS = [
+  // ==========================================
+  // 1. CLASSIC FAVORITES (The Originals)
+  // ==========================================
+  `<circle cx="25" cy="25" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M25 10L25 5 M25 40L25 45 M10 25L5 25 M40 25L45 25" stroke="currentColor"/>`, // Sun
+  `<path d="M10 30 Q25 5 40 30 M13 30 Q25 12 37 30 M5 30 Q5 25 10 25 Q10 20 15 25 Q20 25 20 30 M30 30 Q30 25 35 25 Q35 20 40 25 Q45 25 45 30" stroke="currentColor" stroke-width="1.5"/>`, // Rainbow
+  `<path d="M20 35 L20 20 Q20 10 25 10 Q30 10 30 20 L30 35" stroke="currentColor" stroke-width="1.5"/><path d="M30 25 Q35 25 35 20 Q35 15 30 18" stroke="currentColor"/><path d="M20 28 Q15 28 15 22 Q15 18 20 20" stroke="currentColor"/><path d="M18 35 L32 35 L30 45 L20 45 Z" stroke="currentColor"/>`, // Cactus
+  `<rect x="10" y="15" width="30" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="6" stroke="currentColor"/><rect x="30" y="12" width="6" height="3" fill="currentColor"/>`, // Camera
+  `<path d="M10 15 L40 15 L40 35 L10 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 15 L25 28 L40 15" stroke="currentColor"/>`, // Envelope
+  `<path d="M18 10 Q18 5 25 5 Q32 5 32 10 L32 30 Q32 32 25 32 Q18 32 18 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M22 32 L22 40 Q22 43 25 43 Q28 43 28 40 L28 32" stroke="currentColor"/>`, // Ice Cream
+  `<ellipse cx="25" cy="30" rx="10" ry="14" stroke="currentColor" stroke-width="1.5"/><path d="M25 16 L20 10 M25 16 L25 8 M25 16 L30 10" stroke="currentColor"/><path d="M18 25 L32 35 M18 35 L32 25" stroke="currentColor" opacity="0.5"/>`, // Pineapple
 
-// 2. Activate & Clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
+  // ==========================================
+  // 2. SEWING & CRAFTS (From the new image)
+  // ==========================================
+  `<circle cx="20" cy="20" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="30" cy="30" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M23 23 L27 27 M17 17 L13 13 M33 33 L37 37" stroke="currentColor" stroke-width="1.5"/>`, // Scissors handles
+  `<path d="M35 15 L15 35 M15 15 L35 35" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="3" stroke="currentColor"/><circle cx="35" cy="35" r="3" stroke="currentColor"/>`, // Scissors X
+  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="22" r="1" fill="currentColor"/><circle cx="28" cy="22" r="1" fill="currentColor"/><circle cx="22" cy="28" r="1" fill="currentColor"/><circle cx="28" cy="28" r="1" fill="currentColor"/>`, // Button
+  `<path d="M20 10 L30 10 L35 40 L15 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L35 15 M16 20 L34 20 M17 25 L33 25 M18 30 L32 30 M19 35 L31 35" stroke="currentColor" stroke-width="1"/>`, // Spool of Thread
+  `<path d="M15 30 Q15 10 25 10 Q35 10 35 30" stroke="currentColor" stroke-width="1.5"/><path d="M10 40 L40 40 L40 30 L10 30 Z" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="5" width="6" height="5" stroke="currentColor"/>`, // Sewing Machine (Simple)
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 Q20 18 25 25 Q30 32 25 37" stroke="currentColor"/><path d="M15 20 Q25 20 35 30" stroke="currentColor"/>`, // Yarn Ball
+  `<path d="M10 20 L40 20" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 L10 25 M15 20 L15 25 M20 20 L20 25 M25 20 L25 25 M30 20 L30 25 M35 20 L35 25 M40 20 L40 25" stroke="currentColor"/>`, // Ruler/Tape
+  `<path d="M20 15 L30 15 L28 35 L22 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 15 Q25 5 30 15" stroke="currentColor"/>`, // Thimble
+  `<path d="M35 15 L15 35" stroke="currentColor" stroke-width="1.5"/><circle cx="37" cy="13" r="2" fill="currentColor"/>`, // Needle
+  `<path d="M10 25 L20 25 L25 35 L15 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 35 Q30 35 30 30 L30 20 Q30 15 25 15 L15 15" stroke="currentColor" stroke-width="1.5"/>`, // Safety Pin
 
-// 3. Fetch Strategy (Stale-While-Revalidate)
-self.addEventListener('fetch', (event) => {
-  // Ignore Supabase API calls (let them go to network always)
-  if (event.request.url.includes('supabase.co')) {
-    return;
-  }
+  // ==========================================
+  // 3. EARTH DAY & ECO (From new images)
+  // ==========================================
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 Q15 20 18 30 M30 15 Q25 25 35 28" stroke="currentColor"/>`, // Globe/Earth
+  `<path d="M25 5 L25 45 M10 25 L40 25" stroke="currentColor"/><circle cx="25" cy="25" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M25 5 L20 15 M25 5 L30 15" stroke="currentColor"/>`, // Wind Turbine
+  `<path d="M15 25 L25 10 L35 25" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 Q25 35 35 25" stroke="currentColor" stroke-width="1.5"/><path d="M35 25 L32 28 M15 25 L18 28" stroke="currentColor"/>`, // Recycle Arrows
+  `<path d="M25 40 Q40 40 40 25 Q40 10 25 5 Q10 10 10 25 Q10 40 25 40 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="18" cy="22" r="1.5" fill="currentColor"/><circle cx="32" cy="22" r="1.5" fill="currentColor"/><path d="M20 30 Q25 35 30 30" stroke="currentColor"/>`, // Happy Earth
+  `<path d="M25 10 Q35 25 25 40 Q15 25 25 10 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 10 L25 15" stroke="currentColor"/>`, // Water Drop
+  `<rect x="10" y="20" width="30" height="20" stroke="currentColor" stroke-width="1.5"/><path d="M15 20 L20 10 L30 10 L35 20" stroke="currentColor" stroke-width="1.5"/><path d="M20 30 L22 28 L24 30 L26 28 L28 30" stroke="currentColor"/>`, // Recycling Bin
+  `<rect x="10" y="15" width="30" height="20" transform="rotate(-10 25 25)" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L15 35 M20 15 L20 35 M25 15 L25 35 M30 15 L30 35" transform="rotate(-10 25 25)" stroke="currentColor"/>`, // Solar Panel
+  `<path d="M15 35 Q15 25 25 25 Q35 25 35 35" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L25 15" stroke="currentColor"/><path d="M25 15 L20 10 M25 15 L30 10" stroke="currentColor"/>`, // Sprout in soil
+  `<path d="M20 20 L15 15 Q20 5 30 15 L25 20" stroke="currentColor" stroke-width="1.5"/><path d="M30 30 L35 35 Q30 45 20 35 L25 30" stroke="currentColor" stroke-width="1.5"/><rect x="18" y="18" width="14" height="14" stroke="currentColor"/>`, // Plug / Energy
+  `<path d="M10 25 Q25 40 40 25 Q40 10 25 15 Q10 10 10 25" stroke="currentColor" stroke-width="1.5"/><path d="M25 15 L25 35 M10 25 L40 25" stroke="currentColor" opacity="0.5"/>`, // Leaf Veins
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Return cached response if found
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        // Update the cache with the new network response
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-            });
-        }
-        return networkResponse;
-      });
+  // ==========================================
+  // 4. LIFESTYLE & SELF-CARE (From Image 5)
+  // ==========================================
+  `<path d="M10 30 Q10 40 25 40 Q40 40 40 30 L40 25 L10 25 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 Q15 20 18 20 Q21 20 21 25 M25 25 Q25 15 30 15 Q35 15 35 25" stroke="currentColor"/>`, // Bathtub with bubbles
+  `<rect x="20" y="20" width="10" height="15" stroke="currentColor" stroke-width="1.5"/><path d="M25 20 L25 15" stroke="currentColor"/><path d="M25 15 Q28 10 25 5 Q22 10 25 15" stroke="currentColor" fill="currentColor" opacity="0.3"/>`, // Candle
+  `<rect x="10" y="30" width="30" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="12" y="25" width="26" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="20" width="20" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/>`, // Stack of Books
+  `<path d="M15 15 L35 15 L30 30 L20 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M35 15 Q45 15 40 25 L32 22" stroke="currentColor" stroke-width="1.5"/>`, // Tea Cup
+  `<path d="M25 10 L25 20" stroke="currentColor"/><rect x="20" y="20" width="10" height="12" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L25 25 L30 20" stroke="currentColor"/>`, // Tea Bag
+  `<circle cx="25" cy="20" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 L25 40 M15 40 L35 40" stroke="currentColor" stroke-width="1.5"/>`, // Mirror
+  `<path d="M15 30 Q15 10 35 10 Q35 30 35 30" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="30" width="10" height="10" rx="2" stroke="currentColor"/><rect x="30" y="30" width="10" height="10" rx="2" stroke="currentColor"/>`, // Headphones
+  `<rect x="20" y="25" width="10" height="15" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 L20 20 Q25 15 30 20 L30 25" stroke="currentColor" stroke-width="1.5"/>`, // Lipstick
+  `<path d="M15 20 Q25 15 35 20 L35 30 Q25 25 15 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 25 L5 25 M45 25 L40 25" stroke="currentColor"/>`, // Sleep Mask
+  `<rect x="15" y="15" width="20" height="20" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L20 10 L30 10 L35 15" stroke="currentColor" stroke-width="1.5"/><path d="M23 20 L23 30 M27 20 L27 30" stroke="currentColor"/>`, // Shopping Bag
 
-      // Return cached response immediately, or wait for network if cache is empty
-      return cachedResponse || fetchPromise;
-    })
-  );
-});
-const CACHE_NAME = 'cozygram-v1';
+  // ==========================================
+  // 5. MAGIC & SPOOKY (From Image 6)
+  // ==========================================
+  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M15 35 L35 35 L30 25 L20 25 Z" stroke="currentColor" stroke-width="1.5"/><path d="M22 22 Q25 18 28 22" stroke="currentColor" opacity="0.5"/>`, // Crystal Ball
+  `<path d="M15 25 Q15 10 25 10 Q35 10 35 25 L35 30 Q35 35 25 35 Q15 35 15 30 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="22" r="2" stroke="currentColor"/><circle cx="30" cy="22" r="2" stroke="currentColor"/><path d="M23 30 L27 30" stroke="currentColor"/>`, // Skull
+  `<path d="M15 40 L15 20 Q15 10 25 10 Q35 10 35 20 L35 40 L30 35 L25 40 L20 35 L15 40" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="1.5" fill="currentColor"/><circle cx="30" cy="20" r="1.5" fill="currentColor"/>`, // Ghost
+  `<path d="M20 25 Q25 10 30 25" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 Q10 25 10 30 Q10 35 25 35 Q40 35 40 30 Q40 25 30 25" stroke="currentColor" stroke-width="1.5"/>`, // UFO
+  `<circle cx="25" cy="25" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L30 20 M20 30 L25 25" stroke="currentColor"/><circle cx="22" cy="22" r="1" fill="currentColor"/><circle cx="28" cy="28" r="1" fill="currentColor"/>`, // 8-Ball
+  `<path d="M20 10 L30 10 L35 40 L15 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M18 25 L32 25" stroke="currentColor"/><path d="M20 10 Q25 5 30 10" stroke="currentColor"/>`, // Potion Bottle
+  `<path d="M25 10 Q35 10 35 25 Q35 40 20 40 Q25 35 25 25 Q25 15 30 10" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L22 22 L24 20" stroke="currentColor"/>`, // Moon Face
+  `<path d="M25 5 L27 15 L35 15 L28 20 L30 30 L25 24 L20 30 L22 20 L15 15 L23 15 Z" stroke="currentColor" stroke-width="1.5"/>`, // Magic Star
+  `<path d="M20 20 L30 20 L25 10 Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 20 L15 30 L35 30 L30 20" stroke="currentColor" stroke-width="1.5"/>`, // Pyramid/Crystal
+  `<path d="M25 10 L25 40 M15 20 Q25 15 35 20 M15 30 Q25 25 35 30" stroke="currentColor" stroke-width="1.5"/>`, // Snake line
 
-// List of files to cache immediately
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json'
+  // ==========================================
+  // 6. ABSTRACT & DOODLES (From Images 2 & 3)
+  // ==========================================
+  `<path d="M10 25 L15 20 L20 30 L25 20 L30 30 L35 20 L40 25" stroke="currentColor" stroke-width="1.5" fill="none"/>`, // ZigZag
+  `<path d="M25 25 M15 25 Q15 15 25 15 Q35 15 35 25 Q35 35 25 35 Q20 35 20 28" stroke="currentColor" stroke-width="1.5" fill="none"/>`, // Swirl
+  `<circle cx="15" cy="15" r="1.5" fill="currentColor"/><circle cx="35" cy="15" r="1.5" fill="currentColor"/><circle cx="25" cy="25" r="1.5" fill="currentColor"/><circle cx="15" cy="35" r="1.5" fill="currentColor"/><circle cx="35" cy="35" r="1.5" fill="currentColor"/>`, // Dots
+  `<path d="M10 10 L15 15 M15 10 L10 15 M35 35 L40 40 M40 35 L35 40" stroke="currentColor" stroke-width="1.5"/>`, // Crosses
+  `<path d="M10 25 L35 25 M30 20 L35 25 L30 30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`, // Arrow
+  `<path d="M10 15 L35 15 Q40 15 40 20 L40 30 Q40 35 35 35 L20 35 L15 40 L15 35 L10 35 Q5 35 5 30 L5 20 Q5 15 10 15" stroke="currentColor" stroke-width="1.5"/>`, // Speech Bubble
+  `<path d="M10 30 L10 20 L18 25 L25 15 L32 25 L40 20 L40 30 Z" stroke="currentColor" stroke-width="1.5"/>`, // Crown
+  `<path d="M25 5 L15 25 L25 25 L20 45 L35 20 L25 20 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>`, // Lightning
+  `<path d="M10 25 Q25 10 40 25 Q25 40 10 25" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/>`, // Eye
+  `<path d="M25 10 L15 30 L35 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M25 15 L20 25 L30 25 Z" stroke="currentColor" stroke-width="1"/>`, // Triangle
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 13 L25 37 M25 25 L16 34 M25 25 L34 34" stroke="currentColor" stroke-width="1.5"/>`, // Peace
+  `<path d="M25 25 M22 25 Q22 20 25 20 Q28 20 28 25 Q28 30 25 30" stroke="currentColor" stroke-width="1.5"/><path d="M25 10 L25 5 M25 40 L25 45 M10 25 L5 25 M40 25 L45 25" stroke="currentColor"/>`, // Spiral Sun
+  `<path d="M15 15 L35 15 L35 35 L15 35 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L20 10 L40 10 L40 30 L35 35 M40 10 L35 15" stroke="currentColor" stroke-width="1.5"/>`, // Cube
+  `<path d="M20 20 L30 30 M30 20 L20 30" stroke="currentColor" stroke-width="1.5"/>`, // X Mark
+  `<circle cx="25" cy="25" r="8" stroke="currentColor" stroke-width="1.5"/>`, // O Mark
+
+  // ==========================================
+  // 7. FOOD & PARTY (From Image 9)
+  // ==========================================
+  `<path d="M25 40 L10 10 Q25 5 40 10 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="20" r="2" stroke="currentColor"/><circle cx="20" cy="15" r="2" stroke="currentColor"/><circle cx="30" cy="15" r="2" stroke="currentColor"/>`, // Pizza
+  `<path d="M10 20 L15 35 L35 35 L40 20 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 Q15 10 25 10 Q35 10 40 20" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="8" r="2" fill="currentColor"/>`, // Cupcake
+  `<circle cx="25" cy="20" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 L25 45" stroke="currentColor" stroke-width="1.5"/><path d="M18 20 Q22 25 25 20" stroke="currentColor"/>`, // Lollipop
+  `<rect x="15" y="15" width="20" height="25" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="22" y="10" width="6" height="5" stroke="currentColor"/><circle cx="25" cy="28" r="5" stroke="currentColor"/>`, // Soda Can
+  `<path d="M15 40 L10 20 L40 20 L35 40 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 Q15 10 20 20 Q25 10 30 20 Q35 10 40 20" stroke="currentColor"/>`, // Popcorn
+  `<path d="M25 10 L15 35 Q25 40 35 35 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="10" r="2" stroke="currentColor"/>`, // Party Hat
+  `<path d="M10 20 Q10 15 15 15 L35 15 Q40 15 40 20 L40 30 Q40 35 35 35 L15 35 Q10 35 10 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M10 20 L5 25 L10 30 M40 20 L45 25 L40 30" stroke="currentColor"/>`, // Candy Wrapper
+  `<path d="M10 20 Q25 10 40 20" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="22" width="30" height="4" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M10 28 Q25 32 40 28" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="32" width="30" height="5" rx="2" stroke="currentColor" stroke-width="1.5"/>`, // Burger
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M18 18 L16 16 M32 18 L34 16 M25 32 L25 34" stroke="currentColor"/>`, // Donut
+  `<path d="M15 15 Q10 20 25 40 Q40 20 35 15 Q25 15 15 15" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L18 10 M35 15 L32 10 M25 15 L25 10" stroke="currentColor"/>`, // Strawberry
+
+  // ==========================================
+  // 8. ANIMALS & NATURE (Misc)
+  // ==========================================
+  `<path d="M15 20 L15 10 L20 15 L30 15 L35 10 L35 20 Q35 30 25 30 Q15 30 15 20" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="1" fill="currentColor"/><circle cx="30" cy="20" r="1" fill="currentColor"/>`, // Cat
+  `<path d="M15 15 Q10 25 15 35 Q25 40 35 35 Q40 25 35 15 Q25 10 15 15" stroke="currentColor" stroke-width="1.5"/><path d="M15 15 L10 20 M35 15 L40 20" stroke="currentColor"/><circle cx="20" cy="25" r="1" fill="currentColor"/><circle cx="30" cy="25" r="1" fill="currentColor"/>`, // Dog
+  `<path d="M10 25 Q15 15 25 25 Q35 15 40 25" stroke="currentColor" stroke-width="1.5"/><path d="M10 25 Q15 35 25 25 Q35 35 40 25" stroke="currentColor" stroke-width="1.5"/>`, // Bird Wings
+  `<path d="M10 25 Q15 10 25 10 Q35 10 35 25 Q35 40 25 40 Q15 40 15 25" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 L10 25 Q5 30 10 35 L15 30" stroke="currentColor"/>`, // Snail
+  `<path d="M10 25 L35 25 M35 25 L40 20 M35 25 L40 30 M10 25 L5 20 L5 30 Z" stroke="currentColor" stroke-width="1.5"/><path d="M15 25 L15 20 M20 25 L20 18 M25 25 L25 20" stroke="currentColor"/>`, // Fish
+  `<path d="M20 30 Q25 25 30 30 Q35 35 25 40 Q15 35 20 30" fill="currentColor" opacity="0.5"/><circle cx="15" cy="20" r="3" fill="currentColor" opacity="0.5"/><circle cx="25" cy="15" r="3" fill="currentColor" opacity="0.5"/><circle cx="35" cy="20" r="3" fill="currentColor" opacity="0.5"/>`, // Paw Print
+  `<path d="M25 40 Q25 20 40 5" stroke="currentColor" stroke-width="1.5"/><path d="M25 30 Q15 25 15 20 Q15 25 25 30 M28 20 Q38 15 38 10 Q38 15 28 20" stroke="currentColor" stroke-width="1.5"/>`, // Leaf Branch
+  `<circle cx="25" cy="25" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M25 21 L25 10 M29 25 L40 25 M25 29 L25 40 M21 25 L10 25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`, // Simple Flower
+  `<path d="M25 25 L25 35 M25 25 Q15 15 15 25 Q15 35 25 30 M25 25 Q35 15 35 25 Q35 35 25 30" stroke="currentColor" stroke-width="1.5"/>`, // Butterfly
+  `<path d="M10 30 Q10 20 20 20 Q25 10 35 15 Q40 15 40 25 Q45 30 40 35 L15 35 Q10 35 10 30" stroke="currentColor" stroke-width="1.5"/>`, // Cloud
+
+  // ==========================================
+  // 9. TEXT & SYMBOLS
+  // ==========================================
+  `<path d="M10 15 L10 35 M30 15 L30 35 M10 25 L30 25" stroke="currentColor" stroke-width="1.5"/><path d="M40 15 L40 35" stroke="currentColor" stroke-width="1.5"/><circle cx="40" cy="12" r="2" fill="currentColor"/>`, // "Hi"
+  `<path d="M10 25 L15 35 L20 15" stroke="currentColor" stroke-width="1.5"/><path d="M25 25 L30 20 L35 25 L30 30 L25 25" stroke="currentColor" stroke-width="1.5"/><path d="M40 15 L40 35 L45 35 L45 25" stroke="currentColor" stroke-width="1.5"/>`, // "Wow"
+  `<circle cx="25" cy="25" r="12" stroke="currentColor" stroke-width="1.5"/><path d="M25 18 L25 28 M25 32 L25 34" stroke="currentColor" stroke-width="1.5"/>`, // Exclamation
+  `<path d="M20 15 Q25 10 30 15 Q30 20 25 25 L25 30" stroke="currentColor" stroke-width="1.5"/><circle cx="25" cy="35" r="1.5" fill="currentColor"/>`, // Question
+  `<path d="M15 15 L25 25 L35 15 M15 35 L25 25 L35 35" stroke="currentColor" stroke-width="1.5"/>` // X Shape
 ];
-// 1. Install Service Worker & Cache Assets
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching assets');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-});
 
-// 2. Activate & Clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
+function getSketchBackground(seed) {
+  let str = '';
+  
+  // Grid settings
+  const cols = 4;
+  const rows = 4;
+  const cellW = 100 / cols; 
+  const cellH = 100 / rows; 
 
-// 3. Fetch Strategy (Stale-While-Revalidate)
-self.addEventListener('fetch', (event) => {
-  // Ignore Supabase API calls (let them go to network always)
-  if (event.request.url.includes('supabase.co')) {
-    return;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      
+      const rnd = (seed * 13 + r * 7 + c * 43); 
+      const jitterX = (rnd % 7) - 3; 
+      const jitterY = ((rnd * 3) % 7) - 3;
+      
+      const x = (c * cellW) + jitterX;
+      const y = (r * cellH) + jitterY;
+
+      const idx = rnd % SKETCH_PATHS.length;
+      const rot = (rnd * 23) % 360;
+      const scale = 0.35 + ((rnd % 3) / 20); 
+
+      // UPDATED OPACITY: Ranges from 0.8 to 1.0 (Almost fully opaque)
+      const op = 0.8 + ((rnd % 3) / 10);
+
+      str += `<g transform="translate(${x}, ${y}) rotate(${rot} 25 25) scale(${scale})" opacity="${op}">${SKETCH_PATHS[idx]}</g>`;
+    }
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Return cached response if found
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        // Update the cache with the new network response
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
+  // UPDATED CSS: 
+  // 1. Changed stroke color to rgba(43,43,53, 0.65) -> Much darker ink
+  // 2. Added stroke-linecap="round" for smoother pen-like ends
+  const svgString = `
+    <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <style>path, circle, rect, ellipse { stroke: rgba(43,43,53,0.65); fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }</style>
+      ${str}
+    </svg>
+  `.replace(/\s+/g, ' ').trim();
+
+  const encoded = encodeURIComponent(svgString);
+  return `background-image: url('data:image/svg+xml;utf8,${encoded}'); background-size: 100px 100px;`;
+}
+
+    // --- NEW ART ASSETS: SKETCHY PATTERNS ---
+
+
+    const MOCK_CLUBS = [
+        { id:'study', title:'Study Nook', desc:'Quiet encouragement', tag:'school' }, 
+        { id:'art', title:'Doodle Picnic', desc:'Messy sketches welcome', tag:'art' }, 
+        { id:'music', title:'Playlist Exch', desc:'Warm songs only', tag:'music' }, 
+        { id:'books', title:'Reading Corner', desc:'No spoilers, just vibes', tag:'selfcare' }
+    ];
+
+    const MOCK_PROMPTS = [
+        { title:'What color did you see?', desc:'One sentence post.' }, 
+        { title:'Show your desk corner', desc:'No faces needed.' }, 
+        { title:'One kind thing you did', desc:'Small counts.' }, 
+        { title:'A comfort snack', desc:'Name it like a spell.' }
+    ];
+
+    // --- HELPER FUNCTIONS ---
+    
+    function inferTags(text) {
+        if (!text) return [];
+        const tags = (text.match(/#[\w-]+/g) || []).map(t => t.slice(1));
+        const lower = text.toLowerCase();
+        if (lower.includes('art') && !tags.includes('art')) tags.push('art');
+        if (lower.includes('friend') && !tags.includes('friends')) tags.push('friends');
+        if (lower.includes('self') && !tags.includes('selfcare')) tags.push('selfcare');
+        return tags;
+    }
+
+    // --- CLEAN HELPER FUNCTIONS ---
+    
+    function avatarHTML(u) {
+        // If user has a custom photo, show it
+        if (u && u.avatar_url) {
+            return `<img src="${u.avatar_url}" class="w-full h-full object-cover" alt="${u.username}'s avatar" />`;
+        }
+        // Fallback to the generated art
+        return avatarSVG(u?.seed || 1);
+    }
+    
+    function avatarSVG(seed=1){
+      const bg = ['linear-gradient(135deg, rgba(247,197,159,.95), rgba(251,245,234,.85))','linear-gradient(135deg, rgba(134,166,139,.75), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(219,161,168,.8), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(111,106,134,.55), rgba(251,245,234,.9))','linear-gradient(135deg, rgba(184,125,102,.65), rgba(251,245,234,.92))'][seed%5];
+      return `<div class="w-full h-full" style="background:${bg}"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M16 36c2-12 10-20 16-20s14 8 16 20" fill="none" stroke="rgba(43,43,53,.65)" stroke-width="2.2" stroke-linecap="round"/><path d="M22 36c0 10 4 16 10 16s10-6 10-16" fill="none" stroke="rgba(43,43,53,.65)" stroke-width="2.2" stroke-linecap="round"/><circle cx="26" cy="32" r="2" fill="rgba(43,43,53,.65)"/><circle cx="38" cy="32" r="2" fill="rgba(43,43,53,.65)"/><path d="M28 41c2 2 6 2 8 0" fill="none" stroke="rgba(43,43,53,.5)" stroke-width="2.2" stroke-linecap="round"/><path d="M23 24l-5-5M41 24l5-5" fill="none" stroke="rgba(43,43,53,.5)" stroke-width="2.2" stroke-linecap="round"/></svg></div>`;
+    }
+
+    function svgIcon(kind, active=false, badge=false){
+      const tint = active ? 'rgba(244,163,122,.85)' : 'rgba(43,43,53,.68)';
+      const fill = active ? 'rgba(247,197,159,.45)' : 'rgba(134,166,139,.18)';
+      // The Red Dot logic
+      const badgeHtml = badge ? `<div class="absolute -top-1 -right-1 badge-dot"></div>` : '';
+      
+      const wrap = (inner, label) => `
+        <div class="relative">
+            <div class="mx-auto w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 grid place-items-center ${active ? 'shadow-sm' : ''}">${inner}</div>
+            <div class="mt-1 text-[11px] text-center ${active ? 'font-extrabold text-black/75' : 'text-black/55'}">${label}</div>
+            ${badgeHtml}
+        </div>`;
+
+      if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
+      if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Pages');
+      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
+      if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
+      if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
+      return '';
+    }
+
+    function showView(viewId) {
+        state.tab = viewId;
+
+        // Auto-close chat if leaving messages tab
+        if (viewId !== 'messages' && state.activeThreadId) {
+            state.activeThreadId = null; 
+            const chatHeader = document.getElementById('chatHeader');
+            if(chatHeader) chatHeader.innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
+            const chatMessages = document.getElementById('chatMessages');
+            if(chatMessages) chatMessages.innerHTML = '';
+            const chatInputArea = document.getElementById('chatInputArea');
+            if(chatInputArea) chatInputArea.classList.add('hidden');
+            renderMessages();
+        }
+
+        // Hide/Show sections
+        ['feed', 'stories', 'messages', 'notifs', 'profile'].forEach(id => {
+            const el = document.getElementById(`view-${id}`);
+            if (el) el.classList.add('hidden');
+        });
+        const current = document.getElementById(`view-${viewId}`);
+        if (current) current.classList.remove('hidden');
+        
+        // --- BADGE LOGIC ---
+        const hasUnreadNotes = state.threads.some(t => {
+            const lastReadTime = state.lastRead[t.id] || 0;
+            const lastMsg = t.messages[t.messages.length-1];
+            return lastMsg && lastMsg.from === 'them' && t.timestamp > lastReadTime;
+        });
+
+        const hasNotifs = state.notifications.length > 0;
+
+        // Update Nav Icons
+        $('#nav-feed').innerHTML = svgIcon('feed', viewId === 'feed');
+        $('#nav-stories').innerHTML = svgIcon('stories', viewId === 'stories');
+        $('#nav-messages').innerHTML = svgIcon('messages', viewId === 'messages', hasUnreadNotes);
+        $('#nav-notifs').innerHTML = svgIcon('notifs', viewId === 'notifs', hasNotifs);
+        $('#nav-profile').innerHTML = svgIcon('profile', viewId === 'profile');
+        
+        // --- RENDERING TRIGGERS ---
+        if(viewId === 'profile') renderProfile();
+        
+        // FIX: Force render notifications when entering the tab
+        if(viewId === 'notifs') renderNotifs();
+    }
+    function postMediaHTML(p){
+      const m = p.media;
+      
+      // 1. Handle Image with Custom Position (Saved from your drag)
+      if(m?.type === 'image' && m.mediaId) {
+          // Default to center (50%) if no position was saved
+          const posX = m.position?.x ?? 50; 
+          const posY = m.position?.y ?? 50;
+          
+          // Apply object-position style to match the composer view
+          return `<img src="${m.mediaId}" class="w-full h-full object-cover" style="object-position: ${posX}% ${posY}%" alt="Post photo" />`;
+      }
+      
+      // 2. Handle Video
+      if(m?.type === 'video' && m.mediaId) {
+          return `<video src="${m.mediaId}" class="w-full h-full object-cover" playsinline controls preload="metadata"></video>`;
+      }
+      
+      // 3. Handle Generated Art (Fallback)
+      const seed = m?.seed || Number(String(p.id||'').replace(/\D/g,'')) || 12;
+      const pal = m?.palette || p.palette || 'sunset';
+      return artSVG(seed, pal);
+    }
+
+    async function loadUsers() {
+        try { const { data } = await sb.from('profiles').select('*'); if (data) state.allUsers = data; } catch (e) { console.error('Error loading users', e); }
+    }
+    async function loadNotifications() {
+        if (!state.user) return;
+        
+        try {
+            // We select '*' which now includes 'post_id'
+            const { data, error } = await sb
+                .from('notifications')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) throw error;
+
+            if (data) {
+                state.notifications = data;
+                // Update badge and list
+                const hasNotifs = state.notifications.length > 0;
+                const nav = document.getElementById('nav-notifs');
+                if(nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', hasNotifs);
+                if(state.tab === 'notifs') renderNotifs();
+            }
+        } catch (e) {
+            console.error("Lantern Error:", e);
+        }
+    }
+    async function loadThreads() {
+        if (!state.user) return;
+        try {
+            // 1. Fetch Messages
+            const { data: msgs } = await sb.from('messages')
+                .select('*, profiles:from_id(username, seed)')
+                .or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`)
+                .order('created_at', { ascending: true });
+
+            // 2. NEW: Fetch Read History from Cloud
+            const { data: reads } = await sb.from('thread_reads')
+                .select('other_user_id, last_read_at')
+                .eq('user_id', state.user.id);
+
+            // 3. Map Read History to State
+            if(reads) {
+                reads.forEach(r => {
+                    state.lastRead[r.other_user_id] = new Date(r.last_read_at).getTime();
+                });
+            }
+
+            if (msgs) {
+                const grouped = {};
+                msgs.forEach(m => {
+                    const otherId = m.from_id === state.user.id ? m.to_id : m.from_id;
+                    if (!grouped[otherId]) {
+                        const u = state.allUsers.find(x => x.id === otherId) || { username: 'Neighbor', seed: 1 };
+                        grouped[otherId] = { 
+                            id: otherId, 
+                            user: u.username, 
+                            seed: u.seed, 
+                            // Add avatar_url here
+                            avatar_url: u.avatar_url,
+                            last: '', 
+                            timestamp: 0, 
+                            messages: [] 
+                        };
+                    }
+                    grouped[otherId].messages.push({ from: m.from_id === state.user.id ? 'me' : 'them', text: m.content || '' });
+                    grouped[otherId].last = m.content || 'Sent a note';
+                    grouped[otherId].timestamp = new Date(m.created_at).getTime();
+                });
+                
+                state.threads = Object.values(grouped).sort((a, b) => b.timestamp - a.timestamp);
+                
+                if(state.activeThreadId) {
+                    const activeData = state.threads.find(t => t.id === state.activeThreadId);
+                    if(activeData) renderChatMessages(activeData);
+                }
+            }
+        } catch (e) { console.error("Load error", e); }
+        renderMessages();
+    }
+    // FIX: LOAD STORIES FROM DB
+    async function loadStories() {
+        try {
+            const { data, error } = await sb.from('stories')
+                .select(`*, profiles(username, seed, avatar_url)`)
+                .order('created_at', { ascending: false });
+            
+            if (data) {
+                state.stories = data.map(s => ({ 
+                    id: s.id, 
+                    // FIX: Save the author's ID so we can reply to them!
+                    author_id: s.user_id, 
+                    user: s.profiles?.username || 'Anon', 
+                    seed: s.profiles?.seed || 1, 
+                    avatar_url: s.profiles?.avatar_url,
+                    title: s.title || 'Journal Entry', 
+                    created_at: new Date(s.created_at).getTime(),
+                    time: timeAgo(new Date(s.created_at)), 
+                    pages: Array.isArray(s.pages) ? s.pages : (s.pages ? [s.pages] : ['Empty page...'])
+                }));
+            }
+        } catch(e) { state.stories = []; }
+        renderStories();
+    }
+    async function loadHabits() {
+        if(!state.user) return;
+        try {
+            const today = new Date().toDateString();
+            const { data } = await sb.from('habits').select('*').eq('user_id', state.user.id).eq('date', today).single();
+            if(data) state.habits[today] = data.data;
+        } catch(e) { }
+    }
+    function loadDailyCheckin() {
+        const mood = localStorage.getItem('dailyCheckin');
+        if(mood) { $$('.moodPick').forEach(b => { if(b.dataset.mood === mood) b.classList.add('bg-white','ring-2','ring-black/10'); }); }
+    }
+
+    // --- SEARCH & FILTER LOGIC ---
+
+    function renderFilters() {
+    const bar = document.getElementById('filterBar');
+    if(!bar) return;
+
+    // Defines the responsive classes for the buttons
+    const btnBase = "wobbly px-2.5 py-1.5 lg:px-3 lg:py-2 rounded-[12px] lg:rounded-[14px] border border-black/10 text-[10px] lg:text-xs font-extrabold transition-all";
+
+    if (state.filter.search.length > 0) {
+        const isPosts = state.searchMode === 'posts';
+        bar.innerHTML = `
+            <button onclick="setSearchMode('posts')" class="${btnBase} ${isPosts ? 'bg-black text-white' : 'bg-white/70 text-black/60'}">
+                Posts
+            </button>
+            <button onclick="setSearchMode('people')" class="${btnBase} ${!isPosts ? 'bg-black text-white' : 'bg-white/70 text-black/60'}">
+                People
+            </button>
+        `;
+    } 
+    else {
+        const topics = [
+            { id: 'all', label: 'All' },
+            { id: 'art', label: 'Art 🎨' },
+            { id: 'selfcare', label: 'Self-care 🌿' },
+            { id: 'friends', label: 'Friends 💌' }
+        ];
+        
+        bar.innerHTML = topics.map(t => {
+            const isActive = state.filter.topic === t.id;
+            return `<button onclick="setTopic('${t.id}')" class="${btnBase} ${isActive ? 'bg-white ring-2 ring-black/10 text-black' : 'bg-white/70 text-black/60'}">${t.label}</button>`;
+        }).join('');
+    }
+}
+
+    function setTopic(t) {
+        state.filter.topic = t;
+        renderFilters();
+        renderPosts();
+    }
+
+    function setSearchMode(mode) {
+        state.searchMode = mode;
+        renderFilters();
+        renderMainContent(); // Decides whether to show Posts or Users
+    }
+
+    // This replaces the old renderPosts to handle both content types
+    function renderMainContent() {
+        // If we are searching PEOPLE
+        if (state.filter.search.length > 0 && state.searchMode === 'people') {
+            renderUserResults();
+        } else {
+            // Otherwise render POSTS (Default)
+            renderPosts();
+        }
+    }
+
+    function renderUserResults() {
+        const list = document.getElementById('feed-container');
+        const term = state.filter.search.toLowerCase();
+        
+        // STRICT SEARCH: Only look at the username
+        const matches = state.allUsers.filter(u => 
+            (u.username || '').toLowerCase().includes(term)
+        );
+
+        if (matches.length === 0) {
+            list.innerHTML = `<div class="p-8 text-center opacity-50 text-sm">No neighbors found named "${state.filter.search}".</div>`;
+            return;
+        }
+
+        list.innerHTML = matches.map(u => `
+            <button onclick="openUserModal('${u.id}')" class="w-full text-left wobbly pop-in mb-3">
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">
+                        ${avatarHTML(u)}
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-sm">${html(u.username)}</div>
+                        <div class="text-xs text-black/50 line-clamp-1">${html(u.bio || 'Just a cozy neighbor')}</div>
+                    </div>
+                </div>
+            </button>
+        `).join('');
+    }
+
+    // --- APP LOGIC (UPDATED INIT) ---
+    async function init() {
+    // 1. Initialize Supabase
+    try { 
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        }); 
+    } catch (e) { return; }
+    
+    // 2. Auth Listener (Handles page reloads & logging out)
+    sb.auth.onAuthStateChange((event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !state.user) {
+            handleLoginSuccess(session);
+        } else if (event === 'SIGNED_OUT') {
+            state.user = null;
+            // Redirect to home/login screen if logged out
+            window.location.href = window.location.pathname;
+        }
+    });
+
+    // 3. Load UI Basics
+    loadDailyCheckin();
+    wireEvents(); // Connects all buttons
+    
+    // 4. Start Background Data Loads
+    loadStories(); 
+    loadHabits();
+    loadUsers();
+    setTimeout(updateComposeView, 100);
+
+    // 5. START LIVE TIMERS 
+    // Run once immediately to set initial state
+    updateAllTimers();
+    // Then run every 60 seconds forever
+    setInterval(updateAllTimers, 60000);
+
+    // 6. Check Session / Magic Links
+    const { data } = await sb.auth.getSession();
+    const hasHash = window.location.hash && window.location.hash.includes('access_token');
+
+    if (data?.session) {
+        // User is already logged in
+        if (!state.user) handleLoginSuccess(data.session);
+        setTimeout(checkDeepLink, 1000);
+    } 
+    else if (hasHash) {
+        // User just clicked a Magic Link in their email
+        console.log("Processing magic link...");
+        toast("Verifying magic link...");
+        setTimeout(() => {
+            if (!state.user) {
+                toast("Link expired or valid session not found.");
+                $('#onboardingModal').classList.remove('hidden');
+                renderOnboarding();
+                // Clean URL
+                history.pushState("", document.title, window.location.pathname + window.location.search);
+            }
+        }, 4000);
+    } 
+    else {
+        // No user, show Onboarding
+        $('#onboardingModal').classList.remove('hidden');
+        renderOnboarding();
+    }
+}
+
+    async function handleLoginSuccess(session) {
+        state.user = session.user;
+        $('#onboardingModal').classList.add('hidden');
+        if($('#logoutBtn')) $('#logoutBtn').classList.remove('hidden');
+        await loadProfile();
+        await loadMutedUsers(); // Load Mutes
+        await loadHiddenPosts(); // NEW: Load Hidden Posts
+        await loadShelf(); // NEW: Load Shelf
+        await loadFeed();
+        await loadDrawer();
+        await loadNotifications();
+        await loadThreads();
+        await loadStories(); 
+        await loadClubs()
+        
+        renderNewThreadModal();
+
+        initRealtime();
+        showView('feed');
+    }
+    
+    async function loadMutedUsers() {
+        if(!state.user) return;
+        try {
+            const { data } = await sb.from('mutes').select('muted_user_id').eq('user_id', state.user.id);
+            if(data) state.mutedUsers = data.map(m => m.muted_user_id);
+        } catch(e) { console.error('Error loading mutes', e); }
+    }
+    
+    // NEW: Load Hidden Posts
+    async function loadHiddenPosts() {
+        if(!state.user) return;
+        try {
+            const { data } = await sb.from('hidden_posts').select('post_id').eq('user_id', state.user.id);
+            if(data) state.hiddenPosts = data.map(h => h.post_id);
+        } catch(e) { }
+    }
+    
+    // NEW: Load Shelf
+    async function loadShelf() {
+        if(!state.user) return;
+        try {
+            const { data } = await sb.from('shelf').select('id, text').eq('user_id', state.user.id).order('created_at', { ascending: false });
+            if(data) state.savedPrompts = data; // Now array of objects {id, text}
+        } catch(e) { }
+    }
+
+    async function loadProfile() {
+        if(!state.user) return;
+        let { data, error } = await sb.from('profiles').select('*').eq('id', state.user.id).single();
+        if (error) {
+            const newP = { id: state.user.id, username: state.user.email.split('@')[0], mood: 'sunset', seed: Math.floor(Math.random()*50) };
+            const { data: c } = await sb.from('profiles').insert(newP).select().single();
+            state.profile = c || newP;
+        } else { state.profile = data; }
+        if(state.profile) applyMood(state.profile.mood || 'sunset');
+    }
+    async function saveProfile() {
+        const selectedMood = $('.setupMood.ring-2')?.dataset.m || state.profile.mood || 'sunset';
+        const updates = { username: $('#setupName').value, pronouns: $('#setupPronouns').value, bio: $('#setupBio').value, mood: selectedMood };
+        await sb.from('profiles').update(updates).eq('id', state.user.id);
+        state.profile = { ...state.profile, ...updates };
+        applyMood(selectedMood);
+        $('#editProfileModal').classList.add('hidden'); 
+        toast('Corner updated.'); 
+        renderProfile();
+    }
+    function openEditProfile() { 
+        $('#setupName').value = state.profile.username || ''; 
+        $('#setupPronouns').value = state.profile.pronouns || ''; 
+        $('#setupBio').value = state.profile.bio || ''; 
+        const currentMood = state.profile.mood || 'sunset';
+        $$('.setupMood').forEach(b => {
+            if(b.dataset.m === currentMood) b.classList.add('ring-2', 'ring-black/10', 'bg-white');
+            else b.classList.remove('ring-2', 'ring-black/10', 'bg-white');
+        });
+        $('#editProfileModal').classList.remove('hidden'); 
+    }
+    async function loadFeed() {
+        // FIX: Added 'id' and 'user_id' to the comments(...) selection
+        let { data, error } = await sb.from('posts')
+            .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.warn("Using fallback feed.");
+            const res = await sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type)`).order('created_at', { ascending: false });
+            data = res.data;
+        }
+        state.posts = data || [];
+        renderPosts();
+    }
+    async function loadDrawer() {
+        if(!state.user) return;
+        try {
+            const { data } = await sb.from('saved_posts').select('post_id');
+            if(data) state.savedPostIds = data.map(x => x.post_id);
+        } catch(e) {}
+    }
+
+    async function initRealtime() { 
+        try { await sb.removeAllChannels(); } catch (e) {}
+
+        const channel = sb.channel('cozy-updates');
+
+        channel
+// --- 1. NEW POSTS (Fixed: No Duplicates) ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async (payload) => {
+                // FIX: If I created this post, ignore the server signal (I already rendered it)
+                if (payload.new.user_id === state.user.id) return;
+
+                // Fetch the full post data for everyone else
+                const { data } = await sb.from('posts')
+                    .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                    .eq('id', payload.new.id)
+                    .single();
+                
+                if (data) {
+                    state.posts.unshift(data); // Add to local data
+                    const html = getPostHTML(data);
+                    
+                    const container = document.getElementById('feed-container');
+                    const banner = container.querySelector('.hand-card');
+                    if(banner) {
+                        banner.insertAdjacentHTML('afterend', html);
+                    } else {
+                        container.insertAdjacentHTML('afterbegin', html);
+                    }
+                    toast('New cozy post just appeared!');
+                }
+            })
+
+// --- 2. NEW STICKERS ---
+.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stickers' }, (payload) => {
+    // 1. If I sent it, ignore (UI already updated)
+    if (payload.new.user_id === state.user.id) return;
+
+    const pid = payload.new.post_id;
+    const type = payload.new.sticker_type;
+    
+    // 2. Find the post
+    const postEl = document.getElementById(`post-${pid}`);
+    if(postEl) {
+        // 3. Find the specific button using data-type
+        const btn = postEl.querySelector(`button[data-type="${type}"]`);
+        if(btn) {
+            // 4. Create the fly animation
+            const fly = document.createElement('div'); fly.className = 'sticker-fly';
+            fly.innerHTML = STICKER_SVGS[type];
+            const rect = btn.getBoundingClientRect();
+            fly.style.left = (rect.left + window.scrollX) + 'px';
+            fly.style.top = (rect.top + window.scrollY) + 'px';
+            document.body.appendChild(fly);
+            setTimeout(() => fly.remove(), 1000);
+            
+            // 5. Update the number
+            const span = btn.querySelector('span:last-child');
+            if(span) {
+                const current = parseInt(span.innerText) || 0;
+                span.innerText = current + 1;
+                // Add a little pop effect to the button
+                btn.classList.add('pop-in');
+                setTimeout(()=>btn.classList.remove('pop-in'), 300);
+            }
+        }
+    }
+})
+            
+// --- 3. NEW COMMENTS ---
+.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
+    if (payload.new.user_id === state.user.id) return;
+
+    // 1. Update Internal Data
+    const pid = payload.new.post_id;
+    const { data: user } = await sb.from('profiles').select('username').eq('id', payload.new.user_id).single();
+    
+    const newComment = {
+        id: payload.new.id,
+        user_id: payload.new.user_id,
+        text: payload.new.text,
+        profiles: { username: user?.username || 'Neighbor' }
+    };
+
+    const post = state.posts.find(p => p.id === pid);
+    if(post) {
+        if(!post.comments) post.comments = [];
+        post.comments.push(newComment);
+    }
+
+    // 2. Only update UI if the Modal is OPEN
+    if(state.comments.postId === pid) {
+            renderCommentsModal();
+    }
+    
+    // (Deleted the code that updated previewContainer)
+})
+
+            // --- 4. NEW STORIES ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, async (payload) => {
+                 const { data } = await sb.from('stories').select(`*, profiles(username, seed, avatar_url)`).eq('id', payload.new.id).single();
+                 if(data) {
+                    const s = { 
+                        id: data.id, 
+                        user: data.profiles?.username, 
+                        seed: data.profiles?.seed, 
+                        avatar_url: data.profiles?.avatar_url,
+                        title: data.title, 
+                        time: 'Just now', 
+                        pages: data.pages 
+                    };
+                    state.stories.unshift(s);
+                    const list = document.getElementById('storiesList');
+                    if(list) list.insertAdjacentHTML('afterbegin', getStoryHTML(s, 0));
+                 }
+            })
+// --- 5. NOTIFICATIONS ---
+.on('postgres_changes', { 
+    event: 'INSERT', 
+    schema: 'public', 
+    table: 'notifications' 
+    // Removed the 'filter' property to allow the client to catch 
+    // all incoming rows that the database allows it to see via RLS.
+}, (payload) => {
+    // SECURITY CHECK: Only process if the notification is actually for me
+    if (payload.new.user_id !== state.user.id) return;
+
+    // PREVENT DUPLICATES: Check if this ID already exists in our list
+    if (state.notifications.some(n => n.id === payload.new.id)) return;
+
+    console.log("Lantern: New Notification!", payload.new);
+    state.notifications.unshift(payload.new);
+    
+    // 1. Update the Tab Icon (Red Dot)
+    const nav = document.getElementById('nav-notifs');
+    if (nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', true);
+    
+    // 2. Show a Toast
+    toast("Lantern: " + (payload.new.content || "New glow"));
+    
+    // 3. Refresh list if user is currently looking at the tab
+    if (state.tab === 'notifs') renderNotifs();
+})
+
+            // --- 6. MESSAGES ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+                const newMsg = payload.new;
+                if (!newMsg) return;
+                const isMe = newMsg.from_id === state.user.id;
+                
+                // If I sent it, I already updated the UI. Ignore.
+                if (isMe) return;
+
+                const partnerId = newMsg.from_id;
+                let thread = state.threads.find(t => t.id === partnerId);
+                
+                if (!thread) {
+                    let user = state.allUsers.find(u => u.id === partnerId);
+                    if (!user) {
+                        const { data } = await sb.from('profiles').select('*').eq('id', partnerId).single();
+                        user = data || { username: 'Neighbor', seed: 1 };
+                    }
+                    thread = { id: partnerId, user: user.username, seed: user.seed, avatar_url: user.avatar_url, last: '', timestamp: Date.now(), messages: [] };
+                    state.threads.push(thread);
+                }
+                
+                thread.messages.push({ from: 'them', text: newMsg.content });
+                thread.last = newMsg.content;
+                thread.timestamp = new Date(newMsg.created_at).getTime();
+                state.threads.sort((a, b) => b.timestamp - a.timestamp);
+                
+                if (state.activeThreadId === partnerId) {
+                    // If chat is open, mark read immediately
+                    state.lastRead[partnerId] = Date.now();
+                    const container = document.getElementById('chatMessages');
+                    if(container) {
+                        if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
+                        container.innerHTML += `<div class="flex justify-start pop-in"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 bg-white/75"><div class="text-sm text-black/80">${html(newMsg.content)}</div></div></div>`;
+                        container.scrollTop = container.scrollHeight;
+                    }
+                } else {
+                    toast(`New note from ${thread.user}`);
+                }
+                renderMessages();
+            })
+            
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') console.log("🔥 Everything Realtime Connected!");
+            });
+    }
+
+ // --- RICH DOODLE ASSETS (Updated with Whales, Houses, Gameboys, etc.) ---
+// --- ULTIMATE DOODLE ASSETS (60+ Items: School, Space, Nature, Food, Abstract) ---
+// --- THE ULTIMATE DOODLE LIBRARY (200+ Items) ---
+
+
+        // --- HTML GENERATORS (For Realtime & Initial Load) ---
+
+        function getPostHTML(p) {
+    // Safety check: If p is null (e.g. deleted post), return a placeholder
+    if (!p) return `<div class="p-4 text-center opacity-50">Post unavailable</div>`;
+
+    // Safety check: Handle missing profile (e.g. deleted user)
+    const u = p.profiles || { username: 'Ghost Neighbor', seed: 0, avatar_url: null };
+    
+    // Safety check: Handle missing stickers
+    const stickers = p.stickers || [];
+    const counts = { hug:0, star:0, leaf:0, spark:0, cocoa:0 }; 
+    stickers.forEach(s => counts[s.sticker_type] = (counts[s.sticker_type]||0)+1);
+    
+    let art = postMediaHTML(p);
+    
+    const frameClass = p.frame === 'polaroid' ? 'bg-white/80 pb-8' : (p.frame === 'tape' ? 'bg-white/80' : 'bg-white/60 rounded-[22px]');
+    const tapeDeco = p.frame === 'tape' ? `<div class="flex items-center justify-between -mt-1 mb-2"><div class="w-16 h-5 rounded-[10px_12px_14px_9px] bg-[#f7c59f]/60 border border-black/10 rotate-[-3deg]"></div><div class="w-12 h-5 rounded-[12px_10px_9px_14px] bg-[#b7cbb7]/55 border border-black/10 rotate-[4deg]"></div></div>` : '';
+    const isSaved = state.savedPostIds.includes(p.id);
+    const tags = inferTags(p.caption || '');
+    const tagHtml = tags.map(t => `<span class="text-[10px] opacity-50 mr-1">#${t}</span>`).join('');
+    const promptChip = p.prompt ? `<button onclick="saveToShelf('${html(p.prompt)}')" class="wobbly inline-flex items-center gap-2 px-3 py-1.5 rounded-[16px_14px_18px_12px] border border-black/10 bg-gradient-to-b from-[#fbf5ea] to-white/70 text-xs mb-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgba(244,163,122,.75)"></span>prompt: <b class="font-extrabold">${html(p.prompt)}</b><span class="text-[11px] text-black/45">save</span></button>` : '';
+
+    const rawTime = new Date(p.created_at).getTime();
+    const timeStr = timeAgo(new Date(p.created_at));
+
+    return `
+    <article class="hand-card hand-outline paper-noise p-4 relative mb-4 pop-in" id="post-${p.id}">
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle at 30% 30%, rgba(134,166,139,.18), rgba(219,161,168,.0) 60%);"></div>
+        ${isSaved ? `<div class="absolute left-3 top-3 px-2 py-1 rounded-[14px] bg-white/75 text-[10px] font-extrabold border border-black/5">saved</div>` : ''}
+        
+        <!-- HEADER -->
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <button onclick="openUserModal('${p.user_id}')" class="flex items-center gap-3 text-left wobbly">
+                <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+                <div>
+                    <div class="font-extrabold text-sm">${html(u.username)}</div>
+                    <div class="text-xs text-black/50 live-time" data-ts="${rawTime}">${timeStr}</div>
+                </div>
+            </button>
+            <button onclick="openOptions('${p.id}', '${p.user_id}')" class="wobbly w-10 h-10 flex items-center justify-center sm:w-auto sm:h-auto sm:px-3 sm:py-2 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold">•••</button>
+        </div>
+        ${promptChip}
+
+        <!-- MEDIA -->
+        <div class="relative mb-3 ${frameClass} hand-card hand-outline border border-black/5">
+            ${tapeDeco}
+            <div class="postMediaTap rounded-[16px] overflow-hidden border border-black/5 aspect-square lg:aspect-[3/2] w-full relative flex items-center justify-center" 
+                 style="background-color: #fffaf1; ${getSketchBackground(p.seed || 1)}"
+                 data-postid="${p.id}" 
+                 ondblclick="sendSticker('${p.id}', 'star', this)">
+                    <div class="w-full h-full lg:w-auto lg:h-[94%] aspect-square rounded-[12px] overflow-hidden bg-white shadow-sm border border-black/5 relative">
+                        ${art}
+                        <div class="absolute inset-0 z-10"></div>
+                    </div>
+            </div>
+        </div>
+
+        <!-- CAPTION & STICKERS -->
+        <div class="mb-1">${tagHtml}</div>
+        <div class="text-sm text-black/80 mb-3 leading-snug">${html(p.caption)}</div>
+        <div class="flex flex-wrap gap-2 mb-3" id="stickers-${p.id}">
+            ${stickerBtn(p.id, 'hug', STICKER_SVGS.hug, counts.hug)}
+            ${stickerBtn(p.id, 'star', STICKER_SVGS.star, counts.star)}
+            ${stickerBtn(p.id, 'leaf', STICKER_SVGS.leaf, counts.leaf)}
+            ${stickerBtn(p.id, 'spark', STICKER_SVGS.spark, counts.spark)}
+            ${stickerBtn(p.id, 'cocoa', STICKER_SVGS.cocoa, counts.cocoa)}
+        </div>
+
+        <!-- COMPACT FOOTER -->
+        <div class="hand-card hand-outline bg-white/70 border border-black/10 px-3 py-2 flex items-center justify-between gap-3">
+            <div class="text-xs font-bold text-black/55">Supportive notes</div>
+            <button onclick="openComments('${p.id}')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-[10px] font-bold shrink-0">Open</button>
+        </div>
+    </article>`;
+}
+
+
+function getStoryHTML(s, idx) {
+    const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
+    
+    // Fallback if created_at is missing (for older data)
+    const ts = s.created_at || Date.now(); 
+    
+    return `
+    <button class="w-full wobbly text-left pop-in" onclick="openStory(${idx})">
+        <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+            <div class="flex-1 min-w-0">
+                <div class="font-extrabold truncate">${html(s.user)}'s pages</div>
+                <div class="text-xs text-black/55">
+                    <span class="live-time" data-ts="${ts}">${s.time}</span> • ${s.pages.length} pages
+                </div>
+            </div>
+            <div class="text-xs text-black/50">open →</div>
+        </div>
+    </button>`;
+}
+
+function openClubBuilder() {
+        // --- THE FIX: Auto-initialize the state if it's missing ---
+        if (!state.clubBuilder) {
+            state.clubBuilder = { selected: [] };
+        }
+        
+        // Reset state
+        state.clubBuilder.selected = [];
+        
+        // Reset UI
+        const input = document.getElementById('clubSearchInput');
+        if(input) input.value = '';
+        
+        renderClubBuilderList('');
+        updateClubButton(); // Reset button state
+        
+        document.getElementById('clubBuilderModal').classList.remove('hidden');
+    }
+
+    // 2. Render List with Selection Logic
+    function renderClubBuilderList(term) {
+        const listContainer = document.getElementById('clubUserList');
+        if(!listContainer) return;
+
+        const lowerTerm = term.toLowerCase().trim();
+        const matches = state.allUsers.filter(u => 
+            u.id !== state.user.id && 
+            (u.username || '').toLowerCase().includes(lowerTerm)
+        );
+
+        if (matches.length === 0) {
+            listContainer.innerHTML = `<div class="p-8 text-center opacity-50 text-sm italic">No neighbors found.</div>`;
+            return;
+        }
+
+        listContainer.innerHTML = matches.map(u => {
+            // Check if this user is currently selected
+            const isSelected = state.clubBuilder.selected.includes(u.id);
+            
+            // Dynamic Styles
+            const bgClass = isSelected ? 'bg-[#f4a37a]/10 border-[#f4a37a]' : 'bg-white/60 border-black/10';
+            const iconBox = isSelected 
+                ? `<div class="w-6 h-6 rounded-full bg-[#f4a37a] border border-[#f4a37a] grid place-items-center text-white shadow-sm"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>`
+                : `<div class="w-6 h-6 rounded-full border border-black/10 bg-white grid place-items-center group-hover:border-[#f4a37a]"><svg class="w-3 h-3 text-black/20 group-hover:text-[#f4a37a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>`;
+
+            return `
+            <div onclick="toggleClubMember('${u.id}')" class="hand-card hand-outline ${bgClass} p-2 flex items-center justify-between gap-3 wobbly transition-all cursor-pointer mb-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-[12px] border border-black/10 overflow-hidden bg-white shrink-0">
+                        ${avatarHTML(u)}
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-sm ${isSelected ? 'text-[#e08e6d]' : ''}">${html(u.username)}</div>
+                        <div class="text-[10px] text-black/50 line-clamp-1">${html(u.bio || 'Neighbor')}</div>
+                    </div>
+                </div>
+                <div class="mr-1">
+                    ${iconBox}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // 3. Toggle Logic
+    function toggleClubMember(uid) {
+        const idx = state.clubBuilder.selected.indexOf(uid);
+        
+        if (idx > -1) {
+            // Remove if already selected
+            state.clubBuilder.selected.splice(idx, 1);
+        } else {
+            // Add if not selected
+            state.clubBuilder.selected.push(uid);
+        }
+
+        // Re-render to show visual changes
+        const currentTerm = document.getElementById('clubSearchInput').value;
+        renderClubBuilderList(currentTerm);
+        updateClubButton();
+    }
+
+    // 4. Update Bottom Button
+    function updateClubButton() {
+        const btn = document.getElementById('createClubBtn');
+        const count = state.clubBuilder.selected.length;
+        
+        if (count > 0) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `Create Club (${count})`;
+        } else {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `Select Neighbors`;
+        }
+    }
+
+    // 5. Final Action (Placeholder for now)
+    async function finishClubCreation() {
+        const memberIds = state.clubBuilder.selected;
+        if (memberIds.length === 0) return toast("Select neighbors first.");
+
+        // 1. Hide the builder modal
+        $('#clubBuilderModal').classList.add('hidden');
+
+        // 2. Ask for the Club Name using your existing Text Modal
+        // We reuse the styling you already have!
+        openTextModal(
+            'Name your Club', 
+            'Give this cozy corner a title.', 
+            'e.g. The Sunday Readers...', 
+            async (name) => {
+                if(!name) return false; // Don't close if empty
+                
+                toast("Building club...");
+                
+                try {
+                    // A. Create the Club
+                    const { data: club, error } = await sb.from('clubs')
+                        .insert({ 
+                            name: name, 
+                            description: 'A quiet place for friends.',
+                            owner_id: state.user.id 
+                        })
+                        .select()
+                        .single();
+                    
+                    if(error) throw error;
+
+                    // B. Add Members (Me + Selected Friends)
+                    const allMembers = [...memberIds, state.user.id].map(uid => ({
+                        club_id: club.id,
+                        user_id: uid
+                    }));
+
+                    const { error: memberError } = await sb.from('club_members').insert(allMembers);
+                    if(memberError) throw memberError;
+
+                    toast("Club created! 🛖");
+                    
+                    // C. Refresh
+                    await loadClubs();
+                    return true; // Returns true to close the text modal
+                    
+                } catch(e) {
+                    console.error(e);
+                    toast("Could not create club.");
+                    return true; // Close anyway to avoid stuck state
+                }
+            }
+        );
+    }
+
+    function renderPosts() {
+        const list = document.getElementById('feed-container');
+        if (!list) return;
+        
+        // 1. Handle "Filtering by User" Banner
+        const userBanner = document.getElementById('userFilterBanner');
+        // Only show banner if we are NOT typing in the search bar (e.g. clicked a profile button)
+        if (state.filter.search && state.filter.search !== document.getElementById('searchInput').value) {
+             if(userBanner) userBanner.classList.remove('hidden');
+        } else {
+             if(userBanner) userBanner.classList.add('hidden');
+        }
+        
+        // 2. Filter Logic
+        const term = state.filter.search.toLowerCase();
+        
+        const filtered = state.posts.filter(p => {
+            const tags = inferTags(p.caption); 
+            
+            // STRICT SEARCH: Only look at the caption
+            const matchesSearch = state.filter.search ? (
+                (p.caption || '').toLowerCase().includes(term)
+            ) : true;
+            
+            // Topic filter
+            const matchesTopic = state.filter.topic === 'all' ? true : tags.includes(state.filter.topic);
+            
+            return matchesSearch && matchesTopic; 
+        });
+
+        // 3. Render
+        if(filtered.length === 0) { 
+            // If searching, show specific message
+            if(state.filter.search) {
+                list.innerHTML = `<div class="p-6 text-center opacity-50 font-[Fraunces]">No captions found with "${state.filter.search}".</div>`; 
+            } else {
+                list.innerHTML = `<div class="p-6 text-center opacity-50 font-[Fraunces]">No posts found.</div>`; 
+            }
+            return; 
+        }
+
+        const postsHtml = filtered.map(p => getPostHTML(p)).join('');
+        list.innerHTML = postsHtml;
+    }
+    // Helper for stickers
+    function stickerBtn(pid, type, svg, count) {
+    // Check if numbers should be hidden
+    const hideClass = state.hideNumbers ? 'hidden' : '';
+    
+    return `
+    <button data-type="${type}" onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-2 py-1.5 lg:px-3 lg:py-2 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white transition-colors">
+        ${svg} 
+        <span class="${hideClass}">${count || 0}</span>
+    </button>`;
+}
+
+function shuffleFeed() {
+    // 1. Check if we have posts
+    if (!state.posts || state.posts.length === 0) return;
+
+    // 2. Fisher-Yates Shuffle Algorithm (The standard way to randomize an array)
+    for (let i = state.posts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        // Swap elements
+        [state.posts[i], state.posts[j]] = [state.posts[j], state.posts[i]];
+    }
+
+    // 3. Re-draw the feed
+    renderPosts();
+
+    // 4. Give feedback
+    toast('Feed shuffled 🍂');
+}
+
+    // --- MANAGEMENT LISTS LOGIC ---
+    
+    async function fetchManagementLists() {
+        // 1. Fetch Muted Users (with profile details)
+        const { data: mutes } = await sb.from('mutes')
+            .select('muted_user_id, profiles!muted_user_id(username, seed, avatar_url)')
+            .eq('user_id', state.user.id);
+
+        // 2. Fetch Hidden Posts (with post details)
+        const { data: hidden } = await sb.from('hidden_posts')
+            .select('post_id, posts!post_id(caption, media, seed, palette)')
+            .eq('user_id', state.user.id);
+
+        // 3. Fetch Reports (with post details)
+        const { data: reports } = await sb.from('reports')
+            .select('id, reason, post_id, posts!post_id(caption, media, seed, palette)')
+            .eq('user_id', state.user.id);
+
+        return { 
+            mutes: mutes || [], 
+            hidden: hidden || [], 
+            reports: reports || [] 
+        };
+    }
+
+    async function loadClubs() {
+        if (!state.user) return;
+        try {
+            // Find clubs where I am a member
+            const { data: myMemberships } = await sb.from('club_members')
+                .select('club_id')
+                .eq('user_id', state.user.id);
+            
+            if (myMemberships && myMemberships.length > 0) {
+                const clubIds = myMemberships.map(m => m.club_id);
+                const { data: clubs } = await sb.from('clubs')
+                    .select('*')
+                    .in('id', clubIds)
+                    .order('created_at', { ascending: false });
+                    
+                if (clubs) state.clubs = clubs;
+            }
+        } catch (e) { console.error('Error loading clubs', e); }
+        
+        // Refresh the UI if we are on the stories tab
+        if (state.tab === 'stories') renderStories();
+    }
+
+    async function doUnmute(uid) {
+        toast("Unmuting...");
+        await sb.from('mutes').delete().eq('user_id', state.user.id).eq('muted_user_id', uid);
+        state.mutedUsers = state.mutedUsers.filter(id => id !== uid); 
+        // FIX: Reload the modal list instantly
+        openRoom('mutes'); 
+        toast("Neighbor unmuted.");
+    }
+
+    async function doUnhide(pid) {
+        toast("Unhiding...");
+        await sb.from('hidden_posts').delete().eq('user_id', state.user.id).eq('post_id', pid);
+        state.hiddenPosts = state.hiddenPosts.filter(id => id !== pid);
+        // FIX: Reload the modal list instantly
+        openRoom('hidden'); 
+        toast("Post visible again.");
+    }
+
+    async function doWithdrawReport(rid) {
+        await sb.from('reports').delete().eq('id', rid);
+        // FIX: Reload the modal list instantly
+        openRoom('reports'); 
+        toast("Report withdrawn.");
+    }
+
+    async function openUserModal(targetId) {
+        // 1. If I clicked myself, just go to the Profile tab
+        if (targetId === state.user.id) {
+            showView('profile');
+            return;
+        }
+
+        const modal = document.getElementById('userModal');
+        const body = document.getElementById('userModalBody');
+        
+        // 2. Open Modal with Loading State
+        modal.classList.remove('hidden');
+        body.innerHTML = `<div class="p-8 text-center text-black/40 animate-pulse">Knocking...</div>`;
+
+        // 3. Find User Data
+        // Try local memory first
+        let user = state.allUsers.find(u => u.id === targetId);
+        
+        // If not in memory, fetch from cloud
+        if (!user) {
+            try {
+                const { data } = await sb.from('profiles').select('*').eq('id', targetId).single();
+                user = data;
+            } catch(e) {}
+        }
+
+        if (!user) {
+            body.innerHTML = `<div class="p-8 text-center text-black/40">Neighbor moved away.</div>`;
+            return;
+        }
+
+        // 4. Get their recent posts (from your local feed cache)
+        const recentPosts = state.posts.filter(p => p.user_id === targetId).slice(0, 6);
+
+        // 5. Determine Mood Color (Fallback to white if none)
+        const moodMap = {
+            sunset: 'linear-gradient(135deg, #fff5ea 0%, #fbf5ea 100%)',
+            sage:   'linear-gradient(135deg, #f6fff8 0%, #fbf5ea 100%)',
+            berry:  'linear-gradient(135deg, #fff3f6 0%, #fbf5ea 100%)',
+            clay:   'linear-gradient(135deg, #fff7f1 0%, #fbf5ea 100%)'
+        };
+        const moodBg = moodMap[user.mood || 'sunset'];
+
+        // 6. Render the Profile Card
+        body.innerHTML = `
+            <div class="relative rounded-[22px] border border-black/10 overflow-hidden p-4 mb-4 shadow-sm" style="background: ${moodBg}">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-[20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
+                        ${avatarHTML(user)}
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-[Fraunces] text-xl leading-tight truncate">${html(user.username)}</div>
+                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">${html(user.pronouns || 'Neighbor')}</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-sm text-black/80 leading-relaxed">
+                    ${html(user.bio || 'Just visiting.')}
+                </div>
+                
+<!-- Action Buttons -->
+<div class="mt-4 flex gap-2">
+    <!-- NEW BUTTON using startChat -->
+    <button onclick="startChat('${user.id}')" class="flex-1 py-3 rounded-[14px] bg-[#2b2b35] text-white text-xs font-bold wobbly shadow-md">
+        Send a Note
+    </button>
+                    <!-- Pass null as postId to indicate this is a User Action only -->
+                    <button onclick="openOptions(null, '${user.id}');" class="px-4 py-3 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold wobbly">
+                        •••
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mini Scrapbook -->
+            <div class="flex items-center justify-between px-1 mb-2">
+                <div class="text-xs font-bold text-black/40 uppercase tracking-widest">Recent Shares</div>
+            </div>
+            
+            ${recentPosts.length > 0 ? `
+                <div class="grid grid-cols-3 gap-2 pb-2">
+                    ${recentPosts.map(p => `
+                        <button onclick="openSpotlight('${p.id}')" class="aspect-square rounded-[12px] overflow-hidden border border-black/10 bg-white wobbly relative group">
+                            ${postMediaHTML(p)}
+                        </button>
+                    `).join('')}
+                </div>
+            ` : `<div class="p-6 text-center text-sm text-black/40 italic bg-black/5 rounded-[18px]">Quiet so far.</div>`}
+        `;
+    }
+
+    async function renderProfile() {
+        if(!state.profile) return;
+        const p = state.profile;
+        const meId = state.user.id;
+        
+        // 1. ICONS (Unified Style: 2px stroke, dark grey)
+        const iconClass = "w-7 h-7 mx-auto mb-1 text-[#2b2b35] opacity-80"; 
+        
+        // Shelf: Bookshelf
+        const shelfIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14" />
+            <path d="M4 19h16" />
+            <path d="M4 12h16" />
+            <path d="M8 12v7" />
+            <path d="M16 5v7" />
+            <path d="M12 5l-2 7" />
+        </svg>`;
+
+        // Plant: Potted Plant
+        const plantIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22v-8" />
+            <path d="M5 14h14l-2 8H7z" />
+            <path d="M12 14a5 5 0 0 0-5-5V5a5 5 0 0 1 5 5v4z" />
+            <path d="M12 14a5 5 0 0 1 5-5V5a5 5 0 0 0-5 5v4z" />
+        </svg>`;
+
+        // Drawer: 3-Tier Cabinet
+        const drawerIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <line x1="4" y1="9" x2="20" y2="9" />
+            <line x1="4" y1="15" x2="20" y2="15" />
+            <line x1="10" y1="6.5" x2="14" y2="6.5" />
+            <line x1="10" y1="12" x2="14" y2="12" />
+            <line x1="10" y1="17.5" x2="14" y2="17.5" />
+        </svg>`;
+
+        // Mood: Hanging Lamp
+        const moodIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v6" />
+            <path d="M5 8h14c0 3.5-2.5 7-7 7s-7-3.5-7-7z" />
+            <path d="M12 15v3" />
+            <path d="M9 20h6" />
+            <path d="M5 20l-2 2" />
+            <path d="M19 20l2 2" />
+        </svg>`;
+
+        // Edit: Pencil in Box
+        const editIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>`;
+
+        // 2. Action Box Helper (RESPONSIVE)
+        const actionBox = (label, icon, onClick) => `
+            <button onclick="${onClick}" class="wobbly flex flex-col items-center justify-center p-1 lg:p-1.5 rounded-[16px_14px_18px_12px] bg-white/60 border border-black/5 shrink-0 flex-1 min-w-[55px] lg:min-w-[65px] hover:bg-white transition-colors">
+                ${icon}
+                <div class="text-[10px] lg:text-[11px] font-extrabold text-black/80 leading-none -mt-0.5">${label}</div>
+            </button>
+        `;
+
+        // 3. Galleries
+        const myPosts = state.posts.filter(x => x.user_id === meId).slice(0, 8);
+        const miniGallery = myPosts.map(post => `<button class="myPostThumb wobbly hand-card hand-outline bg-white/70 border border-black/10 p-2 text-left" data-postid="${post.id}"><div class="rounded-[16px_14px_18px_12px] overflow-hidden border border-black/10" style="aspect-ratio: 1 / 1">${postMediaHTML(post)}</div></button>`).join('');
+
+        $('#view-profile').innerHTML = `
+            <!-- COMBINED HEADER CARD -->
+            <div class="relative hand-card hand-outline bg-gradient-to-b from-white/80 to-white/40 border border-black/10 mb-4 overflow-hidden">
+                
+                <!-- Top Section: Bio -->
+                <div class="p-6 pb-4 text-center">
+                    <div class="w-20 h-20 mx-auto rounded-[24px_20px_28px_22px] border border-black/10 overflow-hidden bg-white shadow-sm mb-3">
+                        ${avatarHTML(p)}
+                    </div>
+                    <div class="font-[Fraunces] text-2xl tracking-tight leading-none mb-1">${html(p.username)}</div>
+                    <div class="text-xs text-black/50 font-bold uppercase tracking-wider mb-2">${html(p.pronouns || 'Your Corner')}</div>
+                    <div class="text-sm text-black/70 leading-relaxed max-w-[260px] mx-auto">${html(p.bio || 'Welcome to my cozy corner.')}</div>
+                </div>
+
+                <!-- Divider -->
+                <div class="w-2/3 mx-auto border-t border-black/5 mb-4"></div>
+
+                <!-- Bottom Section: Actions Row -->
+                <div class="px-4 pb-6">
+                    <!-- gap-1 on mobile, gap-2 on desktop -->
+                    <div class="flex items-center justify-between gap-1 lg:gap-2 overflow-x-auto no-scrollbar">
+                        ${actionBox('Shelf', shelfIcon, "openRoom('shelf')")}
+                        ${actionBox('Plant', plantIcon, "openRoom('plant')")}
+                        ${actionBox('Drawer', drawerIcon, "openRoom('drawer')")}
+                        ${actionBox('Mood', moodIcon, "openRoom('window')")}
+                        ${actionBox('Edit', editIcon, "openEditProfile()")}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCRAPBOOK SECTION -->
+            <div class="hand-card hand-outline paper-noise p-4 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="font-[Fraunces] text-lg">My scrapbook</div>
+                    <button onclick="openScrapbookModal()" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold shadow-sm hover:bg-[#fffaf1]">Open</button>
+                </div>
+                ${miniGallery ? `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${miniGallery}</div>` : `<div class="p-6 text-center text-xs opacity-50 italic">Nothing posted yet.</div>`}
+            </div>
+
+            <!-- COMPACT MANAGEMENT BOXES -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pb-8">
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4 flex items-center justify-between">
+                    <span class="text-sm font-extrabold">Hidden Posts</span>
+                    <button onclick="openRoom('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4 flex items-center justify-between">
+                    <span class="text-sm font-extrabold">Muted Neighbors</span>
+                    <button onclick="openRoom('mutes')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+                <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4 flex items-center justify-between">
+                    <span class="text-sm font-extrabold">My Reports</span>
+                    <button onclick="openRoom('reports')" class="wobbly px-3 py-1.5 rounded-[12px] bg-white border border-black/10 text-xs font-bold">Open</button>
+                </div>
+            </div>
+        `;
+        
+        // Rewire Events
+        $$('.myPostThumb').forEach(btn => btn.onclick = () => openOptions(btn.dataset.postid, state.user.id));
+    }
+
+    // --- SCRAPBOOK FUNCTIONS ---
+function openScrapbookModal() {
+    // 1. Filter only my posts
+    const myPosts = state.posts.filter(p => p.user_id === state.user.id);
+    const container = document.getElementById('scrapbookBody');
+    
+    // 2. Render content
+    if (myPosts.length === 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-40 opacity-50">
+                <div class="text-3xl mb-2">🍃</div>
+                <div class="text-sm">No posts yet.</div>
+            </div>`;
+    } else {
+        // We reuse getPostHTML to show full posts
+        container.innerHTML = myPosts.map(p => getPostHTML(p)).join('');
+    }
+
+    // 3. Show Modal
+    document.getElementById('scrapbookModal').classList.remove('hidden');
+}
+
+function closeScrapbook() {
+    document.getElementById('scrapbookModal').classList.add('hidden');
+}
+// Make global for onclick access
+window.openScrapbookModal = openScrapbookModal;
+window.closeScrapbook = closeScrapbook;
+    // UPDATED RENDER STORIES TO USE DB
+    function renderStories() {
+// 1. Render Clubs
+const container = document.getElementById('clubsContainer');
+        
+        // Generate HTML for Real Clubs
+        const realClubsHtml = state.clubs.map(c => `
+            <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly group" onclick="toast('Entering ${html(c.name)}...')">
+                <div class="flex justify-between items-start">
+                    <div class="font-extrabold text-sm group-hover:text-[#f4a37a] transition-colors">${html(c.name)}</div>
+                    <div class="text-[10px] opacity-30">CLUB</div>
+                </div>
+                <div class="text-[10px] text-black/60 mt-1 line-clamp-1">${html(c.description || 'A cozy group.')}</div>
+            </button>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-sm font-extrabold">Cozy Clubs</div>
+                <button onclick="openClubBuilder()" class="wobbly px-3 py-1.5 rounded-[12px] bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-white text-[10px] font-bold shadow-sm border border-black/5 hover:opacity-90 transition-opacity">
+                    + New Club
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                ${realClubsHtml}
+                <!-- If no clubs, show a tiny hint box taking up one slot -->
+                ${state.clubs.length === 0 ? `
+                <div class="col-span-2 p-4 text-center border-2 border-dashed border-black/5 rounded-[18px] bg-white/30">
+                    <div class="text-xs text-black/40 font-bold">No clubs yet.<br>Start one above?</div>
+                </div>` : ''}
+            </div>
+        `;
+
+        // 2. Render Stories List (Unchanged)
+        const listDiv = document.getElementById('storiesList');
+        if (state.stories.length === 0) {
+            listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No journal pages found.<br>Be the first to write one?</div>`;
+        } else {
+            listDiv.innerHTML = state.stories.map((s, idx) => {
+                const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
+                // Using raw timestamp for live update
+                const ts = s.created_at || Date.now();
+                const timeStr = timeAgo(new Date(ts));
+                
+                return `
+                <button class="w-full wobbly text-left" onclick="openStory(${idx})">
+                    <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-extrabold truncate">${html(s.user)}'s pages</div>
+                            <div class="text-xs text-black/55">
+                                <span class="live-time" data-ts="${ts}">${timeStr}</span> • ${s.pages.length} pages
+                            </div>
+                        </div>
+                        <div class="text-xs text-black/50">open →</div>
+                    </div>
+                </button>
+            `}).join('');
+        }
+
+        // 3. Ensure Prompts are Hidden
+        const promptsContainer = document.getElementById('promptsGrid')?.parentElement;
+        if(promptsContainer) promptsContainer.style.display = 'none';
+    }
+
+    function renderMessages() {
+        const threadList = $('#threadList');
+        if (state.threads.length === 0) { 
+            threadList.innerHTML = `<div class="p-4 text-sm opacity-50">No notes yet.</div>`; 
+            return; 
+        }
+        
+        threadList.innerHTML = state.threads.map(t => {
+            const active = state.activeThreadId === t.id;
+            const lastMsg = t.messages[t.messages.length - 1];
+            
+            const lastReadTime = state.lastRead[t.id] || 0;
+            const isNew = t.timestamp > lastReadTime;
+            const isUnread = (lastMsg && lastMsg.from === 'them' && isNew && !active);
+            
+            const activeClass = active ? 'bg-gradient-to-b from-[#f7c59f]/55 to-white/70 ring-2 ring-[#f4a37a]/20' : 'bg-white/70';
+            const unreadClass = isUnread ? 'border-[#f4a37a] shadow-sm' : 'border-black/10';
+            const textWeight = isUnread ? 'font-bold text-black/90' : 'text-black/60';
+            
+            const u = { username: t.user, seed: t.seed, avatar_url: t.avatar_url };
+            const rawTime = t.timestamp;
+            const timeStr = timeAgo(new Date(t.timestamp));
+
+            return `
+            <div class="relative group mb-2">
+                <button class="w-full wobbly text-left" onclick="openThread('${t.id}')">
+                    <div class="hand-card hand-outline ${activeClass} ${unreadClass} border p-3 flex items-center gap-3 relative transition-all duration-300 pr-10">
+                        ${isUnread ? `<div class="absolute -top-1 -right-1 w-3 h-3 bg-[#f4a37a] rounded-full border-2 border-white shadow-sm"></div>` : ''}
+                        <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarHTML(u)}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="font-extrabold truncate text-sm">${html(t.user)}</div>
+                                <div class="text-[10px] opacity-40 live-time" data-ts="${rawTime}">${timeStr}</div>
+                            </div>
+                            <div class="text-xs ${textWeight} truncate mt-0.5">${html(t.last)}</div>
+                        </div>
+                    </div>
+                </button>
+                
+                <!-- DELETE BUTTON (Small Cross) -->
+                <button onclick="deleteThread('${t.id}', event)" class="absolute top-1/2 right-3 -translate-y-1/2 w-6 h-6 rounded-full bg-white/50 hover:bg-red-50 border border-transparent hover:border-red-200 text-black/20 hover:text-red-500 flex items-center justify-center transition-all z-20" title="Delete conversation">
+                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>`;
+        }).join('');
+    }
+    
+    function renderNewThreadModal() {
+        if(!state.user) return;
+        const meId = state.user.id;
+        const list = state.allUsers.filter(u => u.id !== meId);
+        $('#userList').innerHTML = list.length ? list.map(u => `
+            <button onclick="openThread('${u.id}')" class="w-full text-left p-3 hand-card bg-white/70 wobbly font-bold mb-2 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(u.seed)}</div><span>${html(u.username)}</span>
+            </button>
+        `).join('') : '<div class="text-sm opacity-50 p-2">No other users found yet.</div>';
+    }
+
+    // A bridge function to smoothly take you to the chat
+    window.startChat = function(uid) {
+    toast("Opening note...");
+    document.getElementById('userModal').classList.add('hidden');
+    showView('messages');
+    
+    setTimeout(() => {
+        openThread(uid);
+        // Scroll to the chat box on mobile so they don't just see the list
+        const chatBox = document.querySelector('#view-messages .hand-card');
+        if(chatBox) chatBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+};
+
+async function deleteThread(targetId, event) {
+        if(event) { event.stopPropagation(); event.preventDefault(); }
+
+        toast("Clearing notes...");
+
+        // 1. UI Update
+        state.threads = state.threads.filter(t => t.id !== targetId);
+        if(state.activeThreadId === targetId) {
+            state.activeThreadId = null;
+            $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50 text-white/90">Select a note to read</div>`;
+            $('#chatMessages').innerHTML = '';
+            $('#chatInputArea').classList.add('hidden');
+        }
+        renderMessages();
+
+        // 2. Database Delete
+        try {
+            const myId = state.user.id;
+            
+            // EDGE CASE FIX: If deleting a broken thread (undefined target), delete orphans
+            if (!targetId || targetId === 'undefined') {
+                await sb.from('messages').delete().eq('from_id', myId).is('to_id', null);
+                return;
+            }
+
+            const { error } = await sb.from('messages').delete()
+                .or(`and(from_id.eq.${myId},to_id.eq.${targetId}),and(from_id.eq.${targetId},to_id.eq.${myId})`);
+            
+            if (error) throw error;
+        } catch(e) {
+            console.error(e);
+            // Don't show error toast to user, just let the UI update stand
+        }
+    }
+    window.deleteThread = deleteThread;
+    
+    window.deleteThread = deleteThread;
+    
+    // Expose to window for onclick
+    window.deleteThread = deleteThread;
+    async function openThread(targetId) {
+        // --- 1. TOGGLE LOGIC (Clicking same user closes chat) ---
+        if (state.activeThreadId === targetId) {
+            state.activeThreadId = null; // Deselect
+            
+            // Reset UI to "Empty" state
+            $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
+            $('#chatMessages').innerHTML = '';
+            $('#chatInputArea').classList.add('hidden'); // Hide input
+            
+            renderMessages(); // Re-render sidebar to remove orange highlight
+            return; // Stop here
+        }
+
+        // --- 2. OPEN LOGIC ---
+        state.activeThreadId = targetId;
+        
+        // Mark as READ in State (Instant UI update)
+        const now = Date.now();
+        state.lastRead[targetId] = now;
+        
+        // Mark as READ in Cloud (Persist across devices)
+        // We use 'upsert' to either insert a new record or update the existing one
+        sb.from('thread_reads').upsert({ 
+            user_id: state.user.id, 
+            other_user_id: targetId, 
+            last_read_at: new Date().toISOString() 
+        }).then(() => {}); // Fire and forget (don't await, keep UI snappy)
+
+        renderMessages(); // Refresh sidebar to remove red dot
+
+        const container = $('#chatMessages');
+        container.innerHTML = ''; 
+
+        // Find Data
+        let thread = state.threads.find(t => t.id === targetId);
+        let user = state.allUsers.find(u => u.id === targetId);
+        
+        // Header
+// NEW
+if(user) {
+    $('#chatHeader').innerHTML = `
+    <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-[12px] border border-white/30 overflow-hidden bg-white/90 shadow-sm">
+            ${avatarHTML(user)}
+        </div>
+        <div class="font-extrabold text-sm text-white drop-shadow-md">
+            ${html(user.username)}
+        </div>
+    </div>`;
+}
+
+        // Messages
+        if(thread && thread.messages.length > 0) {
+            renderChatMessages(thread);
+        } else {
+            container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic">This paper is blank.<br>Write a gentle note.</div>`;
+        }
+
+        // Reveal
+        $('#chatInputArea').classList.remove('hidden');
+        $('#newThreadModal').classList.add('hidden');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function renderChatMessages(thread) {
+    const container = $('#chatMessages');
+    container.innerHTML = (thread.messages || []).map(m => {
+        const isMe = m.from === 'me';
+        // UPDATES:
+        // 1. Added 'font-bold' to the text.
+        // 2. Changed 'text-black/80' to 'text-black' (solid black).
+        // 3. Increased bubble opacity (bg-white/90 instead of /75) for better contrast.
+        return `
+        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+            <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${isMe ? 'bg-gradient-to-b from-[#86a68b]/40 to-white/90' : 'bg-white/90'} shadow-sm">
+                <div class="text-sm font-bold text-black leading-snug">${html(m.text)}</div>
+            </div>
+        </div>`;
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+}
+
+// --- NOTIFICATION HELPERS ---
+// --- UPDATED NOTIFICATION RENDERER ---
+function notifIcon(type) {
+        // Reply = Envelope
+        if(type === 'reply') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#f4a37a]">${SKETCH_PATHS[4]}</svg>`; 
+        // Sticker = Sun
+        if(type === 'sticker') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-[#86a68b]">${SKETCH_PATHS[0]}</svg>`;
+        // System/Report = Magic Spark (Index 136 in original list, but we'll use Index 6 "Moon/Magic" here as it's safe)
+        if(type === 'system') return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/60">${SKETCH_PATHS[57] || SKETCH_PATHS[6]}</svg>`;
+        
+        // Fallback
+        return `<svg viewBox="0 0 50 50" class="w-6 h-6 text-black/50">${SKETCH_PATHS[3]}</svg>`;
+    }
+
+    function renderNotifs() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+
+    if (!state.notifications || state.notifications.length === 0) { 
+        list.innerHTML = `<div class="p-12 text-center opacity-40">It is quiet here.</div>`; 
+        return; 
+    }
+
+    list.innerHTML = state.notifications.map((n) => {
+        // 1. Clean the ID
+        const rawId = n.post_id || "";
+        // Handle if Supabase sends it as an object (rare edge case) or string
+        const pid = (typeof rawId === 'object') ? rawId.id : String(rawId);
+        
+        const hasLink = pid && pid.length > 5;
+        const iconHtml = notifIcon(n.type || 'system'); 
+        const timeStr = timeAgo(new Date(n.created_at));
+        
+        // 2. Button Logic (We use a real <button> for accessibility and reliability)
+        let actionArea = "";
+        
+        if (hasLink) {
+            // We pass the ID directly to a specific handler function
+            actionArea = `
+            <button onclick="handleNotifClick('${pid}')" class="absolute inset-0 w-full h-full z-10 cursor-pointer opacity-0" aria-label="View post"></button>
+            <div class="absolute top-3 right-3 pointer-events-none">
+                <span class="text-[10px] font-bold text-[#f4a37a] bg-[#fffaf1] px-2 py-1 rounded border border-[#f4a37a]/20">View Post</span>
+            </div>`;
+        } else {
+            actionArea = `<div class="absolute top-3 right-3 pointer-events-none opacity-30 text-[10px]">No Link</div>`;
+        }
+
+        return `
+        <div class="hand-card hand-outline bg-white/80 border border-black/10 p-4 flex items-start gap-4 mb-2 pop-in relative overflow-hidden group hover:bg-white transition-colors">
+            
+            <!-- THE INVISIBLE CLICK OVERLAY -->
+            ${actionArea}
+
+            <!-- Delete Button (z-20 to sit ABOVE the invisible click overlay) -->
+            <button onclick="deleteNotification('${n.id}')" class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full text-black/20 hover:text-red-500 hover:bg-red-50 transition-colors z-20">
+                &times;
+            </button>
+
+            <div class="w-12 h-12 rounded-full bg-[#fffaf1] border border-black/10 grid place-items-center shrink-0">
+                ${iconHtml}
+            </div>
+            
+            <div class="flex-1 min-w-0 pt-1 pr-8">
+                <div class="text-sm font-bold text-black/80 leading-snug">${html(n.content)}</div>
+                <div class="text-[10px] text-black/40 mt-1 font-bold uppercase tracking-widest flex items-center gap-2">
+                    <span>${timeStr}</span>
+                    <span class="text-[#f4a37a] opacity-60">• ${n.type || 'alert'}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// --- FIXED SPOTLIGHT FUNCTION ---
+// --- SELF-HEALING SPOTLIGHT FUNCTION ---
+async function openSpotlight(postId) {
+    console.log("🔦 openSpotlight started for:", postId);
+    if (!postId) return console.error("No ID passed");
+    
+    // 1. AUTO-REPAIR: If modal is missing, create it
+    if (!document.getElementById('spotlightModal')) {
+        console.warn("⚠️ Modal missing from HTML. Injecting it now...");
+        const modalHTML = `
+        <div id="spotlightModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>
+            <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
+                <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
+                    <h3 class="font-[Fraunces] text-lg">Shared Moment</h3>
+                    <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+                </div>
+                <div id="spotlightBody" class="p-4 overflow-y-auto"></div>
+                <div class="p-4 border-t border-black/5 bg-white/50 text-center">
+                    <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly">Go to Feed</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    toast("Loading post...");
+
+    // 2. Fetch Data
+    let post = state.posts.find(p => p.id === postId);
+    
+    if (!post) {
+        try {
+            const { data, error } = await sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .eq('id', postId)
+                .single();
+            
+            if (error) throw error;
+            if (!data) return toast("Post not found.");
+            post = data;
+        } catch (e) {
+            console.error("Spotlight Crash:", e);
+            toast("Could not open post.");
+            return;
+        }
+    }
+
+    // 3. Render & Force Show
+    if (post) {
+        const modal = document.getElementById('spotlightModal');
+        const body = document.getElementById('spotlightBody');
+
+        if(modal && body) {
+            body.innerHTML = getPostHTML(post);
+            
+            // Clean up internal styles to fit the modal
+            const card = body.querySelector('article');
+            if (card) {
+                card.classList.remove('mb-4', 'hand-card', 'hand-outline', 'paper-noise');
+                card.classList.add('w-full', 'bg-transparent');
+                const innerViewBtn = card.querySelector('button[onclick^="window.openSpotlight"]');
+                if(innerViewBtn) innerViewBtn.remove();
+            }
+
+            // Force visibility logic
+            modal.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: [80] !important;';
+            modal.classList.remove('hidden'); 
+            
+            console.log("✨ Modal Injected & Opened");
+        }
+    }
+}
+// Ensure Global Access
+window.openSpotlight = openSpotlight;
+// Ensure it's global
+window.openSpotlight = openSpotlight;
+
+// Make sure it's attached to window to be safe
+window.openSpotlight = openSpotlight;
+
+    function openArtModal() {
+    const grid = document.getElementById('artGrid');
+    if(grid) {
+        grid.innerHTML = COZY_ART.map(url => {
+            // OPTIMIZATION: Use wsrv.nl to create a tiny 250px thumbnail on the fly
+            // This makes the grid load instantly without downloading the huge original file
+            const thumbUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=250&h=333&fit=cover&output=webp`;
+            
+            return `
+            <button onclick="selectArt('${url}')" class="wobbly aspect-[3/4] rounded-[12px] overflow-hidden border border-black/10 bg-gray-100 relative group transition-transform">
+                <img src="${thumbUrl}" class="w-full h-full object-cover" loading="lazy" decoding="async" />
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="text-white font-bold text-xs">Pick</span>
+                </div>
+            </button>
+        `}).join('');
+    }
+    $('#artModal').classList.remove('hidden');
+}
+
+function selectArt(url) {
+    // 1. Update State
+    state.compose.file = null; 
+    state.compose.mediaPreviewUrl = url; // Keep original URL for the database
+    state.compose.mediaKind = 'image';
+    state.compose.mediaPos = { x: 50, y: 50 }; 
+    
+    // 2. Hide input helper
+    $('#mediaInput').classList.add('hidden');
+    
+    // 3. Update View
+    updateComposeView();
+    $('#artModal').classList.add('hidden');
+    
+    // 4. Update Button Text
+    $('#postNowBtn').innerText = "Post to Cloud";
+
+    // 5. Preload the high-res version in the background
+    const img = new Image();
+    img.src = url;
+}
+
+// Initial Render for the mini preview box in the composer
+// Initial Render for the mini preview box in the composer
+function renderArtMiniPreview() {
+    const row = document.getElementById('artPreviewRow');
+    if(!row) return;
+    
+    // Show first 4 images with extreme optimization (100px width)
+    row.innerHTML = COZY_ART.slice(0, 4).map(url => {
+        const thumbUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=100&h=100&fit=cover&output=webp`;
+        return `
+        <button onclick="selectArt('${url}')" class="w-10 h-10 rounded-[8px] overflow-hidden border border-black/10 shrink-0 wobbly">
+            <img src="${thumbUrl}" class="w-full h-full object-cover" loading="lazy" />
+        </button>
+    `}).join('');
+}
+
+
+    async function deleteNotification(id) {
+        // 1. Optimistic Update (Remove from screen immediately)
+        state.notifications = state.notifications.filter(n => n.id !== id);
+        renderNotifs(); // Re-draw the list
+        
+        // Update the navigation badge count
+        const hasNotifs = state.notifications.length > 0;
+        document.getElementById('nav-notifs').innerHTML = svgIcon('notifs', state.tab==='notifs', hasNotifs);
+
+        // 2. Database Delete (Background)
+        try {
+            await sb.from('notifications').delete().eq('id', id);
+        } catch(e) {
+            console.error("Error deleting notification:", e);
+        }
+    }
+
+    // --- ACTIONS ---
+    
+    // UPDATED: Server-side Shelf logic
+    async function saveToShelf(text) {
+        if (!state.user) return;
+        const exists = state.savedPrompts.find(p => p.text === text);
+        if(!exists) {
+            const { data } = await sb.from('shelf').insert({ user_id: state.user.id, text }).select().single();
+            if(data) state.savedPrompts.unshift(data);
+            toast('Saved to Shelf!');
+        } else {
+            toast('Already on Shelf');
+        }
+    }
+    
+    async function removeFromShelf(id) {
+        state.savedPrompts = state.savedPrompts.filter(p => p.id !== id);
+        openRoom('shelf'); // re-render
+        await sb.from('shelf').delete().eq('id', id);
+    }
+
+    async function toggleHabit(habit) {
+        const today = new Date().toDateString();
+        if (!state.habits[today]) state.habits[today] = {};
+        state.habits[today][habit] = !state.habits[today][habit];
+        openRoom('plant'); 
+        try { await sb.from('habits').upsert({ user_id: state.user.id, date: today, data: state.habits[today] }); } catch(e) {}
+    }
+    
+    async function setMood(m) { 
+        // 1. Apply visual change immediately
+        applyMood(m); 
+        state.profile.mood = m; 
+        
+        // 2. If the Window modal is open, re-render it to update the preview art
+        const roomTitle = document.getElementById('roomTitle');
+        if (roomTitle && roomTitle.innerText.includes('Window')) {
+            openRoom('window'); // Re-renders the modal in place
+        }
+        
+        // 3. Save to Cloud
+        await sb.from('profiles').update({ mood: m }).eq('id', state.user.id); 
+        
+        toast(`Vibe set to ${m}`); 
+        renderProfile(); // Update the profile page background
+    }
+    
+    async function toggleSavePost() {
+        const pid = state.activePostOption;
+        const isSaved = state.savedPostIds.includes(pid);
+        
+        $('#postOptionsModal').classList.add('hidden');
+
+        if (isSaved) {
+            state.savedPostIds = state.savedPostIds.filter(id => id !== pid);
+            toast('Removed from Drawer.');
+            await sb.from('saved_posts').delete().eq('post_id', pid).eq('user_id', state.user.id);
+        } else {
+            state.savedPostIds.push(pid);
+            toast('Saved to Drawer.');
+            await sb.from('saved_posts').insert({ user_id: state.user.id, post_id: pid });
+        }
+        
+        renderPosts();
+        renderProfile();
+    }
+    
+    async function toggleMuteUser() {
+        const uid = state.activePostUser;
+        const isMuted = state.mutedUsers.includes(uid);
+        
+        $('#postOptionsModal').classList.add('hidden');
+        
+        if (isMuted) {
+            state.mutedUsers = state.mutedUsers.filter(id => id !== uid);
+            toast('User unmuted.');
+            await sb.from('mutes').delete().eq('user_id', state.user.id).eq('muted_user_id', uid);
+        } else {
+            state.mutedUsers.push(uid);
+            toast('User muted.');
+            await sb.from('mutes').insert({ user_id: state.user.id, muted_user_id: uid });
+        }
+        renderPosts();
+    }
+    
+    function muteUser() { toggleMuteUser(); }
+    
+    // UPDATED: Server-side Hide logic
+    async function hidePost() {
+        const pid = state.activePostOption;
+        const isHidden = state.hiddenPosts.includes(pid);
+        
+        $('#postOptionsModal').classList.add('hidden');
+        
+        if(isHidden) {
+            state.hiddenPosts = state.hiddenPosts.filter(id => id !== pid);
+            toast('Post unhidden.');
+            await sb.from('hidden_posts').delete().eq('user_id', state.user.id).eq('post_id', pid);
+        } else {
+            state.hiddenPosts.push(pid);
+            toast('Post hidden.');
+            await sb.from('hidden_posts').insert({ user_id: state.user.id, post_id: pid });
+        }
+        renderPosts();
+    }
+
+    async function deletePost() {
+        const pid = state.activePostOption;
+        if(!pid) return;
+
+        // 1. Close Options Modal Immediately
+        document.getElementById('postOptionsModal').classList.add('hidden');
+
+        // 2. Visual Feedback: Fade out and remove from DOM
+        const el = document.getElementById(`post-${pid}`);
+        if(el) {
+            el.style.transition = "all 0.3s ease";
+            el.style.opacity = "0";
+            el.style.transform = "scale(0.9)";
+            setTimeout(() => el.remove(), 300);
+        }
+
+        // 3. Update Local State (Remove from memory)
+        state.posts = state.posts.filter(p => p.id !== pid);
+        
+        toast("Deleting post...");
+
+        try {
+            // 4. Delete from Supabase
+            const { error } = await sb.from('posts').delete().eq('id', pid);
+            if(error) throw error;
+            toast("Post deleted.");
+        } catch(e) {
+            console.error(e);
+            toast("Error deleting. Refreshing...");
+            // If error, reload feed to bring it back
+            loadFeed();
+        }
+    }
+    
+    async function reportPost() {
+    $('#postOptionsModal').classList.add('hidden');
+    openTextModal('Report Post', 'Is this unsafe or unkind?', 'Describe what happened...', async (val) => {
+        if(!val) return toast('Please describe the issue.');
+        
+        const postId = state.activePostOption; 
+        const post = state.posts.find(p => p.id === postId); 
+
+        try {
+            // 1. Submit the actual report record
+            await sb.from('reports').insert({
+                user_id: state.user.id,
+                post_id: postId,
+                reason: val
+            });
+            
+            // 2. Notify the POST OWNER (The most important part)
+            if (post && post.user_id !== state.user.id) {
+                await sb.from('notifications').insert({
+                    user_id: post.user_id, // <--- Target is the Owner
+                    type: 'system',
+                    content: `A neighbor flagged your post: "${val}".`,
+                    post_id: postId 
+                });
+            }
+
+            // 3. Save a receipt for the REPORTER (You)
+            await sb.from('notifications').insert({
+                user_id: state.user.id, // <--- Target is You
+                type: 'system',
+                content: `You reported a post for: "${val}"`,
+                post_id: postId 
+            });
+
+            toast('Report received.');
+        } catch(e) {
+            console.error(e);
+            toast('Error submitting report.');
+        }
+        return true; 
+    });
+}
+
+    async function sharePost() {
+        const pid = state.activePostOption;
+        const p = state.posts.find(x => x.id === pid);
+        if(!p) return;
+        
+        // 1. Create the Deep Link
+        // We use window.location.origin + pathname to get the base URL (e.g., cozygram.com/)
+        // Then we append ?p=POST_ID
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareUrl = `${baseUrl}?p=${pid}`;
+        
+        const uname = p.profiles?.username || 'Someone';
+        const text = `Check out this cozy post by ${uname} ✨`;
+        
+        // 2. Close Options
+        document.getElementById('postOptionsModal').classList.add('hidden');
+        
+        try {
+            // 3. Try Native Share (Mobile)
+            if(navigator.share) {
+                await navigator.share({ 
+                    title: 'CozyGram', 
+                    text: text, 
+                    url: shareUrl 
+                });
+                toast('Opened share menu.');
+            } else {
+                // 4. Fallback to Clipboard (Desktop)
+                await safeCopy(shareUrl);
+                toast('Link copied to clipboard!');
+            }
+        } catch(e) { 
+            // Fallback if share is cancelled or fails
+            await safeCopy(shareUrl);
+            toast('Link copied to clipboard!');
+        }
+    }
+
+    // --- DEEP LINKING LOGIC ---
+
+    async function checkDeepLink() {
+        // 1. Parse URL for '?p=ID'
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('p');
+        
+        if (!postId) return;
+
+        // 2. Fetch the Post
+        toast("Loading shared post...");
+        const { data, error } = await sb.from('posts')
+            .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+            .eq('id', postId)
+            .single();
+
+        if (error || !data) {
+            toast("Post not found (maybe deleted?)");
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
+        // 3. Open Spotlight
+        const modal = document.getElementById('spotlightModal');
+        const body = document.getElementById('spotlightBody');
+        
+        if (modal && body) {
+            // Render the post using existing helper, but strip the wrapper margin if needed
+            body.innerHTML = getPostHTML(data);
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function closeSpotlight() {
+    const modal = document.getElementById('spotlightModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = ''; 
+        modal.style.zIndex = '';
+        modal.style.opacity = '';
+    }
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+function openOptions(pid, uid) { 
+    state.activePostOption = pid; 
+    state.activePostUser = uid; 
+    
+    const modal = document.getElementById('postOptionsModal');
+    modal.classList.remove('hidden'); 
+    
+    // --- 1. Post Specific Buttons (Hide if pid is null) ---
+    const hasPost = !!pid;
+    
+    // Toggle visibility of post-only actions
+    const postActions = ['savePostBtn', 'sharePostBtn', 'hidePostBtn', 'copyCaptionBtn'];
+    postActions.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.toggle('hidden', !hasPost);
+    });
+
+    // --- 2. Update Text for Save Button ---
+    if (hasPost) {
+        const isSaved = state.savedPostIds.includes(pid);
+        const saveBtn = document.getElementById('savePostBtn');
+        if(saveBtn) {
+            saveBtn.innerText = isSaved ? "Remove from Drawer" : "Save to Drawer";
+            if(isSaved) saveBtn.classList.add('text-red-500'); 
+            else saveBtn.classList.remove('text-red-500');
+        }
+        
+        const isHidden = state.hiddenPosts.includes(pid);
+        document.getElementById('hidePostBtn').innerText = isHidden ? "Unhide Post" : "Hide Post";
+    }
+    
+    // --- 3. User Specific Buttons ---
+    const isMuted = state.mutedUsers.includes(uid);
+    document.getElementById('muteUserBtn').innerText = isMuted ? "Unmute User" : "Mute User";
+
+    // --- 4. Owner Buttons (Edit/Delete) ---
+    // Only show if I own the post AND there is a post
+    const isMe = uid === state.user.id;
+    document.getElementById('editPostBtn').classList.toggle('hidden', !hasPost || !isMe);
+    document.getElementById('deletePostBtn').classList.toggle('hidden', !hasPost || !isMe);
+}
+
+    function clearUserFilter() {
+        state.filter.search = '';
+        state.searchMode = 'posts';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('userFilterBanner').classList.add('hidden');
+        renderFilters();
+        renderPosts();
+        toast("Filter cleared");
+    }
+    
+    function renderCommentsModal(){
+      const p = state.posts.find(x => x.id === state.comments.postId);
+      const listDiv = document.getElementById('commentsList');
+      if(!p || !listDiv){ if(listDiv) listDiv.innerHTML = ''; return; }
+      
+      const comments = p.comments || [];
+      
+      if(comments.length === 0) {
+          listDiv.innerHTML = `<div class="p-8 text-center text-sm text-black/40 italic">It's quiet here.<br>Leave the first gentle note.</div>`;
+      } else {
+          listDiv.innerHTML = comments.map(c => {
+            const isMine = c.user_id === state.user.id;
+            
+            return `
+            <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 mb-2 flex justify-between items-start gap-2 group">
+                <div class="text-sm">
+                    <span class="font-extrabold">${html(c.profiles?.username || 'Neighbor')}:</span> 
+                    <span class="text-black/70">${html(c.text)}</span>
+                </div>
+                ${isMine ? `
+                <button onclick="deleteComment('${c.id}')" class="text-black/30 hover:text-red-500 font-bold text-lg leading-none px-2 -mr-2 -mt-1" title="Delete note">
+                    &times;
+                </button>` : ''}
+            </div>`;
+          }).join('');
+      }
+    }
+
+    async function deleteComment(commentId) {
+    try {
+        const { error } = await sb.from('comments').delete().eq('id', commentId);
+        if(error) throw error;
+        
+        const p = state.posts.find(x => x.id === state.comments.postId);
+        if(p && p.comments) {
+            p.comments = p.comments.filter(c => c.id !== commentId);
+        }
+        
+        renderCommentsModal();
+        
+        // (Deleted the code that updated previewContainer)
+        
+        toast("Note removed.");
+    } catch(e) {
+        console.error(e);
+        toast("Could not delete note.");
+    }
+}
+    
+    function openComments(postId) { 
+        state.comments.postId = postId; 
+        
+        // FIX: Manually show the modal (openModal helper didn't exist)
+        const modal = document.getElementById('commentsModal');
+        if(modal) modal.classList.remove('hidden');
+        
+        renderCommentsModal(); 
+    }
+    
+    function openEditProfile() { 
+        $('#setupName').value = state.profile.username || ''; 
+        $('#setupPronouns').value = state.profile.pronouns || ''; 
+        $('#setupBio').value = state.profile.bio || ''; 
+        
+        // Show current avatar in the picker
+        $('#editProfileAvatarPreview').innerHTML = avatarHTML(state.profile);
+
+        const currentMood = state.profile.mood || 'sunset';
+        $$('.setupMood').forEach(b => {
+            if(b.dataset.m === currentMood) b.classList.add('ring-2', 'ring-black/10', 'bg-white');
+            else b.classList.remove('ring-2', 'ring-black/10', 'bg-white');
+        });
+        $('#editProfileModal').classList.remove('hidden'); 
+    }
+    function closeCompose() { 
+    $('#composeModal').classList.add('hidden'); 
+    
+    // Reset Edit State
+    state.editingId = null;
+    
+    // Reset Data
+    state.compose.file = null;
+    state.compose.mediaPreviewUrl = null;
+    state.compose.mediaKind = null;
+    state.compose.seed = Math.floor(Math.random()*100);
+    state.compose.illustSeed = null;
+    state.compose.mediaPos = {x:50, y:50};
+    
+    // Reset UI
+    $('#composeCaption').value = ''; 
+    $('#mediaInput').value = ''; 
+    $('#postNowBtn').innerText = "Post to Cloud";
+    document.querySelector('#composeModal h3').innerText = "Make a cozy post";
+    
+    // Render empty/random state for next time
+    updateComposeView();
+}
+    
+    function openAccountModal() {
+        const p = state.profile || { username: 'Neighbor', seed: 0, pronouns: '', bio: '' };
+        
+        $('#accountBody').innerHTML = `
+            <!-- Top Section: Avatar and Edit Button -->
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div class="flex items-center gap-4">
+                    <!-- Actual Avatar -->
+                    <div class="w-16 h-16 rounded-[22px_18px_26px_20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
+                        ${avatarHTML(p)}
+                    </div>
+                    <div class="min-w-0">
+                        <!-- Full Name / Username -->
+                        <div class="font-[Fraunces] text-xl truncate leading-tight">${html(p.username)}</div>
+                        <!-- Pronouns -->
+                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">
+                            ${html(p.pronouns || 'Cozy Neighbor')}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Edit Profile Button at the Top (FIXED) -->
+                <!-- We now manually hide the modal and call openEditProfile -->
+                <button id="accountModalEditBtn" class="wobbly px-3 py-2 rounded-[14px_12px_16px_10px] border border-black/10 bg-white/80 text-xs font-extrabold shadow-sm">
+                    Edit Profile
+                </button>
+            </div>
+
+            <!-- Bio Section -->
+            <div class="hand-card bg-white/50 border border-black/5 p-3 mb-4">
+                <div class="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-1">About your corner</div>
+                <div class="text-sm text-black/75 leading-relaxed">
+                    ${html(p.bio || 'No bio yet. Tap edit to add one!')}
+                </div>
+            </div>
+
+            <!-- Settings / Actions List -->
+            <div class="hand-card bg-white/70 border border-black/10 overflow-hidden">
+                <div class="px-3 py-2 border-b border-black/5 text-[10px] font-bold text-black/30 uppercase tracking-widest">Settings</div>
+                
+                <button id="accountModalSafetyBtn" class="w-full text-left px-4 py-3 hover:bg-black/5 transition-colors flex items-center justify-between group">
+                    <span class="text-sm font-bold text-black/70">Safety & Comfort</span>
+                    <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                </button>
+                
+                <button id="modalLogoutBtn" class="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center justify-between group">
+                    <span class="text-sm font-bold text-red-500">Log Out</span>
+                    <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
+        `;
+
+        // --- WIRE UP BUTTONS SAFELY ---
+        
+        // 1. Edit Profile
+        document.getElementById('accountModalEditBtn').onclick = () => {
+            document.getElementById('accountModal').classList.add('hidden'); // Close this one
+            openEditProfile(); // Open the edit screen
+        };
+
+        // 2. Safety
+        document.getElementById('accountModalSafetyBtn').onclick = () => {
+            document.getElementById('accountModal').classList.add('hidden');
+            document.getElementById('safetyModal').classList.remove('hidden');
+        };
+
+        // 3. Logout
+        const modalLogout = document.getElementById('modalLogoutBtn');
+        if(modalLogout) {
+            modalLogout.onclick = async () => {
+                await sb.auth.signOut();
+                window.location.href = window.location.pathname;
+            };
+        }
+
+        // Show the modal
+        $('#accountModal').classList.remove('hidden');
+    }
+
+    // --- PART 6: DYNAMIC COMPOSER VIEW ---
+// --- PART 6: DYNAMIC COMPOSER VIEW (FIXED) ---
+// --- PART 6: DYNAMIC COMPOSER VIEW (NO SCROLL FIX) ---
+// --- PART 6: DYNAMIC COMPOSER VIEW (FIXED HEIGHT) ---
+function updateComposeView() {
+    const container = document.getElementById('composePreviewContainer');
+    const content = document.getElementById('composePreview');
+    const fileInput = document.getElementById('mediaInput');
+    
+    if(!container || !content) return; 
+    
+    if(document.getElementById('artPreviewRow') && document.getElementById('artPreviewRow').innerHTML === "") {
+        renderArtMiniPreview();
+    }
+
+    // --- 1. Frame Logic ---
+    // NOTE: We do NOT set aspect-ratio here anymore. We let the HTML classes handle it.
+    let classes = 'rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center w-full h-full overflow-hidden relative transition-all duration-300 ';
+    
+    const oldTape = container.querySelector('.tape-deco');
+    if(oldTape) oldTape.remove();
+
+    // Since we removed the Frame Buttons, this just defaults to basic style
+    if (state.compose.frame === 'polaroid') {
+        classes += 'bg-white p-4 pb-10 shadow-sm';
+    } else if (state.compose.frame === 'tape') {
+        classes += 'bg-white/80 p-2';
+        const tape = document.createElement('div');
+        tape.className = 'tape-deco absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f7c59f]/80 rotate-[-2deg] border border-black/5 z-20 shadow-sm';
+        container.appendChild(tape);
+    } else {
+            classes += 'bg-white/40';
+    }
+    
+    // IMPORTANT: We only update the INNER classes. We do not touch the container's outer layout classes (flex-1, etc)
+    // Actually, to be safe, we should NOT reset container.className entirely.
+    // Let's just append the specific frame classes to the background.
+    
+    // Reset background/padding only
+    container.style.backgroundColor = '';
+    container.style.padding = '';
+    
+    if(state.compose.frame === 'polaroid') {
+        container.classList.add('bg-white', 'p-4', 'pb-10');
+        container.classList.remove('bg-white/40', 'bg-white/80', 'p-2');
+    } else {
+        container.classList.add('bg-white/40');
+        container.classList.remove('bg-white', 'p-4', 'pb-10', 'bg-white/80');
+    }
+
+
+    // --- 2. Content Rendering ---
+    content.innerHTML = ''; 
+    const hasMedia = !!state.compose.mediaPreviewUrl;
+    
+    let overlay = container.querySelector('.overlay-ctrl');
+    if(!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'overlay-ctrl absolute bottom-2 right-2 bg-white/90 px-2 py-1.5 rounded-[8px] text-[10px] font-bold transition-opacity z-50 shadow-sm border border-black/5';
+        container.appendChild(overlay);
+    }
+
+    if (hasMedia) {
+            if(fileInput) fileInput.classList.add('hidden'); 
+            
+            let mediaEl;
+            const posX = state.compose.mediaPos?.x ?? 50;
+            const posY = state.compose.mediaPos?.y ?? 50;
+            const posStyle = `object-position: ${posX}% ${posY}%`;
+            const mediaClasses = "w-full h-full object-cover rounded-[12px] cursor-move select-none touch-none"; 
+            
+            if(state.compose.mediaKind === 'video') {
+                mediaEl = document.createElement('video');
+                mediaEl.src = state.compose.mediaPreviewUrl;
+                mediaEl.className = mediaClasses;
+                mediaEl.style.cssText = posStyle;
+                mediaEl.playsInline = true;
+                mediaEl.controls = false; 
+            } else {
+                mediaEl = document.createElement('img');
+                mediaEl.src = state.compose.mediaPreviewUrl;
+                mediaEl.className = mediaClasses;
+                mediaEl.style.cssText = posStyle;
+                mediaEl.draggable = false; 
+                mediaEl.crossOrigin = "anonymous"; 
+            }
+            
+            mediaEl.style.webkitUserSelect = "none";
+            mediaEl.style.touchAction = "none"; 
+            
+            content.appendChild(mediaEl);
+
+            let isDown = false;
+            let startX = 0, startY = 0;
+            const handleMove = (clientX, clientY) => {
+                if(!isDown) return;
+                const deltaX = (startX - clientX) * 0.4; 
+                const deltaY = (startY - clientY) * 0.4;
+                state.compose.mediaPos.x = Math.max(0, Math.min(100, state.compose.mediaPos.x + deltaX));
+                state.compose.mediaPos.y = Math.max(0, Math.min(100, state.compose.mediaPos.y + deltaY));
+                mediaEl.style.objectPosition = `${state.compose.mediaPos.x}% ${state.compose.mediaPos.y}%`;
+                startX = clientX; startY = clientY;
+            };
+            mediaEl.onmousedown = (e) => { isDown=true; startX=e.clientX; startY=e.clientY; mediaEl.style.transition='none'; overlay.innerText="Dragging..."; window.addEventListener('mousemove', onMouseMove); window.addEventListener('mouseup', onMouseUp); };
+            const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
+            const onMouseUp = () => { isDown=false; mediaEl.style.transition='object-position 0.2s ease'; renderOverlayButtons(); window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
+            
+            mediaEl.ontouchstart = (e) => { if(e.cancelable)e.preventDefault(); isDown=true; startX=e.touches[0].clientX; startY=e.touches[0].clientY; mediaEl.style.transition='none'; overlay.innerText="Dragging..."; window.addEventListener('touchmove', onTouchMove, {passive:false}); window.addEventListener('touchend', onTouchEnd); };
+            const onTouchMove = (e) => { if(e.cancelable)e.preventDefault(); handleMove(e.touches[0].clientX, e.touches[0].clientY); };
+            const onTouchEnd = () => { isDown=false; mediaEl.style.transition='object-position 0.2s ease'; renderOverlayButtons(); window.removeEventListener('touchmove', onTouchMove); window.removeEventListener('touchend', onTouchEnd); };
+
+            function renderOverlayButtons() {
+                overlay.classList.remove('pointer-events-none');
+                overlay.classList.remove('opacity-0');
+                overlay.innerHTML = `
+                <div class="flex gap-2 items-center">
+                    <span class="text-[9px] opacity-50 select-none">Drag to adjust</span>
+                    <button id="removeMediaBtn" class="bg-red-50 text-red-600 px-3 py-2 rounded-[8px] text-[10px] font-extrabold shadow-sm border border-red-100 cursor-pointer active:scale-95 transition-transform">Remove</button>
+                </div>`;
+                const btn = document.getElementById('removeMediaBtn');
+                if(btn) {
+                    const handleRemove = (e) => { e.preventDefault(); e.stopPropagation(); removeComposeMedia(); };
+                    btn.addEventListener('click', handleRemove);
+                    btn.addEventListener('touchend', handleRemove);
+                    btn.addEventListener('touchstart', (e)=>e.stopPropagation());
+                    btn.addEventListener('mousedown', (e)=>e.stopPropagation());
+                }
+            }
+            renderOverlayButtons();
+
+    } else {
+            if(fileInput) fileInput.classList.remove('hidden');
+            if(!state.editingId) state.compose.mediaPos = { x: 50, y: 50 }; 
+
+            content.innerHTML = `
+            <div class="flex flex-col items-center justify-center opacity-40">
+                <svg class="w-12 h-12 mb-2 text-black/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" y1="5" x2="22" y2="5"/><line x1="19" y1="2" x2="19" y2="8"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <div class="text-xs font-bold text-center">Tap to upload<br>or pick art</div>
+            </div>`;
+            
+            overlay.classList.add('pointer-events-none');
+            overlay.classList.add('opacity-0');
+    }
+}
+    function removeComposeMedia(silent = false) {
+        // 1. Clear Memory
+        if (state.compose.mediaPreviewUrl) {
+            try { URL.revokeObjectURL(state.compose.mediaPreviewUrl); } catch(e) {}
+        }
+        
+        // 2. Reset State
+        state.compose.file = null;
+        state.compose.mediaPreviewUrl = null;
+        state.compose.mediaKind = null;
+        
+        // 3. Reset Input
+        const input = document.getElementById('mediaInput');
+        if (input) input.value = '';
+
+        // 4. Refresh UI
+        updateComposeView();
+        
+        // 5. Toast only if NOT silent
+        if (!silent) toast("Media removed.");
+    }
+    
+    function getPlantSVG(pct) {
+        // --- ASSETS (Based on the flat vector image) ---
+        
+        // 1. The Pot (Terracotta with thick rim and dark soil)
+        // We use 'overflow: visible' to allow leaves to stretch out
+        const pot = `
+            <!-- Back of Pot Rim (Depth) -->
+            <path d="M15 32 h18 l-1 3 h-16 z" fill="#BF360C" />
+            <!-- Soil -->
+            <ellipse cx="24" cy="32" rx="8" ry="2" fill="#3E2723" />
+            <!-- Pot Body -->
+            <path d="M17 35 h14 l-2 10 h-10 z" fill="#8D6E63" />
+            <!-- Pot Rim Front -->
+            <path d="M14 31 h20 v4 h-20 z" fill="#FF7043" />
+            <path d="M14 35 h20 v1 h-20 z" fill="#BF360C" opacity="0.3" /> <!-- Shadow under rim -->
+        `;
+
+        // 2. Leaf Builder (Helper for two-tone leaves)
+        // x,y = stem connection. r = rotation. s = scale.
+        const leaf = (x, y, r, s) => `
+            <g transform="translate(${x},${y}) rotate(${r}) scale(${s})">
+                <!-- Dark Half -->
+                <path d="M0 0 Q-10 -5 0 -15 Z" fill="#1B5E20" />
+                <!-- Light Half -->
+                <path d="M0 0 Q10 -5 0 -15 Z" fill="#66BB6A" />
+            </g>
+        `;
+
+        // --- STAGES ---
+
+        // Stage 1: Seed / Tiny Sprout (0-24%)
+        if(pct < 25) { 
+             return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+                ${pot}
+                <!-- Tiny sprout poking out -->
+                <path d="M24 32 q0 -3 0 -4" stroke="#388E3C" stroke-width="2" fill="none" />
+                ${leaf(24, 29, -15, 0.4)}
+            </svg>`;
+        }
+
+        // Stage 2: Sapling (25-49%)
+        // Small stem, two small leaves
+        if(pct < 50) { 
+             return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+                <!-- Stem -->
+                <path d="M24 32 q0 -10 0 -12" stroke="#388E3C" stroke-width="2.5" stroke-linecap="round" fill="none" />
+                <!-- Leaves -->
+                ${leaf(24, 26, -45, 0.7)}
+                ${leaf(24, 24, 45, 0.7)}
+                ${pot}
+            </svg>`;
+        }
+
+        // Stage 3: Growing (50-74%)
+        // Taller stem, 4 leaves
+        if(pct < 75) { 
+             return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+                <!-- Stem -->
+                <path d="M24 32 q0 -15 -2 -18" stroke="#388E3C" stroke-width="3" stroke-linecap="round" fill="none" />
+                <!-- Bottom Leaves -->
+                ${leaf(24, 26, -50, 0.8)}
+                ${leaf(24, 25, 50, 0.8)}
+                <!-- Top Leaves -->
+                ${leaf(23, 18, -30, 0.9)}
+                ${leaf(23, 17, 30, 0.9)}
+                ${pot}
+            </svg>`;
+        }
+
+        // Stage 4: Full Plant (75-100%) - Matches your image
+        // Tall stem, big lush leaves with two-tone shading
+        return `<svg viewBox="0 0 48 48" class="w-full h-full drop-shadow-sm pop-in" style="overflow: visible;">
+            <!-- Main Stem -->
+            <path d="M24 32 C24 25, 24 15, 28 8" stroke="#388E3C" stroke-width="3" stroke-linecap="round" fill="none" />
+            
+            <!-- Bottom Leaves -->
+            ${leaf(24, 26, -70, 0.8)} <!-- Left Down -->
+            ${leaf(24, 25, 70, 0.8)}  <!-- Right Down -->
+            
+            <!-- Middle Leaves -->
+            ${leaf(24, 18, -40, 1.1)} <!-- Left Mid -->
+            ${leaf(25, 17, 40, 1.1)}  <!-- Right Mid -->
+            
+            <!-- Top Leaf (The big one) -->
+            ${leaf(27, 10, -10, 1.3)} <!-- Top -->
+            
+            ${pot}
+        </svg>`;
+    }
+
+    // UPDATED ROOM LOGIC (Shelf uses IDs now)
+    async function openRoom(room) {
+        const titleMap = { 
+            shelf: 'Your Shelf', plant: 'Your Plant', window: 'Your Window', drawer: 'Your Drawer',
+            hidden: 'Hidden Posts', mutes: 'Muted Neighbors', reports: 'My Reports'
+        };
+        $('#roomTitle').innerText = titleMap[room] || `Your ${room}`;
+        
+        // Show Loading State
+        $('#roomBody').innerHTML = `<div class="p-8 text-center text-black/40 animate-pulse">Loading...</div>`;
+        $('#roomModal').classList.remove('hidden');
+
+        let content = '';
+        
+        // --- LOGIC FOR MANAGEMENT BOXES ---
+        
+        if (room === 'hidden') {
+            const { data } = await sb.from('hidden_posts').select('post_id, posts!post_id(caption, media, seed, palette)').eq('user_id', state.user.id);
+            if(!data || data.length === 0) {
+                content = `<div class="p-6 text-center text-black/50 italic text-sm">No hidden posts.</div>`;
+            } else {
+                content = `<div class="space-y-2">${data.map(h => `
+                <div class="flex items-center justify-between p-2 border-b border-black/5 last:border-0">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-[10px] overflow-hidden border border-black/10 bg-gray-100 shrink-0">${postMediaHTML({ media: h.posts.media, seed: h.posts.seed, palette: h.posts.palette })}</div>
+                        <div class="text-xs text-black/70 line-clamp-2">${html(h.posts.caption)}</div>
+                    </div>
+                    <button onclick="doUnhide('${h.post_id}')" class="text-[10px] font-bold px-3 py-1.5 rounded-[8px] bg-[#fffaf1] border border-[#f4a37a]/30 text-[#f4a37a] shrink-0 ml-2">Unhide</button>
+                </div>`).join('')}</div>`;
+            }
+        }
+        else if (room === 'mutes') {
+            const { data } = await sb.from('mutes').select('muted_user_id, profiles!muted_user_id(username, seed, avatar_url)').eq('user_id', state.user.id);
+            if(!data || data.length === 0) {
+                content = `<div class="p-6 text-center text-black/50 italic text-sm">No muted neighbors.</div>`;
+            } else {
+                content = `<div class="space-y-2">${data.map(m => `
+                <div class="flex items-center justify-between p-2 border-b border-black/5 last:border-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-[14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarHTML(m.profiles || { username: 'Unknown', seed: 1 })}</div>
+                        <div class="text-sm font-bold text-black/80">${html(m.profiles?.username)}</div>
+                    </div>
+                    <button onclick="doUnmute('${m.muted_user_id}')" class="text-[10px] font-bold px-3 py-1.5 rounded-[8px] bg-[#fffaf1] border border-[#f4a37a]/30 text-[#f4a37a] shrink-0">Unmute</button>
+                </div>`).join('')}</div>`;
+            }
+        }
+        else if (room === 'reports') {
+            // FIX: Now fetching 'media, seed, palette' to show the image
+            const { data } = await sb.from('reports')
+                .select('id, reason, post_id, posts!post_id(caption, media, seed, palette)')
+                .eq('user_id', state.user.id);
+
+            if(!data || data.length === 0) {
+                content = `<div class="p-6 text-center text-black/50 italic text-sm">No active reports.</div>`;
+            } else {
+                content = `<div class="space-y-2">${data.map(r => {
+                const p = r.posts || { caption: 'Deleted Post' };
+                return `
+                <div class="flex items-center justify-between p-2 border-b border-black/5 last:border-0">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <!-- Image -->
+                        <div class="w-10 h-10 rounded-[10px] overflow-hidden border border-black/10 bg-gray-100 shrink-0">
+                            ${postMediaHTML({ media: p.media, seed: p.seed, palette: p.palette })}
+                        </div>
+                        <!-- Text Details -->
+                        <div class="min-w-0">
+                            <div class="text-xs font-extrabold text-black/80 line-clamp-1">${html(p.caption)}</div>
+                            <div class="text-[10px] text-red-400 italic truncate">Reason: ${html(r.reason)}</div>
+                        </div>
+                    </div>
+                    <!-- Withdraw Button -->
+                    <button onclick="doWithdrawReport('${r.id}')" class="text-[10px] font-bold px-3 py-1.5 rounded-[8px] bg-[#fffaf1] border border-[#f4a37a]/30 text-[#f4a37a] shrink-0 ml-2">Withdraw</button>
+                </div>`;
+                }).join('')}</div>`;
+            }
+        }
+        
+        // --- EXISTING ROOMS (Shelf, Plant, Window, Drawer) ---
+        else if (room === 'shelf') {
+             if (state.savedPrompts.length === 0) {
+                content = `
+                <div class="hand-card bg-white/70 border border-black/10 p-4">
+                    <div class="font-extrabold mb-1">Your shelf is empty.</div>
+                    <div class="text-sm text-black/70 mb-3">Save prompts from Stories to keep them here. Or start with one:</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="seedPrompt wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-text="One tiny thing I am proud of today">Save "Proud"</button>
+                        <button class="seedPrompt wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-text="What I wish someone told me this week">Save "Wish"</button>
+                    </div>
+                </div>`;
+            } else {
+                content = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${state.savedPrompts.map((p) => `
+                    <div class="hand-card bg-white/75 border border-black/10 p-3 flex flex-col justify-between">
+                        <div class="text-sm font-extrabold mb-2 leading-snug">${html(p.text)}</div>
+                        <div class="flex items-center gap-2">
+                            <button class="shelfUse wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-xs font-extrabold text-white" data-text="${html(p.text)}">Use</button>
+                            <button class="shelfRemove wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold text-red-400" data-id="${p.id}">Remove</button>
+                        </div>
+                    </div>`).join('')}</div>`;
+            }
+        } 
+        else if (room === 'window') {
+            const mood = state.profile.mood || 'sunset';
+            
+            // DEFINING THE PURE GRADIENTS (Matching your new styles)
+            const gradients = {
+                sunset: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)', // Deep Orange to Gold
+                sage:   'linear-gradient(135deg, #86a68b 0%, #b7cbb7 100%)', // Soft Sage
+                berry:  'linear-gradient(135deg, #dba1a8 0%, #c77d93 100%)', // Deep Berry
+                clay:   'linear-gradient(135deg, #f0ece6 0%, #dcd6ce 100%)'  // Soft Taupe/White (The Image look)
+            };
+            
+            const currentGradient = gradients[mood] || gradients.sunset;
+
+            content = `
+            <div class="hand-card bg-white/70 border border-black/10 p-4 mb-4">
+                <div class="text-sm font-extrabold">A little light</div>
+                <div class="text-sm text-black/70 mt-1">Choose a vibe. It recolors your corner (private).</div>
+                
+                <!-- PREVIEW BOX: Pure Gradient Only -->
+                <div class="mt-3 rounded-[18px_16px_22px_14px] overflow-hidden border border-black/10 shadow-sm w-full h-32 transition-all duration-500" 
+                     style="background: ${currentGradient};">
+                </div>
+
+                <!-- BUTTONS -->
+                <div class="mt-3 flex flex-wrap gap-2">
+                    ${['sunset','sage','berry','clay'].map(m => `<button onclick="setMood('${m}')" class="px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 text-xs font-extrabold wobbly capitalize ${mood===m ? 'bg-white/80 ring-2 ring-black/10' : 'bg-white/70'}">${m}</button>`).join('')}
+                </div>
+            </div>`;
+        }
+        else if (room === 'plant') {
+            const today = new Date().toDateString();
+            const h = state.habits[today] || {};
+            const habitsList = [{id: 'water', label: '💧 Drink Water'}, {id: 'stretch', label: '🧘 Stretch (20s)'}, {id: 'sun', label: '☀️ See Daylight'}, {id: 'kind', label: '💌 Send a Kind Text'}, {id: 'tidy', label: '🧹 Tidy 5 mins'}];
+            const doneCount = habitsList.filter(x => h[x.id]).length;
+            const pct = Math.round((doneCount / habitsList.length) * 100);
+            const plantSvg = getPlantSVG(pct);
+
+            content = `
+            <div class="hand-card bg-[#f6fff8] p-4 border border-black/5 mb-4 relative overflow-hidden">
+                <div class="absolute right-[-20px] top-[-20px] w-32 h-32 bg-yellow-100 rounded-full blur-2xl opacity-50"></div>
+                <div class="flex justify-between items-center gap-4">
+                    <div class="w-24 h-24 shrink-0 transition-all duration-500">${plantSvg}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-[Fraunces] text-lg leading-tight mb-1">Today’s Growth</div>
+                        <div class="text-xs text-black/60 mb-2">${doneCount}/${habitsList.length} gentle actions completed</div>
+                        <div class="w-full h-3 bg-black/5 rounded-full overflow-hidden border border-black/5"><div class="h-full bg-[#86a68b] transition-all duration-500 ease-out" style="width: ${pct}%"></div></div>
+                    </div>
+                </div>
+                <div class="mt-3 flex justify-end"><button id="resetHabits" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-[10px] font-bold text-black/50 hover:text-red-500">Reset Day</button></div>
+            </div>
+            <div class="space-y-2">${habitsList.map(item => `<button class="habitToggle wobbly w-full text-left" data-habit="${item.id}"><div class="hand-card ${h[item.id] ? 'bg-gradient-to-r from-green-50 to-white' : 'bg-white/75'} border ${h[item.id] ? 'border-green-200' : 'border-black/10'} p-3 flex items-center justify-between gap-3 transition-colors"><div class="text-sm font-extrabold ${h[item.id] ? 'text-green-800' : 'text-black/80'}">${item.label}</div><div class="w-6 h-6 rounded-full border ${h[item.id] ? 'bg-green-500 border-green-600' : 'bg-white border-black/20'} grid place-items-center">${h[item.id] ? '<svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}</div></div></button>`).join('')}</div>`;
+        } 
+        else if (room === 'drawer') {
+            if (state.savedPostIds.length === 0) content = `<div class="p-6 text-center opacity-50">Tap ••• on a post to save it here.</div>`;
+            else { const savedPosts = state.posts.filter(p => state.savedPostIds.includes(p.id)); content = `<div class="grid grid-cols-3 gap-2">${savedPosts.map(p => `<div class="aspect-square bg-white rounded-[12px] overflow-hidden border border-black/10 wobbly" onclick="toast('Viewing saved post')">${postMediaHTML(p)}</div>`).join('')}</div><div class="mt-4 text-center text-xs opacity-50">Showing ${savedPosts.length} saved items</div>`; }
+        }
+        
+        $('#roomBody').innerHTML = content;
+        
+        // --- WIRING ---
+        if (room === 'shelf') {
+            $$('.shelfUse').forEach(b => b.onclick = () => { $('#roomModal').classList.add('hidden'); $('#composeModal').classList.remove('hidden'); $('#composeCaption').value = b.dataset.text + '\n\n'; });
+            $$('.shelfRemove').forEach(b => b.onclick = () => removeFromShelf(b.dataset.id));
+            $$('.seedPrompt').forEach(b => b.onclick = () => saveToShelf(b.dataset.text));
+        }
+        if (room === 'plant') {
+            $$('.habitToggle').forEach(b => b.onclick = () => toggleHabit(b.dataset.habit));
+            const resetBtn = $('#resetHabits');
+            if(resetBtn) resetBtn.onclick = () => { delete state.habits[new Date().toDateString()]; localStorage.setItem('dailyHabits', JSON.stringify(state.habits)); openRoom('plant'); };
+        }
+        $('#roomModal').classList.remove('hidden');
+    }
+    
+    // UPDATED STORY EVENTS
+    function wireStoryEvents() {
+        const prev = $('#prevStory'); const next = $('#nextStory');
+        if (prev) prev.onclick = () => { if (state.storyPageIndex > 0) { state.storyPageIndex--; renderStoryModal(); } };
+        if (next) next.onclick = () => { const s = state.stories[state.storyIndex]; if (s && state.storyPageIndex < s.pages.length - 1) { state.storyPageIndex++; renderStoryModal(); } else { $('#storyModal').classList.add('hidden'); } };
+        
+        $('#replyStoryBtn').onclick = () => {
+            openTextModal('Reply with a note', 'A folded page for someone.', 'One gentle sentence is enough...', async (val) => { 
+                if(!val) return false;
+                try { 
+                    const s = state.stories[state.storyIndex];
+                    // FIX: Included to_id using the new author_id property
+                    // If author_id is missing (broken story), default to self to prevent crash
+                    const target = s.author_id || state.user.id;
+                    
+                    await sb.from('messages').insert({ 
+                        from_id: state.user.id, 
+                        to_id: target, 
+                        content: `Replying to story: ${val}`, 
+                        type: 'reply' 
+                    }); 
+                    toast('Reply sent.'); 
+                } catch(e) { toast('Error sending.'); }
+                return true; 
+            });
+        };
+    }
+    
+    function openStory(idx) {
+        state.storyIndex = idx; state.storyPageIndex = 0;
+        renderStoryModal();
+        $('#storyModal').classList.remove('hidden');
+    }
+
+    // UPDATED STORY MODAL RENDER
+    function renderStoryModal() {
+        const s = state.stories[state.storyIndex];
+        if(!s) return;
+        const pageContent = s.pages[state.storyPageIndex];
+        $('#storyAvatar').innerHTML = avatarSVG(s.seed);
+        $('#storyTitle').innerText = `${s.user} • ${s.title}`;
+        $('#storyMeta').innerText = `Page ${state.storyPageIndex + 1} of ${s.pages.length}`;
+        const pageEl = $('#storyPage');
+        pageEl.classList.remove('pageflip'); void pageEl.offsetWidth; pageEl.classList.add('pageflip');
+        
+        pageEl.innerHTML = `<div class="text-2xl mb-4 font-bold text-black/20 italic">~ ${state.storyPageIndex + 1} ~</div><div class="text-xl font-medium leading-relaxed">${html(pageContent)}</div><div class="mt-8 text-xs font-bold opacity-30 uppercase tracking-widest text-center">Cozy Journal • ${s.time}</div>`;
+        $('#prevStory').disabled = (state.storyPageIndex === 0);
+        $('#prevStory').style.opacity = (state.storyPageIndex === 0) ? '0.5' : '1';
+        $('#nextStory').innerText = (state.storyPageIndex === s.pages.length - 1) ? 'Close' : 'Next';
+    }
+    
+    function openStoryComposeModal() { $('#storyHeading').value = ''; $('#storyText').value = ''; $('#storyComposeModal').classList.remove('hidden'); }
+    
+    // UPDATED SAVE STORY
+    async function saveStoryPage() {
+        const heading = $('#storyHeading').value.trim(); const text = $('#storyText').value.trim();
+        if (!heading || !text) return toast('Please add a heading and some text.');
+        $('#storyComposeModal').classList.add('hidden');
+        toast('Posting journal page...');
+        try { 
+            await sb.from('stories').insert({ user_id: state.user.id, title: heading, pages: [text] }); 
+            toast('Journal page posted.'); 
+            loadStories(); 
+            $('#storyHeading').value = ''; 
+            $('#storyText').value = '';
+        } catch(e) { toast('Error posting.'); }
+    }
+    
+    async function createPost() {
+    const caption = document.getElementById('composeCaption').value; 
+    // Validation: Must have caption OR visual
+    const hasVisual = state.compose.file || state.compose.mediaPreviewUrl || state.compose.illustSeed !== null;
+    if (!caption && !hasVisual) return toast("Write a note or add art.");
+    
+    const btn = document.getElementById('postNowBtn');
+    const originalText = btn.innerText;
+    btn.innerText = state.editingId ? "Updating..." : "Publishing...";
+    btn.disabled = true;
+    
+    let imageUrl = null;
+    let mediaType = state.compose.mediaKind || 'image'; // Default to image
+
+    try {
+        // --- MEDIA LOGIC ---
+        
+        // Case A: User uploaded a NEW file (from device)
+        if (state.compose.file) {
+            btn.innerText = "Compressing...";
+            const file = state.compose.file;
+            const isVideo = file.type.startsWith('video/');
+            mediaType = isVideo ? 'video' : 'image';
+            const fileToUpload = await compressImageToBlob(file);
+            
+            btn.innerText = "Uploading...";
+            const ext = isVideo ? 'mp4' : 'jpg';
+            const name = `${state.user.id}/${Date.now()}.${ext}`;
+            const { error } = await sb.storage.from('cozy-media').upload(name, fileToUpload);
+            if (error) throw error;
+            const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
+            imageUrl = data.publicUrl;
+        } 
+        // Case B: Art Collection OR Editing existing post
+        // FIX: We simply check if there is a preview URL available. 
+        // If 'selectArt' was used, this contains the Art URL.
+        else if (state.compose.mediaPreviewUrl) {
+            imageUrl = state.compose.mediaPreviewUrl;
+        }
+
+        // Prepare Data Object
+        const postData = { 
+            caption, 
+            image_url: imageUrl, // Legacy support
+            media: imageUrl ? { 
+                type: mediaType, 
+                mediaId: imageUrl, 
+                position: state.compose.mediaPos 
+            } : null,
+            frame: state.compose.frame, 
+            palette: state.compose.vibe, 
+            seed: state.compose.illustSeed !== null ? state.compose.illustSeed : state.compose.seed 
+        };
+
+        let resultData;
+
+        // --- DB ACTION ---
+        if (state.editingId) {
+            // UPDATE EXISTING
+            btn.innerText = "Saving...";
+            const { data, error } = await sb.from('posts')
+                .update(postData)
+                .eq('id', state.editingId)
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .single();
+            if (error) throw error;
+            resultData = data;
+
+            // Update Local State (Replace the old post object)
+            const idx = state.posts.findIndex(p => p.id === state.editingId);
+            if (idx !== -1) {
+                resultData.stickers = state.posts[idx].stickers || [];
+                resultData.comments = state.posts[idx].comments || [];
+                state.posts[idx] = resultData;
+            }
+
+            // Update DOM (Re-render just this post)
+            const oldEl = document.getElementById(`post-${state.editingId}`);
+            if (oldEl) oldEl.outerHTML = getPostHTML(resultData);
+            
+            toast("Post updated.");
+        } 
+        else {
+            // INSERT NEW
+            const { data, error } = await sb.from('posts')
+                .insert({ ...postData, user_id: state.user.id })
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .single();
+            if (error) throw error;
+            resultData = data;
+
+            // Add to Local State
+            state.posts.unshift(resultData);
+
+            // Update DOM
+            const html = getPostHTML(resultData);
+            const container = document.getElementById('feed-container');
+            const banner = container.querySelector('.hand-card'); 
+            if(banner) banner.insertAdjacentHTML('afterend', html);
+            else container.insertAdjacentHTML('afterbegin', html);
+            
+            toast("Posted.");
+        }
+        
+        // --- CLEANUP ---
+        closeCompose(); 
+
+    } catch(e) {
+        console.error("FULL ERROR:", e);
+        toast("Error: " + (e.message || "Action failed"));
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
+function editPost() {
+    const pid = state.activePostOption;
+    const post = state.posts.find(p => p.id === pid);
+    
+    $('#postOptionsModal').classList.add('hidden');
+    if (!post) return;
+
+    // 1. Set Edit Mode
+    state.editingId = pid;
+
+    // 2. Resolve Media URL & Position
+    // Handle cases where 'media' object exists, or fallback to 'image_url'
+    const mediaUrl = post.media?.mediaId || post.image_url || null;
+    const mediaType = post.media?.type || 'image';
+    
+    // BUG FIX: Load position safely. Default to 50/50 if missing.
+    const savedPos = post.media?.position || {x: 50, y: 50};
+
+    // 3. Populate State
+    state.compose = {
+        frame: post.frame || 'wavy',
+        vibe: post.palette || 'sunset',
+        seed: post.seed || 1,
+        
+        // Load the Visuals
+        mediaPreviewUrl: mediaUrl,
+        mediaKind: mediaType,
+        mediaPos: { x: savedPos.x, y: savedPos.y }, // Explicit copy
+        
+        illustSeed: null,
+        file: null // No new file yet
+    };
+    
+    // If it was art-only (no mediaUrl), set the illust seed
+    if (!mediaUrl) {
+        state.compose.illustSeed = post.seed;
+    }
+
+    // 4. Pre-fill Caption
+    const captionInput = document.getElementById('composeCaption');
+    if(captionInput) captionInput.value = post.caption || '';
+    
+    // 5. Update UI
+    document.getElementById('postNowBtn').innerText = "Save Changes";
+    document.querySelector('#composeModal h3').innerText = "Edit Post";
+
+    // 6. Render
+    updateComposeView();
+    $('#composeModal').classList.remove('hidden');
+}
+
+    async function sendSticker(pid, type, el) {
+        // 1. Animation
+        if(el) {
+            const fly = document.createElement('div'); 
+            fly.className = 'sticker-fly';
+            fly.innerHTML = STICKER_SVGS[type] || '✨'; 
+            const rect = el.getBoundingClientRect();
+            fly.style.left = (rect.left + window.scrollX) + 'px';
+            fly.style.top = (rect.top + window.scrollY) + 'px';
+            document.body.appendChild(fly);
+            setTimeout(() => fly.remove(), 1000);
+            const span = el.querySelector('span:last-child');
+            if(span) span.innerText = parseInt(span.innerText || '0') + 1;
+        }
+
+        try { 
+            // 2. Save Sticker
+            const { error } = await sb.from('stickers').insert({ 
+                post_id: pid, 
+                sticker_type: type, 
+                user_id: state.user.id 
+            }); 
+            if(error) throw error;
+
+            // 3. Notify Owner (FIXED VARIABLE NAMES)
+            const post = state.posts.find(p => p.id === pid);
+            if(post && post.user_id !== state.user.id) {
+                 await sb.from('notifications').insert({
+                     user_id: post.user_id,
+                     type: 'sticker', // Correct type
+                     // Correct content using the 'type' variable, not 'val'
+                     content: `${state.profile.username || 'A neighbor'} sent a ${type} sticker!`, 
+                     post_id: pid // Link for the button
+                 });
+            }
+            
+            if(state.kindness) {
+                const names = { hug: 'Warm hug', star: 'Gold star', leaf: 'Calm leaf', spark: 'Tiny spark', cocoa: 'Hot cocoa' };
+                const label = names[type] || 'Sticker';
+                toast(`${label} sent.`);
+            }
+        } catch(e) {
+            console.error("Sticker error:", e);
+        }
+    }
+
+    // --- TEXT MODAL HELPERS ---
+
+// Updated helper to support pre-filling text
+function openTextModal(title, subtitle, placeholder, callback, initialValue = '') {
+    // 1. Setup UI
+    document.getElementById('textModalTitle').innerText = title;
+    document.getElementById('textModalSubtitle').innerText = subtitle;
+    
+    const input = document.getElementById('textModalInput');
+    input.placeholder = placeholder;
+    input.value = initialValue; // Set the existing text
+    
+    // Update Character Count immediately
+    const countEl = document.getElementById('textModalCount');
+    if(countEl) countEl.innerText = initialValue.length;
+    
+    // 2. Store callback
+    state.textModal.onSave = callback;
+    
+    // 3. Show Modal
+    document.getElementById('textModal').classList.remove('hidden');
+    input.focus();
+}
+
+    function closeTextModal() {
+        document.getElementById('textModal').classList.add('hidden');
+        state.textModal.onSave = null; // Clean up
+    }
+
+    // RESTORED: Wire Events Function
+    function wireEvents() {
+        // Helper to attach listeners safely (prevents crashes if an element is missing)
+        const safeWire = (id, fn) => {
+            const el = $(id);
+            if (el) el.onclick = fn;
+            else console.warn(`Element ${id} not found, skipping.`);
+        };
+        
+        const safeWireAll = (selector, fn) => {
+            const els = $$(selector);
+            if(els.length) els.forEach(fn);
+        };
+
+        // --- AUTH ---
+        safeWire('#magicLinkBtn', async () => { 
+            const email = $('#emailInput').value; 
+            if(!email) return toast("Enter your email."); 
+            $('#magicLinkBtn').innerText = "Sending..."; 
+            const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } }); 
+            if(error) { toast("Error sending."); $('#magicLinkBtn').innerText = "Try Again"; } 
+            else { $('#loginMsg').innerText = "Check your inbox for the link!"; $('#magicLinkBtn').innerText = "Sent!"; } 
+        });
+
+        safeWire('#logoutBtn', async () => { 
+            await sb.auth.signOut(); 
+            // Clear URL and reload to a clean state
+            window.location.href = window.location.pathname; 
+        });
+
+        // --- NAVIGATION ---
+        safeWireAll('.navBtn', (b) => {
+            b.onclick = () => {
+                b.classList.add('wiggle');
+                setTimeout(() => b.classList.remove('wiggle'), 700);
+                showView(b.dataset.tab);
+            };
+        });
+
+        // --- FAB & COMPOSE ---
+        // NEW Post Button Logic
+        safeWire('#newPostTrigger', () => { 
+            $('#composeModal').classList.remove('hidden'); 
+            state.compose.seed = Math.floor(Math.random()*100); 
+            updateComposeView(); 
+        });
+        
+        safeWire('#closeCompose', () => $('#composeModal').classList.add('hidden'));
+        safeWire('#postNowBtn', createPost);
+        safeWire('#editPostBtn', editPost);
+
+        const textInput = document.getElementById('textModalInput');
+    if(textInput) {
+        textInput.oninput = (e) => {
+            const len = e.target.value.length;
+            const countEl = document.getElementById('textModalCount');
+            if(countEl) countEl.innerText = len;
+        };
+    }
+        
+// FIX: Use onchange for files, because safeWire only does onclick!
+        const mediaInput = document.getElementById('mediaInput');
+        if (mediaInput) {
+            mediaInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Clear old preview memory
+                if (state.compose.mediaPreviewUrl) {
+                    try { URL.revokeObjectURL(state.compose.mediaPreviewUrl); } catch(e) {}
+                }
+
+                // Update State
+                state.compose.file = file;
+                state.compose.mediaPreviewUrl = URL.createObjectURL(file);
+                state.compose.mediaKind = file.type.startsWith('video/') ? 'video' : 'image';
+                
+                // Render
+                updateComposeView(); 
+            };
+        }
+
+        safeWireAll('.frameBtn', (b) => b.onclick = () => { state.compose.frame = b.dataset.f; updateComposeView(); });
+        safeWireAll('.vibeBtn', (b) => b.onclick = () => { state.compose.vibe = b.dataset.v; updateComposeView(); });
+        
+        const captionInput = $('#composeCaption');
+        if(captionInput) captionInput.oninput = (e) => { 
+            const tags = inferTags(e.target.value); 
+            $('#composeTags').innerHTML = tags.map(t => `<span class="text-[10px] bg-black/5 px-2 py-1 rounded-full text-black/50">#${t}</span>`).join(''); 
+        };
+
+        // --- ART PICKER ---
+        const artPicker = $('#artPicker');
+        if (artPicker) {
+            artPicker.innerHTML = illustChoices.map(ch => `
+                <button type="button" class="artBtn wobbly px-2 py-1 rounded-[10px] border border-black/10 bg-white/70 text-[10px] font-bold" data-seed="${ch.seed || ''}">
+                    ${ch.label}
+                </button>
+            `).join('');
+            
+            safeWireAll('.artBtn', (b) => b.onclick = () => {
+                if (state.compose.file) { toast('Remove photo to use art.'); return; }
+                const seedAttr = b.dataset.seed;
+                state.compose.illustSeed = seedAttr ? parseInt(seedAttr) : null;
+                updateComposeView();
             });
         }
-        return networkResponse;
-      });
 
-      // Return cached response immediately, or wait for network if cache is empty
-      return cachedResponse || fetchPromise;
-    })
-  );
-});
+        // --- FEED & FILTERS ---
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchSubmitBtn');
+
+        // Initial Render
+        renderFilters();
+
+        if (searchInput) {
+            searchInput.oninput = (e) => {
+                const val = e.target.value.trim();
+                state.filter.search = val;
+                
+                // If clearing search, reset mode to posts
+                if(val.length === 0) state.searchMode = 'posts';
+                
+                renderFilters();      // Update buttons (All vs People/Posts)
+                renderMainContent();  // Update results
+            };
+        }
+        
+        // Make the magnifying glass button focus the input
+        if (searchBtn) {
+            searchBtn.onclick = () => searchInput.focus();
+        }
+
+        safeWire('#openAccount', openAccountModal);
+        safeWire('#openSafety', () => $('#safetyModal').classList.remove('hidden'));
+        safeWire('#kindToggle', () => { 
+            state.kindness = !state.kindness; 
+            
+            // 1. Visual Update for Header Button
+            const btn = document.getElementById('kindToggle');
+            const label = btn.querySelector('span'); // Gets the first span (Text)
+            
+            if (state.kindness) {
+                // State: ON
+                btn.classList.remove('grayscale', 'opacity-50', 'bg-gray-100');
+                btn.classList.add('bg-white/70');
+                label.innerText = "Kind";
+            } else {
+                // State: OFF
+                btn.classList.remove('bg-white/70');
+                btn.classList.add('grayscale', 'opacity-50', 'bg-gray-100');
+                label.innerText = "Off";
+            }
+
+            // 2. Update the Safety Modal toggle (to keep them in sync)
+            const btn2 = document.getElementById('kindToggle2');
+            if(btn2) btn2.innerText = state.kindness ? 'On' : 'Off';
+
+            // 3. Logic
+            toast(`Kindness: ${state.kindness?'On':'Off'}`); 
+            renderPosts(); 
+        });
+        safeWire('#kindToggle2', () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; renderPosts(); });
+// UPDATED: Toggle with Memory (Saves to phone)
+safeWire('#numbersToggle', () => { 
+            state.hideNumbers = !state.hideNumbers; 
+            
+            // 1. Update UI Text
+            $('#numbersToggle').innerText = state.hideNumbers ? 'On' : 'Off'; 
+            
+            // 2. Save to Phone Memory
+            localStorage.setItem('cozyHideNumbers', state.hideNumbers);
+            
+            // 3. Re-render feed to apply changes immediately
+            renderPosts(); 
+            
+            toast(state.hideNumbers ? "Numbers hidden." : "Numbers visible.");
+        });
+        // --- POST ACTIONS ---
+        safeWire('#hidePostBtn', hidePost);
+        safeWire('#deletePostBtn', deletePost);        
+        safeWire('#copyCaptionBtn', () => { const p = state.posts.find(x => x.id === state.activePostOption); if(p) { safeCopy(p.caption); toast('Copied.'); } $('#postOptionsModal').classList.add('hidden'); });
+        safeWire('#reportPostBtn', reportPost);
+        safeWire('#sharePostBtn', sharePost);
+        safeWire('#savePostBtn', toggleSavePost);
+        safeWire('#muteUserBtn', toggleMuteUser);
+
+        // --- CHECKIN ---
+        safeWireAll('.moodPick', (b) => b.onclick = () => { localStorage.setItem('dailyCheckin', b.dataset.mood); $$('.moodPick').forEach(x => x.classList.remove('bg-white', 'ring-2')); b.classList.add('bg-white', 'ring-2'); toast("Checked in."); });
+
+        // --- PROFILE ---
+        safeWire('#saveProfileSetup', saveProfile);
+        
+        const avatarInput = $('#avatarFileInput');
+        if(avatarInput) avatarInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const tempUrl = URL.createObjectURL(file);
+            const preview = $('#editProfileAvatarPreview');
+            if(preview) preview.innerHTML = `<img src="${tempUrl}" class="w-full h-full object-cover">`;
+            toast('Compressing & Uploading...');
+            try {
+                const compressed = await compressImageToBlob(file, 600, 0.8);
+                const name = `avatars/${state.user.id}/${Date.now()}.jpg`;
+                const { error } = await sb.storage.from('cozy-media').upload(name, compressed);
+                if (error) throw error;
+                const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
+                await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', state.user.id);
+                state.profile.avatar_url = data.publicUrl;
+                renderProfile();
+                toast('New avatar set!');
+            } catch (err) { console.error(err); toast('Error updating avatar.'); }
+        };
+
+        // --- MESSAGING ---
+        safeWire('#chatSendBtn', async () => { 
+            const input = $('#chatInput');
+            const txt = input.value.trim(); 
+            const targetId = state.activeThreadId;
+            
+            // Validation
+            if(!txt || !targetId) return; 
+            
+            // 1. Clear Input immediately
+            input.value = ''; 
+            
+            // 2. OPTIMISTIC UI: Show the message bubble immediately
+            const container = $('#chatMessages');
+            // Remove "This paper is blank" placeholder if it exists
+            if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
+
+            // Add my bubble (Align Right)
+            const msgHTML = `<div class="flex justify-end pop-in"><div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 bg-gradient-to-b from-[#86a68b]/40 to-white/90 shadow-sm"><div class="text-sm font-bold text-black leading-snug">${html(txt)}</div></div></div>`;            container.insertAdjacentHTML('beforeend', msgHTML);
+            container.scrollTop = container.scrollHeight;
+
+            // 3. Update the Thread List Sidebar (Move this chat to top)
+            const thread = state.threads.find(t => t.id === targetId);
+            if(thread) {
+                thread.last = txt;
+                thread.timestamp = Date.now();
+                // Add to local memory so it doesn't disappear on refresh/re-render
+                thread.messages.push({ from: 'me', text: txt });
+                
+                // Sort threads: Newest on top
+                state.threads.sort((a, b) => b.timestamp - a.timestamp);
+                renderMessages();
+            }
+
+            // 4. Send to Cloud (Supabase)
+            try {
+                const { error } = await sb.from('messages').insert({ from_id: state.user.id, to_id: targetId, content: txt });
+                if(error) throw error;
+            } catch(e) { 
+                toast('Error sending note.'); 
+                console.error(e); 
+                // Ideally we would show a "red retry button" here, but for now the Toast warns the user.
+            }
+        });
+
+        safeWire('#sendCommentBtn', async () => { 
+            const input = document.getElementById('commentInput');
+            const val = input.value.trim();
+            if(!val) return; 
+
+            const btn = document.getElementById('sendCommentBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "...";
+            btn.disabled = true;
+
+            try { 
+                const { data, error } = await sb.from('comments')
+                    .insert({ post_id: state.comments.postId, user_id: state.user.id, text: val })
+                    .select('id, user_id, text, created_at')
+                    .single();
+                
+                if(error) throw error;
+
+                const newComment = {
+                    id: data.id,
+                    user_id: state.user.id,
+                    text: data.text,
+                    profiles: { username: state.profile.username }
+                };
+
+                const post = state.posts.find(p => p.id === state.comments.postId);
+                if(post) {
+                    if(!post.comments) post.comments = [];
+                    post.comments.push(newComment);
+                }
+
+                renderCommentsModal();
+
+                // FIX: Notify Owner with Link
+                if(post && post.user_id !== state.user.id) {
+                     await sb.from('notifications').insert({
+                         user_id: post.user_id,
+                         type: 'reply',
+                         content: `${state.profile.username || 'A neighbor'} wrote: "${val.substring(0, 25)}${val.length>25?'...':''}"`,
+                         post_id: post.id // <--- THIS ADDS THE BUTTON
+                     });
+                }
+                
+                toast('Note sent.'); 
+                input.value = ''; 
+
+            } catch(e) { 
+                console.error(e);
+                toast('Error sending note.'); 
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // --- MODALS & UTILS ---
+// --- TEXT MODAL SAVE BUTTON ---
+safeWire('#textModalSave', async () => {
+            const val = document.getElementById('textModalInput').value;
+            
+            if (state.textModal.onSave) {
+                const btn = document.getElementById('textModalSave');
+                const originalText = btn.innerText;
+                
+                // Show loading state
+                btn.innerText = "Sending...";
+                btn.disabled = true;
+
+                try {
+                    // Run the specific action (Report, Reply, etc.)
+                    // We await it in case it's an async database call
+                    const shouldClose = await state.textModal.onSave(val);
+                    
+                    if (shouldClose) {
+                        closeTextModal();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    toast("Something went wrong.");
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }
+        });
+        // --- ONBOARDING (This was likely crashing before) ---
+        safeWire('#onboardBack', () => { if(state.onboardingStep > 0) { state.onboardingStep--; renderOnboarding(); } });
+        safeWire('#onboardNext', () => { if(state.onboardingStep < 4) { state.onboardingStep++; renderOnboarding(); } });
+        safeWire('#skipOnboarding', () => { state.onboardingStep = 4; renderOnboarding(); });
+
+        wireStoryEvents();
+        renderNewThreadModal();
+    }
+    
+    function renderOnboarding() {
+        const steps = [
+            { text: "Welcome to CozyGram. Let me show you around.", pct: 0 },
+            { text: "This is a quiet place. No follower counts here.", pct: 25 },
+            { text: "We use stickers instead of likes to show warmth.", pct: 50 },
+            { text: "Ready to find your cozy corner?", pct: 75 },
+            { text: "Let's get you signed in.", pct: 100 }
+        ];
+        
+        // Ensure state is valid
+        if(isNaN(state.onboardingStep)) state.onboardingStep = 0;
+        
+        const current = steps[state.onboardingStep] || steps[0];
+        const txt = document.getElementById('onboardText');
+        if(txt) txt.innerText = current.text;
+
+        const dots = document.getElementById('onboardDots');
+        if(dots) dots.innerHTML = steps.map((_, i) => 
+            `<div class="w-2 h-2 rounded-full transition-colors ${i === state.onboardingStep ? 'bg-[#f4a37a]' : 'bg-black/10'}"></div>`
+        ).join('');
+
+        const container = document.getElementById('authContainer');
+        const nav = document.getElementById('onboardNav');
+        const mascot = document.getElementById('mascot');
+
+        if (state.onboardingStep === 4) {
+             if(container) container.classList.remove('hidden');
+             if(nav) nav.classList.add('hidden');
+             if(mascot) mascot.classList.add('hidden'); 
+        } else {
+             if(container) container.classList.add('hidden');
+             if(nav) nav.classList.remove('hidden');
+             if(mascot) mascot.classList.remove('hidden');
+        }
+    }
+
+    // --- NOTIFICATION CLICK HANDLER ---
+// --- UPDATED CLICK HANDLER (With Delay & Safety) ---
+window.handleNotifClick = function(postId) {
+    // 1. Stop the click from bubbling up (prevents immediate closing)
+    if (window.event) {
+        window.event.preventDefault();
+        window.event.stopPropagation();
+    }
+
+    console.log("🖱️ CLICKED Notification for Post:", postId);
+    
+    if (!postId || postId === "undefined") {
+        toast("Error: Link is broken.");
+        return;
+    }
+
+    // 2. Use setTimeout to decouple the open action from the click event
+    setTimeout(() => {
+        if (window.openSpotlight) {
+            window.openSpotlight(postId);
+        } else {
+            console.error("openSpotlight function not found!");
+            toast("System error: Reload page.");
+        }
+    }, 10); // 10ms delay is enough
+};
+
+// Ensure openSpotlight is global too
+window.openSpotlight = openSpotlight; 
+
+init(); // Your existing init call
+
+  </script>
+  <!-- REGISTER SERVICE WORKER -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
