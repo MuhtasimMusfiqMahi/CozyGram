@@ -13,6 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,600;800&display=swap" rel="stylesheet">
   <!-- PWA MANIFEST LINK -->
   <link rel="manifest" href="/manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />6
 
   <!-- APPLE / IOS OPTIMIZATION -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -39,12 +40,8 @@
     body {
       font-family: Nunito, ui-sans-serif, system-ui, -apple-system, sans-serif;
       color: var(--ink);
-      background:
-        radial-gradient(1200px 800px at 25% 0%, var(--mood-a), rgba(251,245,234,0) 60%),
-        radial-gradient(900px 650px at 85% 10%, var(--mood-b), rgba(251,245,234,0) 65%),
-        radial-gradient(1000px 700px at 60% 90%, var(--mood-c), rgba(251,245,234,0) 58%),
-        linear-gradient(180deg, var(--mood-bg1) 0%, var(--mood-bg2) 35%, var(--mood-bg3) 100%);
-      -webkit-tap-highlight-color: transparent;
+
+              -webkit-tap-highlight-color: transparent;
       
       /* Mobile Constraints */
       min-height: 100dvh;
@@ -52,6 +49,25 @@
       max-width: 100vw;  /* Hard limit to viewport width */
       overflow-x: hidden; /* Cut off any elements attempting to overflow */
       position: relative;
+    }
+
+    /* NEW: FIXED BACKGROUND LAYER */
+    body::before {
+      content: "";
+      position: fixed; /* Locks it to the screen */
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%;
+      z-index: -1; /* Puts it behind content */
+      pointer-events: none; /* Lets clicks pass through */
+      
+      /* The Gradient Logic moved here */
+      background:
+        radial-gradient(1200px 800px at 25% 0%, var(--mood-a), rgba(251,245,234,0) 60%),
+        radial-gradient(900px 650px at 85% 10%, var(--mood-b), rgba(251,245,234,0) 65%),
+        radial-gradient(1000px 700px at 60% 90%, var(--mood-c), rgba(251,245,234,0) 58%),
+        linear-gradient(180deg, var(--mood-bg1) 0%, var(--mood-bg2) 35%, var(--mood-bg3) 100%);
     }
 
     .paper-noise {
@@ -380,10 +396,6 @@
           </div>
           <div id="clubsContainer" class="hand-card hand-outline bg-white/70 border border-black/10 p-4"></div>
           <div id="storiesList" class="space-y-3"></div>
-          <div class="hand-card hand-outline bg-white/70 border border-black/10 p-4">
-            <div class="flex items-center justify-between mb-3"><div class="text-sm font-extrabold">Gentle prompts</div><button class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" onclick="pickRandomPrompt()">Surprise me</button></div>
-            <div id="promptsGrid" class="grid grid-cols-2 gap-3"></div>
-          </div>
       </section>
       
 <!-- MESSAGES -->
@@ -794,17 +806,50 @@ function artSVG(seed=1, palette='sunset'){
     }
 
     // 3. (Just in case you missed it earlier) Apply Mood Function
-    function applyMood(moodId){
+ // 3. APPLY MOOD FUNCTION (RICH & VIBRANT)
+ // 3. APPLY MOOD FUNCTION (UPDATED: Orange Sunset & Real Clay)
+ function applyMood(moodId){
       const themes = {
-        sunset: { a:'rgba(247,197,159,.55)', b:'rgba(134,166,139,.35)', c:'rgba(219,161,168,.22)', bg1:'#fff5ea', bg2:'#fbf5ea', bg3:'#f7f0e6' },
-        sage:   { a:'rgba(134,166,139,.45)', b:'rgba(247,197,159,.25)', c:'rgba(111,106,134,.18)', bg1:'#f6fff8', bg2:'#fbf5ea', bg3:'#f3f6f2' },
-        berry:  { a:'rgba(219,161,168,.42)', b:'rgba(247,197,159,.22)', c:'rgba(111,106,134,.22)', bg1:'#fff3f6', bg2:'#fbf5ea', bg3:'#f7f0f2' },
-        clay:   { a:'rgba(184,125,102,.40)', b:'rgba(247,197,159,.28)', c:'rgba(134,166,139,.18)', bg1:'#fff7f1', bg2:'#fbf5ea', bg3:'#f6efe7' }
+        sunset: { 
+            // Real Sunset: Deep Orange, Golden Yellow, and Warm Red
+            a: 'rgba(255, 126, 95, 0.65)',   // Vibrant Orange
+            b: 'rgba(254, 180, 123, 0.55)',  // Golden Hour Yellow
+            c: 'rgba(255, 90, 80, 0.45)',    // Deep Sun Red
+            bg1: '#fff0e6', bg2: '#fff5ea', bg3: '#ffe8d6' 
+        },
+        sage: { 
+            // Enchanted Forest: Mint, Soft Blue, and Lime (Kept same)
+            a: 'rgba(110, 220, 180, 0.45)', 
+            b: 'rgba(130, 200, 250, 0.35)', 
+            c: 'rgba(210, 240, 160, 0.40)', 
+            bg1: '#f0fdf7', bg2: '#f6fff8', bg3: '#e8f5ee' 
+        },
+        berry: { 
+            // Cotton Candy: Rose, Lavender, and Peach (Kept same)
+            a: 'rgba(255, 140, 210, 0.45)', 
+            b: 'rgba(170, 160, 255, 0.40)', 
+            c: 'rgba(255, 180, 160, 0.35)', 
+            bg1: '#fff0f6', bg2: '#fff5fa', bg3: '#fcebf4' 
+        },
+        clay: { 
+            // Solid Clay: Warm Taupe, Muted Brown, Greige (Matches your image)
+            a: 'rgba(189, 183, 171, 0.70)',  // Darker Taupe Blob
+            b: 'rgba(214, 208, 196, 0.60)',  // Soft Greige Blob
+            c: 'rgba(160, 150, 145, 0.50)',  // Deep Clay Shadow
+            bg1: '#ebe7e0', bg2: '#f0ece6', bg3: '#e3dfd8' // Solid Clay Backgrounds
+        }
       };
+      
       const m = themes[moodId] || themes.sunset;
       const r = document.documentElement.style;
-      r.setProperty('--mood-a', m.a); r.setProperty('--mood-b', m.b); r.setProperty('--mood-c', m.c);
-      r.setProperty('--mood-bg1', m.bg1); r.setProperty('--mood-bg2', m.bg2); r.setProperty('--mood-bg3', m.bg3);
+      
+      // Apply variables
+      r.setProperty('--mood-a', m.a); 
+      r.setProperty('--mood-b', m.b); 
+      r.setProperty('--mood-c', m.c);
+      r.setProperty('--mood-bg1', m.bg1); 
+      r.setProperty('--mood-bg2', m.bg2); 
+      r.setProperty('--mood-bg3', m.bg3);
     }
 
     // --- MEDIA COMPRESSION HELPER ---
@@ -864,7 +909,8 @@ function artSVG(seed=1, palette='sunset'){
         },
         filter: { search: '', topic: 'all' },
         searchMode: 'posts',
-        kindness: true, hideNumbers: true,
+        kindness: true, 
+        hideNumbers: localStorage.getItem('cozyHideNumbers') !== 'false',
         hiddenPosts: [], // DB-backed
         mutedUsers: [], // DB-backed
         savedPrompts: [], // DB-backed (Shelf)
@@ -1309,28 +1355,28 @@ function getSketchBackground(seed) {
     }
     // FIX: LOAD STORIES FROM DB
     async function loadStories() {
-    try {
-        const { data, error } = await sb.from('stories')
-            .select(`*, profiles(username, seed, avatar_url)`)
-            .order('created_at', { ascending: false });
-        
-        if (data) {
-            state.stories = data.map(s => ({ 
-                id: s.id, 
-                user: s.profiles?.username || 'Anon', 
-                seed: s.profiles?.seed || 1, 
-                avatar_url: s.profiles?.avatar_url,
-                title: s.title || 'Journal Entry', 
-                // NEW: Store raw timestamp for the live timer
-                created_at: new Date(s.created_at).getTime(),
-                // Keep formatted for initial render
-                time: timeAgo(new Date(s.created_at)), 
-                pages: Array.isArray(s.pages) ? s.pages : (s.pages ? [s.pages] : ['Empty page...'])
-            }));
-        }
-    } catch(e) { state.stories = []; }
-    renderStories();
-}
+        try {
+            const { data, error } = await sb.from('stories')
+                .select(`*, profiles(username, seed, avatar_url)`)
+                .order('created_at', { ascending: false });
+            
+            if (data) {
+                state.stories = data.map(s => ({ 
+                    id: s.id, 
+                    // FIX: Save the author's ID so we can reply to them!
+                    author_id: s.user_id, 
+                    user: s.profiles?.username || 'Anon', 
+                    seed: s.profiles?.seed || 1, 
+                    avatar_url: s.profiles?.avatar_url,
+                    title: s.title || 'Journal Entry', 
+                    created_at: new Date(s.created_at).getTime(),
+                    time: timeAgo(new Date(s.created_at)), 
+                    pages: Array.isArray(s.pages) ? s.pages : (s.pages ? [s.pages] : ['Empty page...'])
+                }));
+            }
+        } catch(e) { state.stories = []; }
+        renderStories();
+    }
     async function loadHabits() {
         if(!state.user) return;
         try {
@@ -1940,8 +1986,14 @@ function getStoryHTML(s, idx) {
     }
     // Helper for stickers
     function stickerBtn(pid, type, svg, count) {
-    // Added 'data-type' attribute for reliable Realtime targeting
-    return `<button data-type="${type}" onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-2 py-1.5 lg:px-3 lg:py-2 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white transition-colors">${svg} <span>${count || 0}</span></button>`;
+    // Check if numbers should be hidden
+    const hideClass = state.hideNumbers ? 'hidden' : '';
+    
+    return `
+    <button data-type="${type}" onclick="sendSticker('${pid}','${type}',this)" class="wobbly inline-flex items-center gap-1 px-2 py-1.5 lg:px-3 lg:py-2 bg-white/70 border border-black/10 rounded-[12px] text-xs font-bold text-black/60 hover:bg-white transition-colors">
+        ${svg} 
+        <span class="${hideClass}">${count || 0}</span>
+    </button>`;
 }
 
 function shuffleFeed() {
@@ -2106,17 +2158,59 @@ function shuffleFeed() {
         const p = state.profile;
         const meId = state.user.id;
         
-        // 1. Icons (Responsive: w-6 on mobile, w-8 on desktop)
-        const iconClass = "w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-0.5 opacity-70 stroke-[1.5]"; 
-        const shelfIcon = `<svg viewBox="0 0 24 24" class="${iconClass}"><path class="ink-line-lite" d="M6 6h12v14H6z" fill="rgba(247,197,159,.25)"/><path class="ink-line-lite" d="M8 10h8M8 13h8M8 16h6" fill="none"/></svg>`;
-        const plantIcon = `<svg viewBox="0 0 24 24" class="${iconClass}"><path class="ink-line-lite" d="M12 21c0-6 0-12 6-16-1 7-3 8-6 8" fill="none"/><path class="ink-line-lite" d="M12 21c0-6 0-12-6-16 1 7 3 8 6 8" fill="none"/><path class="ink-line-lite" d="M7 21h10" fill="none"/></svg>`;
-        const drawerIcon = `<svg viewBox="0 0 24 24" class="${iconClass}"><path class="ink-line-lite" d="M5 7h14v12H5z" fill="rgba(219,161,168,.18)"/><path class="ink-line-lite" d="M5 12h14" fill="none"/><path class="ink-line-lite" d="M10 10h4" fill="none"/></svg>`;
-        const moodIcon = `<svg viewBox="0 0 24 24" class="${iconClass}"><circle cx="12" cy="12" r="5" fill="rgba(255,215,0,.2)" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-        const editIcon = `<svg viewBox="0 0 24 24" class="${iconClass}"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        // 1. ICONS (Unified Style: 2px stroke, dark grey)
+        const iconClass = "w-7 h-7 mx-auto mb-1 text-[#2b2b35] opacity-80"; 
+        
+        // Shelf: Bookshelf
+        const shelfIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14" />
+            <path d="M4 19h16" />
+            <path d="M4 12h16" />
+            <path d="M8 12v7" />
+            <path d="M16 5v7" />
+            <path d="M12 5l-2 7" />
+        </svg>`;
+
+        // Plant: Potted Plant
+        const plantIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22v-8" />
+            <path d="M5 14h14l-2 8H7z" />
+            <path d="M12 14a5 5 0 0 0-5-5V5a5 5 0 0 1 5 5v4z" />
+            <path d="M12 14a5 5 0 0 1 5-5V5a5 5 0 0 0-5 5v4z" />
+        </svg>`;
+
+        // Drawer: 3-Tier Cabinet
+        const drawerIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <line x1="4" y1="9" x2="20" y2="9" />
+            <line x1="4" y1="15" x2="20" y2="15" />
+            <line x1="10" y1="6.5" x2="14" y2="6.5" />
+            <line x1="10" y1="12" x2="14" y2="12" />
+            <line x1="10" y1="17.5" x2="14" y2="17.5" />
+        </svg>`;
+
+        // Mood: Hanging Lamp
+        const moodIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v6" />
+            <path d="M5 8h14c0 3.5-2.5 7-7 7s-7-3.5-7-7z" />
+            <path d="M12 15v3" />
+            <path d="M9 20h6" />
+            <path d="M5 20l-2 2" />
+            <path d="M19 20l2 2" />
+        </svg>`;
+
+        // Edit: Pencil in Box
+        const editIcon = `
+        <svg viewBox="0 0 24 24" class="${iconClass}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>`;
 
         // 2. Action Box Helper (RESPONSIVE)
-        // Mobile: p-1, min-w-[55px], text-[10px]
-        // Desktop (lg): p-1.5, min-w-[65px], text-[11px]
         const actionBox = (label, icon, onClick) => `
             <button onclick="${onClick}" class="wobbly flex flex-col items-center justify-center p-1 lg:p-1.5 rounded-[16px_14px_18px_12px] bg-white/60 border border-black/5 shrink-0 flex-1 min-w-[55px] lg:min-w-[65px] hover:bg-white transition-colors">
                 ${icon}
@@ -2218,6 +2312,7 @@ window.openScrapbookModal = openScrapbookModal;
 window.closeScrapbook = closeScrapbook;
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
+        // 1. Render Clubs
         const clubsHtml = MOCK_CLUBS.map(c => `
             <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly" onclick="state.filter.topic = '${c.tag}'; showView('feed'); toast('Peeking into ${c.title}');">
                 <div class="font-extrabold text-sm">${c.title}</div>
@@ -2227,75 +2322,85 @@ window.closeScrapbook = closeScrapbook;
         `).join('');
         document.getElementById('clubsContainer').innerHTML = `<div class="flex items-center justify-between mb-3"><div class="text-sm font-extrabold">Cozy Clubs</div></div><div class="grid grid-cols-2 gap-3">${clubsHtml}</div>`;
 
+        // 2. Render Stories List
         const listDiv = document.getElementById('storiesList');
         if (state.stories.length === 0) {
             listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No journal pages found.<br>Be the first to write one?</div>`;
         } else {
             listDiv.innerHTML = state.stories.map((s, idx) => {
-                // FIX: Define the user object 'u' here
                 const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
+                // Using raw timestamp for live update
+                const ts = s.created_at || Date.now();
+                const timeStr = timeAgo(new Date(ts));
                 
                 return `
                 <button class="w-full wobbly text-left" onclick="openStory(${idx})">
                     <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
                         <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
-                        <div class="flex-1 min-w-0"><div class="font-extrabold truncate">${html(s.user)}'s pages</div><div class="text-xs text-black/55">${s.time} • ${s.pages.length} pages</div></div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-extrabold truncate">${html(s.user)}'s pages</div>
+                            <div class="text-xs text-black/55">
+                                <span class="live-time" data-ts="${ts}">${timeStr}</span> • ${s.pages.length} pages
+                            </div>
+                        </div>
                         <div class="text-xs text-black/50">open →</div>
                     </div>
                 </button>
             `}).join('');
         }
 
-        const promptsHtml = MOCK_PROMPTS.map(p => `
-            <div class="wobbly hand-card hand-outline paper-noise border border-black/10 p-3">
-              <div class="text-xs font-extrabold leading-snug mb-1">${p.title}</div><div class="text-[10px] text-black/60 mb-2">${p.desc}</div>
-              <div class="flex gap-2"><button class="px-2 py-1 rounded border border-black/10 bg-white/70 text-[10px] font-bold" onclick="toast('Copied to composer')">Use</button><button class="px-2 py-1 rounded border border-black/10 bg-[#fbf5ea] text-[10px] font-bold" onclick="saveToShelf('${p.title}')">Save</button></div>
-            </div>
-        `).join('');
-        document.getElementById('promptsGrid').innerHTML = promptsHtml;
+        // 3. REMOVED: Prompts Logic
+        // If the element still exists in HTML, hide it
+        const promptsContainer = document.getElementById('promptsGrid')?.parentElement;
+        if(promptsContainer) promptsContainer.style.display = 'none';
     }
 
     function renderMessages() {
-    const threadList = $('#threadList');
-    if (state.threads.length === 0) { 
-        threadList.innerHTML = `<div class="p-4 text-sm opacity-50">No notes yet.</div>`; 
-        return; 
-    }
-    
-    threadList.innerHTML = state.threads.map(t => {
-        const active = state.activeThreadId === t.id;
-        const lastMsg = t.messages[t.messages.length - 1];
+        const threadList = $('#threadList');
+        if (state.threads.length === 0) { 
+            threadList.innerHTML = `<div class="p-4 text-sm opacity-50">No notes yet.</div>`; 
+            return; 
+        }
         
-        const lastReadTime = state.lastRead[t.id] || 0;
-        const isNew = t.timestamp > lastReadTime;
-        const isUnread = (lastMsg && lastMsg.from === 'them' && isNew && !active);
-        
-        const activeClass = active ? 'bg-gradient-to-b from-[#f7c59f]/55 to-white/70 ring-2 ring-[#f4a37a]/20' : 'bg-white/70';
-        const unreadClass = isUnread ? 'border-[#f4a37a] shadow-sm' : 'border-black/10';
-        const textWeight = isUnread ? 'font-bold text-black/90' : 'text-black/60';
-        
-        const u = { username: t.user, seed: t.seed, avatar_url: t.avatar_url };
+        threadList.innerHTML = state.threads.map(t => {
+            const active = state.activeThreadId === t.id;
+            const lastMsg = t.messages[t.messages.length - 1];
+            
+            const lastReadTime = state.lastRead[t.id] || 0;
+            const isNew = t.timestamp > lastReadTime;
+            const isUnread = (lastMsg && lastMsg.from === 'them' && isNew && !active);
+            
+            const activeClass = active ? 'bg-gradient-to-b from-[#f7c59f]/55 to-white/70 ring-2 ring-[#f4a37a]/20' : 'bg-white/70';
+            const unreadClass = isUnread ? 'border-[#f4a37a] shadow-sm' : 'border-black/10';
+            const textWeight = isUnread ? 'font-bold text-black/90' : 'text-black/60';
+            
+            const u = { username: t.user, seed: t.seed, avatar_url: t.avatar_url };
+            const rawTime = t.timestamp;
+            const timeStr = timeAgo(new Date(t.timestamp));
 
-        // LIVE TIMER VARS
-        const rawTime = t.timestamp;
-        const timeStr = timeAgo(new Date(t.timestamp));
-
-        return `
-        <button class="w-full wobbly text-left mb-2" onclick="openThread('${t.id}')">
-            <div class="hand-card hand-outline ${activeClass} ${unreadClass} border p-3 flex items-center gap-3 relative transition-all duration-300">
-                ${isUnread ? `<div class="absolute -top-1 -right-1 w-3 h-3 bg-[#f4a37a] rounded-full border-2 border-white shadow-sm"></div>` : ''}
-                <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarHTML(u)}</div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-2">
-                        <div class="font-extrabold truncate text-sm">${html(t.user)}</div>
-                        <div class="text-[10px] opacity-40 live-time" data-ts="${rawTime}">${timeStr}</div>
+            return `
+            <div class="relative group mb-2">
+                <button class="w-full wobbly text-left" onclick="openThread('${t.id}')">
+                    <div class="hand-card hand-outline ${activeClass} ${unreadClass} border p-3 flex items-center gap-3 relative transition-all duration-300 pr-10">
+                        ${isUnread ? `<div class="absolute -top-1 -right-1 w-3 h-3 bg-[#f4a37a] rounded-full border-2 border-white shadow-sm"></div>` : ''}
+                        <div class="w-11 h-11 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">${avatarHTML(u)}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="font-extrabold truncate text-sm">${html(t.user)}</div>
+                                <div class="text-[10px] opacity-40 live-time" data-ts="${rawTime}">${timeStr}</div>
+                            </div>
+                            <div class="text-xs ${textWeight} truncate mt-0.5">${html(t.last)}</div>
+                        </div>
                     </div>
-                    <div class="text-xs ${textWeight} truncate mt-0.5">${html(t.last)}</div>
-                </div>
-            </div>
-        </button>`;
-    }).join('');
-}
+                </button>
+                
+                <!-- DELETE BUTTON (Small Cross) -->
+                <button onclick="deleteThread('${t.id}', event)" class="absolute top-1/2 right-3 -translate-y-1/2 w-6 h-6 rounded-full bg-white/50 hover:bg-red-50 border border-transparent hover:border-red-200 text-black/20 hover:text-red-500 flex items-center justify-center transition-all z-20" title="Delete conversation">
+                    <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>`;
+        }).join('');
+    }
     
     function renderNewThreadModal() {
         if(!state.user) return;
@@ -2321,6 +2426,47 @@ window.closeScrapbook = closeScrapbook;
         if(chatBox) chatBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 50);
 };
+
+async function deleteThread(targetId, event) {
+        if(event) { event.stopPropagation(); event.preventDefault(); }
+
+        toast("Clearing notes...");
+
+        // 1. UI Update
+        state.threads = state.threads.filter(t => t.id !== targetId);
+        if(state.activeThreadId === targetId) {
+            state.activeThreadId = null;
+            $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50 text-white/90">Select a note to read</div>`;
+            $('#chatMessages').innerHTML = '';
+            $('#chatInputArea').classList.add('hidden');
+        }
+        renderMessages();
+
+        // 2. Database Delete
+        try {
+            const myId = state.user.id;
+            
+            // EDGE CASE FIX: If deleting a broken thread (undefined target), delete orphans
+            if (!targetId || targetId === 'undefined') {
+                await sb.from('messages').delete().eq('from_id', myId).is('to_id', null);
+                return;
+            }
+
+            const { error } = await sb.from('messages').delete()
+                .or(`and(from_id.eq.${myId},to_id.eq.${targetId}),and(from_id.eq.${targetId},to_id.eq.${myId})`);
+            
+            if (error) throw error;
+        } catch(e) {
+            console.error(e);
+            // Don't show error toast to user, just let the UI update stand
+        }
+    }
+    window.deleteThread = deleteThread;
+    
+    window.deleteThread = deleteThread;
+    
+    // Expose to window for onclick
+    window.deleteThread = deleteThread;
     async function openThread(targetId) {
         // --- 1. TOGGLE LOGIC (Clicking same user closes chat) ---
         if (state.activeThreadId === targetId) {
@@ -3487,17 +3633,33 @@ function updateComposeView() {
         } 
         else if (room === 'window') {
             const mood = state.profile.mood || 'sunset';
-            const preview = artSVG(44, mood); 
+            
+            // DEFINING THE PURE GRADIENTS (Matching your new styles)
+            const gradients = {
+                sunset: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)', // Deep Orange to Gold
+                sage:   'linear-gradient(135deg, #86a68b 0%, #b7cbb7 100%)', // Soft Sage
+                berry:  'linear-gradient(135deg, #dba1a8 0%, #c77d93 100%)', // Deep Berry
+                clay:   'linear-gradient(135deg, #f0ece6 0%, #dcd6ce 100%)'  // Soft Taupe/White (The Image look)
+            };
+            
+            const currentGradient = gradients[mood] || gradients.sunset;
+
             content = `
             <div class="hand-card bg-white/70 border border-black/10 p-4 mb-4">
                 <div class="text-sm font-extrabold">A little light</div>
                 <div class="text-sm text-black/70 mt-1">Choose a vibe. It recolors your corner (private).</div>
-                <div class="mt-3 rounded-[18px_16px_22px_14px] overflow-hidden border border-black/10 bg-white/50 transition-all duration-500" style="aspect-ratio: 4/2">${preview}</div>
+                
+                <!-- PREVIEW BOX: Pure Gradient Only -->
+                <div class="mt-3 rounded-[18px_16px_22px_14px] overflow-hidden border border-black/10 shadow-sm w-full h-32 transition-all duration-500" 
+                     style="background: ${currentGradient};">
+                </div>
+
+                <!-- BUTTONS -->
                 <div class="mt-3 flex flex-wrap gap-2">
                     ${['sunset','sage','berry','clay'].map(m => `<button onclick="setMood('${m}')" class="px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 text-xs font-extrabold wobbly capitalize ${mood===m ? 'bg-white/80 ring-2 ring-black/10' : 'bg-white/70'}">${m}</button>`).join('')}
                 </div>
             </div>`;
-        } 
+        }
         else if (room === 'plant') {
             const today = new Date().toDateString();
             const h = state.habits[today] || {};
@@ -3553,9 +3715,18 @@ function updateComposeView() {
                 if(!val) return false;
                 try { 
                     const s = state.stories[state.storyIndex];
-                    await sb.from('messages').insert({ from_id: state.user.id, content: `Replying to story: ${val}`, type: 'reply' }); 
+                    // FIX: Included to_id using the new author_id property
+                    // If author_id is missing (broken story), default to self to prevent crash
+                    const target = s.author_id || state.user.id;
+                    
+                    await sb.from('messages').insert({ 
+                        from_id: state.user.id, 
+                        to_id: target, 
+                        content: `Replying to story: ${val}`, 
+                        type: 'reply' 
+                    }); 
                     toast('Reply sent.'); 
-                } catch(e) { toast('Reply sent.'); }
+                } catch(e) { toast('Error sending.'); }
                 return true; 
             });
         };
@@ -4006,8 +4177,21 @@ function openTextModal(title, subtitle, placeholder, callback, initialValue = ''
             renderPosts(); 
         });
         safeWire('#kindToggle2', () => { state.kindness = !state.kindness; $('#kindToggle2').innerText = state.kindness ? 'On' : 'Off'; renderPosts(); });
-        safeWire('#numbersToggle', () => { state.hideNumbers = !state.hideNumbers; $('#numbersToggle').innerText = state.hideNumbers ? 'On' : 'Off'; renderPosts(); });
-
+// UPDATED: Toggle with Memory (Saves to phone)
+safeWire('#numbersToggle', () => { 
+            state.hideNumbers = !state.hideNumbers; 
+            
+            // 1. Update UI Text
+            $('#numbersToggle').innerText = state.hideNumbers ? 'On' : 'Off'; 
+            
+            // 2. Save to Phone Memory
+            localStorage.setItem('cozyHideNumbers', state.hideNumbers);
+            
+            // 3. Re-render feed to apply changes immediately
+            renderPosts(); 
+            
+            toast(state.hideNumbers ? "Numbers hidden." : "Numbers visible.");
+        });
         // --- POST ACTIONS ---
         safeWire('#hidePostBtn', hidePost);
         safeWire('#deletePostBtn', deletePost);        
