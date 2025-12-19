@@ -445,15 +445,17 @@
     </div>
 </section>
 <!-- JOURNAL SECTION -->
+<!-- JOURNAL SECTION -->
 <section id="view-stories" class="hidden space-y-4">
     <!-- Header -->
-    <div class="hand-card hand-outline paper-noise p-4">
-      <div class="flex items-start justify-between gap-3">
+    <div class="hand-card hand-outline paper-noise p-3 lg:p-4">
+      <div class="flex items-center justify-between gap-3">
         <div>
-            <h2 class="font-[Fraunces] text-lg">Journal</h2>
-            <p class="text-sm text-black/70 mt-1">Flip through pages. Respond with a sticker.</p>
+            <!-- UPDATED: Smaller fonts on mobile (text-base, text-xs) -->
+            <h2 class="font-[Fraunces] text-base lg:text-lg leading-tight">Journal</h2>
+            <p class="text-xs lg:text-sm text-black/70 mt-0.5">Flip through pages. Respond with a sticker.</p>
         </div>
-        <button onclick="openStoryComposeModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New Journal</button>
+        <button onclick="openStoryComposeModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold shrink-0">New Journal</button>
       </div>
     </div>
 
@@ -470,11 +472,16 @@
 </section>
       
 <!-- MESSAGES -->
+<!-- MESSAGES -->
 <section id="view-messages" class="hidden space-y-4">
-    <div class="hand-card hand-outline paper-noise p-4">
-      <div class="flex items-start justify-between gap-3">
-          <div><h2 class="font-[Fraunces] text-lg">Passing Notes</h2><p class="text-sm text-black/70 mt-1">Chats feel like folded paper.</p></div>
-          <button onclick="$('#newThreadModal').classList.remove('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New note</button>
+    <div class="hand-card hand-outline paper-noise p-3 lg:p-4">
+      <div class="flex items-center justify-between gap-3">
+          <div>
+              <!-- UPDATED: Smaller fonts on mobile -->
+              <h2 class="font-[Fraunces] text-base lg:text-lg leading-tight">Passing Notes</h2>
+              <p class="text-xs lg:text-sm text-black/70 mt-0.5">Chats feel like folded paper.</p>
+          </div>
+          <button onclick="$('#newThreadModal').classList.remove('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold shrink-0">New note</button>
       </div>
     </div>
     
@@ -482,12 +489,7 @@
         <!-- Sidebar List -->
         <div id="threadList" class="space-y-2"></div>
         
-        <!-- 
-           CHAT BOX UPDATE:
-           1. Added 'relative' and 'overflow-hidden' to clip the image.
-           2. Added 'p-0' to remove any internal padding that causes gaps.
-           3. Height: 80vh on mobile, 600px on desktop.
-        -->
+        <!-- Chat Box -->
         <div class="hand-card hand-outline border border-black/10 flex flex-col h-[80vh] lg:h-[600px] relative overflow-hidden p-0"
              style="
                 background-color: #2b2b35; 
@@ -496,21 +498,14 @@
                 background-position: center bottom;
              ">
              
-            <!-- Darker Overlay for text readability -->
             <div class="absolute inset-0 bg-black/30 pointer-events-none z-0"></div>
   
-            <!-- HEADER (Floating on Top) -->
-            <!-- z-20 to stay above messages. bg-white/20 for glass effect. -->
             <div id="chatHeader" class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/20 backdrop-blur-md">
                 <div class="font-extrabold text-sm text-white/90 drop-shadow-sm">Select a note to read</div>
             </div>
   
-            <!-- MESSAGES AREA (Scrollable) -->
-            <!-- z-10. Added pt-16 and pb-20 so text isn't hidden behind header/footer. -->
             <div id="chatMessages" class="absolute inset-0 z-10 overflow-y-auto pt-16 pb-20 px-3 space-y-3"></div>
   
-            <!-- INPUT AREA (Floating on Bottom) -->
-            <!-- z-20. Removed quick replies. Glass effect. -->
             <div id="chatInputArea" class="absolute bottom-0 left-0 right-0 z-20 p-3 bg-white/20 backdrop-blur-md border-t border-white/10 hidden">
                 <div class="flex gap-2">
                     <input id="chatInput" class="flex-1 px-4 py-3 rounded-[16px] border border-white/20 bg-white/80 text-black placeholder:text-black/50 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a37a] shadow-lg" placeholder="Write a gentle note..." />
@@ -522,14 +517,16 @@
 </section>
       
       <!-- NOTIFICATIONS -->
-      <section id="view-notifs" class="hidden space-y-4">
-          <div class="hand-card hand-outline paper-noise p-4">
-              <h2 class="font-[Fraunces] text-lg">Lantern Glow</h2>
-              <p class="text-sm text-black/70 mt-1">Updates that feel warm.</p>
-          </div>
-          <div class="flex justify-between items-center px-1"><div class="text-xs text-black/50">Recent glows</div><button class="text-xs font-bold opacity-50 hover:opacity-100" onclick="document.getElementById('notifList').innerHTML = ''; toast('Cleared.')">Clear all</button></div>
-          <div id="notifList" class="space-y-3"></div>
-      </section>
+<!-- NOTIFICATIONS -->
+<section id="view-notifs" class="hidden space-y-4">
+    <div class="hand-card hand-outline paper-noise p-3 lg:p-4">
+        <!-- UPDATED: Smaller fonts on mobile -->
+        <h2 class="font-[Fraunces] text-base lg:text-lg leading-tight">Lantern Glow</h2>
+        <p class="text-xs lg:text-sm text-black/70 mt-0.5">Updates that feel warm.</p>
+    </div>
+    <div class="flex justify-between items-center px-1"><div class="text-xs text-black/50">Recent glows</div><button class="text-xs font-bold opacity-50 hover:opacity-100" onclick="document.getElementById('notifList').innerHTML = ''; toast('Cleared.')">Clear all</button></div>
+    <div id="notifList" class="space-y-3"></div>
+</section>
       
       <!-- PROFILE -->
       <section id="view-profile" class="hidden space-y-4"></section>
