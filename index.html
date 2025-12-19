@@ -600,18 +600,51 @@
         </div>
     </div>
 </div>
-  <div id="storyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3"><div id="storyAvatar" class="w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white"></div><div><div id="storyTitle" class="font-extrabold text-sm"></div><div id="storyMeta" class="text-xs text-black/55"></div></div></div>
-        <button onclick="$('#storyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
+<!-- VIEW JOURNAL MODAL (Fixed Layout) -->
+<div id="storyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
+    <!-- Container: Fixed height (90% screen), Flex Column, No outer scrolling -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in flex flex-col h-[90dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+      
+      <!-- 1. HEADER (Stays at top) -->
+      <div class="flex items-center justify-between mb-3 shrink-0 z-20 relative">
+        <div class="flex items-center gap-3">
+            <div id="storyAvatar" class="w-10 h-10 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shadow-sm"></div>
+            <div>
+                <div id="storyTitle" class="font-extrabold text-sm text-black/80"></div>
+                <div id="storyMeta" class="text-[10px] font-bold text-black/40 uppercase tracking-wider"></div>
+            </div>
+        </div>
+        <button onclick="$('#storyModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
       </div>
-      <div id="storyPage" class="hand-card hand-outline bg-white/70 border border-black/10 p-5 mb-4 min-h-[200px] flex items-center justify-center text-center font-serif text-lg leading-relaxed text-black/80 flex-col"></div>
-      <div class="flex justify-center gap-4 mb-4"><button class="wobbly text-2xl" onclick="toast('Sent a warm hug!')">🤗</button><button class="wobbly text-2xl" onclick="toast('Sent a star!')">⭐</button><button class="wobbly text-2xl" onclick="toast('Sent a calm leaf!')">🍃</button></div>
-      <button id="replyStoryBtn" class="w-full mb-3 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Reply with a note</button>
-      <div class="flex items-center justify-between"><button id="prevStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Prev</button><button id="nextStory" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Next</button></div>
+
+      <!-- 2. JOURNAL PAGE (Fills the middle, handles internal scrolling) -->
+      <div id="storyPage" class="flex-1 w-full relative mb-3 shadow-inner rounded-[6px] border border-black/10 overflow-hidden bg-gray-100">
+          <!-- Content injected by JS -->
+      </div>
+
+      <!-- 3. FOOTER (Stays at bottom) -->
+      <div class="shrink-0 z-20 relative space-y-3">
+          <!-- Reaction Buttons -->
+          <div class="flex justify-center gap-4">
+              <button class="wobbly text-2xl hover:scale-110 transition-transform" onclick="toast('Sent a warm hug!')">🤗</button>
+              <button class="wobbly text-2xl hover:scale-110 transition-transform" onclick="toast('Sent a star!')">⭐</button>
+              <button class="wobbly text-2xl hover:scale-110 transition-transform" onclick="toast('Sent a calm leaf!')">🍃</button>
+          </div>
+          
+          <!-- Reply Button -->
+          <button id="replyStoryBtn" class="w-full py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shadow-md active:scale-95 transition-transform text-sm">
+              Reply with a note
+          </button>
+          
+          <!-- Nav Buttons -->
+          <div class="flex items-center justify-between px-1">
+              <button id="prevStory" class="wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-bold disabled:opacity-30">Prev</button>
+              <button id="nextStory" class="wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-bold">Next</button>
+          </div>
+      </div>
+
     </div>
-  </div>
+</div>
 <!-- Inside #composeModal .grid -->
 <!-- COMPOSE MODAL (Main Post Creator) -->
 <div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
@@ -4173,8 +4206,8 @@ function updateComposeView() {
         void pageEl.offsetWidth; 
         pageEl.classList.add('pageflip');
         
-        // Classes: Fixed Height, Shadow, No Background (Image shows through)
-        pageEl.className = "pageflip relative w-full h-[65vh] mb-4 shadow-md overflow-hidden rounded-[6px] border border-black/10 bg-transparent";
+        // --- UPDATED CLASS: Just ensuring full width/height of the flex parent ---
+        pageEl.className = "pageflip flex-1 w-full relative mb-3 shadow-md overflow-hidden rounded-[6px] border border-black/10 bg-transparent";
         
         // 3. Dynamic Tape Color
         const tapeColors = ['#f4a37a', '#86a68b', '#dba1a8', '#f7c59f'];
@@ -4182,33 +4215,34 @@ function updateComposeView() {
 
         // 4. Render
         pageEl.innerHTML = `
-            <!-- The Background Image (Fixed) -->
-            <div class="absolute inset-0 journal-vintage-bg z-0"></div>
+            <!-- Background Image (Locked) -->
+            <div class="absolute inset-0 journal-vintage-bg z-0 pointer-events-none"></div>
             
-            <!-- Washi Tape (Fixed) -->
+            <!-- Washi Tape (Locked) -->
             <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 torn-tape opacity-90 shadow-sm z-20" 
                  style="background-color: ${tapeColor}; transform: translateX(-50%) rotate(-1deg);">
             </div>
 
-            <!-- Content Container (Scrollable) -->
-            <div class="absolute inset-0 z-10 overflow-y-auto p-6 flex flex-col">
+            <!-- SCROLLABLE CONTENT AREA -->
+            <!-- 'absolute inset-0' fills the box. 'overflow-y-auto' handles text scrolling. -->
+            <div class="absolute inset-0 z-10 overflow-y-auto p-6 flex flex-col overscroll-contain">
                 
                 <!-- Page Stamp -->
-                <div class="self-end mb-4 shrink-0">
+                <div class="self-end mb-6 shrink-0 pt-2">
                     <div class="px-3 py-1 bg-[#fbf5ea]/90 text-[#5c4033] text-[10px] font-bold uppercase tracking-widest border border-dashed border-[#5c4033]/30 shadow-sm rounded-[2px] backdrop-blur-sm">
                         Page ${state.storyPageIndex + 1}
                     </div>
                 </div>
 
                 <!-- Text Area -->
-                <div class="flex-1 w-full min-w-0 pb-10">
-                    
-                    <!-- Title: Handwritten, Darker, Larger -->
-                    <h3 class="font-['Patrick_Hand'] text-3xl font-bold text-[#1a1a1a] mb-5 leading-tight break-words drop-shadow-sm sticky top-0">
+                <!-- Added padding bottom to ensure text doesn't get cut off at end of scroll -->
+                <div class="flex-1 w-full min-w-0 pb-12">
+                    <!-- Title -->
+                    <h3 class="font-['Patrick_Hand'] text-3xl font-bold text-[#1a1a1a] mb-6 leading-tight break-words drop-shadow-sm">
                         ${html(s.title)}
                     </h3>
                     
-                    <!-- Body: Handwritten, Darker, Larger -->
+                    <!-- Body -->
                     <div class="font-['Patrick_Hand'] text-xl text-[#0f0f0f] leading-relaxed whitespace-pre-wrap break-words w-full">
                         ${html(pageContent)}
                     </div>
