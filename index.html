@@ -3809,49 +3809,57 @@ function openAccountModal() {
         const p = state.profile || { username: 'Neighbor', seed: 0, pronouns: '', bio: '' };
         
         $('#accountBody').innerHTML = `
-            <!-- Top Section: Avatar and Edit Button -->
-            <div class="flex items-start justify-between gap-4 mb-4">
-                <div class="flex items-center gap-4">
-                    <!-- Actual Avatar -->
-                    <div class="w-16 h-16 rounded-[22px_18px_26px_20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
+            <!-- Top Section: Avatar, Name, and Edit Button -->
+            <div class="flex items-center justify-between gap-3 mb-4">
+                
+                <!-- Left Side: Avatar + Text -->
+                <!-- 'flex-1' allows this section to grow/shrink. 'min-w-0' allows text wrapping inside flex. -->
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    
+                    <!-- Avatar (Fixed Size) -->
+                    <div class="w-14 h-14 rounded-[20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
                         ${avatarHTML(p)}
                     </div>
-                    <div class="min-w-0">
-                        <!-- Full Name / Username -->
-                        <!-- FIX: Changed 'text-xl' to 'text-lg sm:text-xl' for better mobile fit -->
-                        <div class="font-[Fraunces] text-lg sm:text-xl truncate leading-tight">${html(p.username)}</div>
+                    
+                    <!-- Text Info -->
+                    <div class="min-w-0 flex-1 pr-2">
+                        <!-- Username: Wraps to 2 lines, breaks long words -->
+                        <div class="font-[Fraunces] text-lg sm:text-xl leading-tight text-black/90 line-clamp-2 break-words">
+                            ${html(p.username)}
+                        </div>
                         
                         <!-- Pronouns -->
-                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">
+                        <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-0.5 truncate">
                             ${html(p.pronouns || 'Cozy Neighbor')}
                         </div>
                     </div>
                 </div>
                 
-                <!-- Edit Profile Button -->
-                <button id="accountModalEditBtn" class="wobbly px-3 py-2 rounded-[14px_12px_16px_10px] border border-black/10 bg-white/80 text-xs font-extrabold shadow-sm shrink-0">
+                <!-- Right Side: Edit Button -->
+                <!-- 'shrink-0' ensures it stays visible and full width. -->
+                <button id="accountModalEditBtn" class="wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/80 text-xs font-extrabold shadow-sm shrink-0 whitespace-nowrap hover:bg-white transition-colors">
                     Edit Profile
                 </button>
             </div>
 
             <!-- Bio Section -->
-            <div class="hand-card bg-white/50 border border-black/5 p-3 mb-4">
+            <div class="hand-card bg-white/50 border border-black/5 p-4 mb-4 rounded-[18px]">
                 <div class="text-[10px] font-bold text-black/40 uppercase tracking-widest mb-1">About your corner</div>
-                <div class="text-sm text-black/75 leading-relaxed">
+                <div class="text-sm text-black/75 leading-relaxed break-words">
                     ${html(p.bio || 'No bio yet. Tap edit to add one!')}
                 </div>
             </div>
 
             <!-- Settings / Actions List -->
-            <div class="hand-card bg-white/70 border border-black/10 overflow-hidden">
-                <div class="px-3 py-2 border-b border-black/5 text-[10px] font-bold text-black/30 uppercase tracking-widest">Settings</div>
+            <div class="hand-card bg-white/70 border border-black/10 overflow-hidden rounded-[20px]">
+                <div class="px-4 py-2 border-b border-black/5 text-[10px] font-bold text-black/30 uppercase tracking-widest bg-white/40">Settings</div>
                 
                 <button id="accountModalSafetyBtn" class="w-full text-left px-4 py-3 hover:bg-black/5 transition-colors flex items-center justify-between group">
                     <span class="text-sm font-bold text-black/70">Safety & Comfort</span>
                     <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                 </button>
                 
-                <button id="modalLogoutBtn" class="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center justify-between group">
+                <button id="modalLogoutBtn" class="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center justify-between group border-t border-black/5">
                     <span class="text-sm font-bold text-red-500">Log Out</span>
                     <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 </button>
