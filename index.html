@@ -902,6 +902,43 @@ style="
         </div>
     </div>
 </div>
+<!-- CLUB CHAT MODAL -->
+<div id="clubChatModal" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md lg:max-w-lg hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER -->
+        <div class="flex flex-col border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <div class="flex justify-between items-center p-4 pb-2">
+                <div>
+                    <h3 id="clubChatTitle" class="font-[Fraunces] text-lg leading-none">Club Name</h3>
+                    <div id="clubChatSubtitle" class="text-xs text-black/50 font-bold mt-1">...</div>
+                </div>
+                <div class="flex gap-2">
+                     <button onclick="toggleClubMembers()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Members</button>
+                     <button onclick="closeClubChat()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
+                </div>
+            </div>
+            
+            <!-- MEMBERS DRAWER (Hidden by default) -->
+            <div id="clubMembersDrawer" class="hidden bg-white/80 border-t border-black/5 p-3 overflow-x-auto whitespace-nowrap">
+                <!-- Members injected here -->
+            </div>
+        </div>
+
+        <!-- 2. MESSAGES BODY -->
+        <div id="clubMessagesList" class="flex-1 w-full overflow-y-auto p-4 space-y-3 overscroll-contain bg-[#fffaf1]">
+            <!-- Chat bubbles go here -->
+        </div>
+
+        <!-- 3. INPUT AREA -->
+        <div class="p-3 border-t border-black/5 bg-white/60 backdrop-blur-md shrink-0 z-20">
+            <div class="flex gap-2 items-end">
+                <textarea id="clubChatInput" class="flex-1 px-4 py-3 rounded-[18px] border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-[#86a68b] min-h-[48px] max-h-24 text-sm shadow-inner resize-none pt-3" placeholder="Chat with the club..."></textarea>
+                <button onclick="sendClubMessage()" class="px-4 py-3 bg-[#86a68b] text-white font-bold rounded-[16px] wobbly text-xs shadow-lg h-12 mb-0.5">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Find this modal div -->
 <div id="postOptionsModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
     <div class="w-full max-w-xs hand-card hand-outline paper-noise bg-white p-4 pop-in" role="dialog">
@@ -2196,6 +2233,28 @@ async function handleLoginSuccess(session) {
                 renderMessages();
             })
             
+            // --- 7. CLUB CHAT ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'club_messages' }, async (payload) => {
+                
+                // FIX: Ignore my own messages (because sendClubMessage already added them!)
+                if (payload.new.user_id === state.user.id) return;
+
+                // Only process if we are currently looking at THIS club
+                if (state.activeClubId && payload.new.club_id === state.activeClubId) {
+                    
+                    const { data: user } = await sb.from('profiles').select('username, avatar_url, seed').eq('id', payload.new.user_id).single();
+                    
+                    const newMsg = {
+                        ...payload.new,
+                        profiles: user || { username: 'Neighbor', seed: 1 }
+                    };
+                    
+                    if(!state.clubMessages) state.clubMessages = [];
+                    state.clubMessages.push(newMsg);
+                    renderClubMessages();
+                }
+            })
+            
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') console.log("🔥 Everything Realtime Connected!");
             });
@@ -2698,6 +2757,183 @@ function shuffleFeed() {
         `;
     }
 
+    // --- CLUB CHAT LOGIC ---
+
+    async function openClub(clubId) {
+        // 1. Setup UI
+        state.activeClubId = clubId;
+        const club = state.clubs.find(c => c.id === clubId);
+        if(!club) return toast("Club not found.");
+
+        document.getElementById('clubChatTitle').innerText = club.name;
+        document.getElementById('clubChatSubtitle').innerText = "Loading chatter...";
+        document.getElementById('clubMessagesList').innerHTML = `<div class="p-8 text-center opacity-50 text-sm">Opening door...</div>`;
+        document.getElementById('clubChatModal').classList.remove('hidden');
+
+        // 2. Load Members (for the drawer/mentions)
+        loadClubMembers(clubId);
+
+        // 3. Load Messages
+        await loadClubMessages(clubId);
+        
+        // 4. Subscribe to Realtime (Specific to this implementation)
+        // Note: We already have a global listener, we just need to make sure it handles 'club_messages'
+    }
+
+    function closeClubChat() {
+        document.getElementById('clubChatModal').classList.add('hidden');
+        state.activeClubId = null;
+    }
+
+    async function loadClubMembers(clubId) {
+        try {
+            const { data } = await sb.from('club_members')
+                .select('user_id, profiles(username, avatar_url, bio, seed)')
+                .eq('club_id', clubId);
+
+            if(data) {
+                const drawer = document.getElementById('clubMembersDrawer');
+                const count = data.length;
+                document.getElementById('clubChatSubtitle').innerText = `${count} members here`;
+
+                drawer.innerHTML = data.map(m => {
+                    const u = m.profiles;
+                    // FIX: Click opens Profile (openUserModal), separate button for @mention
+                    return `
+                    <div class="inline-flex items-center gap-2 mr-3 mb-2 p-1.5 pr-3 rounded-[14px] bg-white border border-black/10 shadow-sm transition-transform active:scale-95">
+                        
+                        <!-- Open Profile -->
+                        <button onclick="openUserModal('${m.user_id}')" class="flex items-center gap-2 group">
+                            <div class="w-8 h-8 rounded-[10px] overflow-hidden border border-black/10 bg-gray-50">
+                                ${avatarHTML(u)}
+                            </div>
+                            <div class="text-left">
+                                <div class="text-xs font-bold text-black/80 leading-none group-hover:underline">${html(u.username)}</div>
+                                <div class="text-[9px] text-black/40 font-bold uppercase tracking-wider mt-0.5">View</div>
+                            </div>
+                        </button>
+
+                        <!-- Mention Action -->
+                        <div class="w-px h-6 bg-black/5 mx-1"></div>
+                        <button onclick="mentionUser('${html(u.username)}')" class="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-[10px] text-black/50 hover:bg-[#f4a37a] hover:text-white transition-colors" title="Mention @${html(u.username)}">
+                            @
+                        </button>
+                    </div>`;
+                }).join('');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleClubMembers() {
+        document.getElementById('clubMembersDrawer').classList.toggle('hidden');
+    }
+
+    function mentionUser(name) {
+        const input = document.getElementById('clubChatInput');
+        input.value += `@${name} `;
+        input.focus();
+    }
+
+    async function loadClubMessages(clubId) {
+        try {
+            // NOTE: You need to create a table 'club_messages' in Supabase!
+            // Columns: id, club_id, user_id, content, created_at
+            const { data, error } = await sb.from('club_messages')
+                .select('*, profiles(username, avatar_url, seed)')
+                .eq('club_id', clubId)
+                .order('created_at', { ascending: true })
+                .limit(50);
+
+            if(error) throw error;
+            
+            state.clubMessages = data || [];
+            renderClubMessages();
+        } catch(e) {
+            console.warn("Club Chat Error:", e);
+            document.getElementById('clubMessagesList').innerHTML = `<div class="p-8 text-center text-xs opacity-50">This room is quiet (or needs the 'club_messages' table).</div>`;
+        }
+    }
+
+    function renderClubMessages() {
+        const list = document.getElementById('clubMessagesList');
+        if(!state.clubMessages || state.clubMessages.length === 0) {
+            list.innerHTML = `<div class="p-8 text-center text-xs opacity-50 italic">Be the first to say hello!</div>`;
+            return;
+        }
+
+        list.innerHTML = state.clubMessages.map(msg => {
+            const isMe = msg.user_id === state.user.id;
+            const u = msg.profiles || { username: 'Ghost', seed: 0 };
+            
+            // Highlight Mentions
+            let text = html(msg.content);
+            // Simple regex to bold mentions
+            text = text.replace(/@(\w+)/g, '<span class="text-[#f4a37a] font-extrabold">@$1</span>');
+
+            return `
+            <div class="flex items-end gap-2 mb-1 ${isMe ? 'flex-row-reverse' : ''} pop-in">
+                <!-- Avatar -->
+                <div class="w-8 h-8 rounded-[10px] border border-black/10 overflow-hidden bg-white shrink-0 mb-1">
+                    ${avatarHTML(u)}
+                </div>
+                
+                <!-- Bubble -->
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
+                    ${!isMe ? `<span class="text-[10px] text-black/40 font-bold ml-1 mb-0.5">${html(u.username)}</span>` : ''}
+                    <div class="px-3 py-2 rounded-[16px] border border-black/5 text-sm leading-snug shadow-sm 
+                        ${isMe ? 'bg-[#86a68b] text-white rounded-br-none' : 'bg-white text-black/90 rounded-bl-none'}">
+                        ${text}
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        // Scroll to bottom
+        list.scrollTop = list.scrollHeight;
+    }
+
+    async function sendClubMessage() {
+        const input = document.getElementById('clubChatInput');
+        const txt = input.value.trim();
+        if(!txt || !state.activeClubId) return;
+
+        // 1. Clear Input
+        input.value = '';
+
+        // 2. OPTIMISTIC UPDATE: Add to screen IMMEDIATELY
+        const tempMsg = {
+            id: 'temp-' + Date.now(), // Temporary ID
+            user_id: state.user.id,
+            content: txt,
+            created_at: new Date().toISOString(),
+            profiles: {
+                username: state.profile.username,
+                avatar_url: state.profile.avatar_url,
+                seed: state.profile.seed || 1
+            }
+        };
+
+        if (!state.clubMessages) state.clubMessages = [];
+        state.clubMessages.push(tempMsg);
+        
+        // Render immediately so you don't have to wait
+        renderClubMessages();
+
+        // 3. Send to Database in background
+        try {
+            const { error } = await sb.from('club_messages').insert({
+                club_id: state.activeClubId,
+                user_id: state.user.id,
+                content: txt
+            });
+            if(error) throw error;
+        } catch(e) {
+            console.error(e);
+            toast("Failed to send.");
+        }
+    }
+
     async function renderProfile() {
         if(!state.profile) return;
         const p = state.profile;
@@ -2898,7 +3134,7 @@ window.closeScrapbook = closeScrapbook;
         // --- 2. RENDER CLUBS ---
         const clubsContainer = document.getElementById('clubsContainer');
         const realClubsHtml = state.clubs.map(c => `
-            <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly group" onclick="toast('Entering ${html(c.name)}...')">
+            <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly group" onclick="openClub('${c.id}')">
                 <div class="flex justify-between items-start">
                     <div class="font-extrabold text-sm group-hover:text-[#f4a37a] transition-colors">${html(c.name)}</div>
                     <div class="text-[10px] opacity-30">CLUB</div>
