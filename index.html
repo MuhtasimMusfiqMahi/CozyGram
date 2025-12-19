@@ -270,36 +270,71 @@
   <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
 
   <!-- ONBOARDING MODAL -->
-  <div id="onboardingModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="flex items-start justify-between gap-3 mb-4">
-            <div class="flex items-start gap-3">
-                <div id="mascot" class="w-14 h-14 rounded-[22px_18px_26px_16px] bg-gradient-to-br from-[#86a68b] via-[#fbf5ea] to-[#f4a37a] border border-black/10 grid place-items-center floaty">
-                    <svg class="w-9 h-9" viewBox="0 0 64 64" aria-hidden="true"><path class="ink-line" fill="none" d="M15 34c2-12 10-20 17-20s15 8 17 20"/><path class="ink-line" fill="none" d="M20 34c0 10 5 18 12 18s12-8 12-18"/><path class="ink-line" fill="none" d="M24 22l-7-6M40 22l7-6"/><path class="ink-line" fill="none" d="M25 40c2 3 4 4 7 4s5-1 7-4"/><circle cx="26" cy="30" r="2" fill="rgba(43,43,53,.75)"/><circle cx="38" cy="30" r="2" fill="rgba(43,43,53,.75)"/></svg>
-                </div>
-                <div>
-                    <h2 class="font-[Fraunces] text-lg">Hi, I’m Pippin!</h2>
-                    <p id="onboardText" class="text-sm text-black/70 leading-snug">Welcome to CozyGram. Let me show you around.</p>
+<!-- ONBOARDING MODAL (Fixed Layout & Auto-Fit) -->
+<div id="onboardingModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card: Auto-Fit Height, Flex Column, No Outer Scroll -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <h3 class="font-[Fraunces] text-lg">Meet Pippin</h3>
+            <button onclick="$('#onboardingModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
+        </div>
+
+        <!-- 2. BODY (Scrollable content) -->
+        <div class="w-full overflow-y-auto overflow-x-hidden p-6 overscroll-contain relative flex flex-col items-center text-center">
+            
+            <!-- Mascot -->
+            <div id="mascot" class="w-24 h-24 rounded-[30px] bg-gradient-to-br from-[#86a68b] via-[#fbf5ea] to-[#f4a37a] border border-black/10 grid place-items-center floaty mb-6 shadow-sm shrink-0">
+                <svg class="w-12 h-12" viewBox="0 0 64 64">
+                    <path class="ink-line" fill="none" d="M15 34c2-12 10-20 17-20s15 8 17 20"/>
+                    <path class="ink-line" fill="none" d="M20 34c0 10 5 18 12 18s12-8 12-18"/>
+                    <path class="ink-line" fill="none" d="M24 22l-7-6M40 22l7-6"/>
+                    <path class="ink-line" fill="none" d="M25 40c2 3 4 4 7 4s5-1 7-4"/>
+                    <circle cx="26" cy="30" r="2" fill="rgba(43,43,53,.75)"/>
+                    <circle cx="38" cy="30" r="2" fill="rgba(43,43,53,.75)"/>
+                </svg>
+            </div>
+
+            <!-- Dynamic Text -->
+            <div class="mb-2">
+                <h2 class="font-[Fraunces] text-2xl text-[#2b2b35] mb-2">Hi, I’m Pippin!</h2>
+                <p id="onboardText" class="text-sm text-black/70 leading-relaxed max-w-[260px] mx-auto">Welcome to CozyGram. Let me show you around.</p>
+            </div>
+
+            <!-- Auth Form (Hidden by default, shown at step 4) -->
+            <div id="authContainer" class="hidden w-full space-y-3 animate-fade-in text-left mt-4">
+                <div class="text-xs font-bold text-center mb-1 opacity-50 uppercase tracking-widest">Login / Sign Up</div>
+                <input id="emailInput" type="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-base" />
+                <button id="magicLinkBtn" class="w-full py-3 rounded-[16px] bg-gradient-to-r from-[#f4a37a] to-[#f7c59f] font-extrabold text-white wobbly shadow-md active:scale-95 transition-transform">Send Magic Link</button>
+                <div id="loginMsg" class="text-center text-xs text-black/50 min-h-[1.5em]"></div>
+            </div>
+            
+            <!-- Spacer -->
+            <div class="h-4"></div>
+        </div>
+
+        <!-- 3. FOOTER (Fixed Navigation) -->
+        <div class="p-5 border-t border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <!-- Nav Controls -->
+            <div id="onboardNav" class="flex items-center justify-between">
+                <div id="onboardDots" class="flex items-center gap-2"></div>
+                <div class="flex items-center gap-2">
+                    <button id="onboardBack" class="wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-bold opacity-50 disabled:opacity-30 transition-opacity" disabled>Back</button>
+                    <button id="onboardNext" class="wobbly px-5 py-2 rounded-[14px] bg-[#2b2b35] text-white text-xs font-bold shadow-sm hover:bg-black transition-colors">Next</button>
                 </div>
             </div>
-            <button id="skipOnboarding" class="wobbly rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 px-3 py-2 text-xs font-bold text-black/50">Log In</button>
-        </div>
-        <div id="authContainer" class="hidden animate-fade-in space-y-3">
-            <div class="text-sm font-bold text-center mb-2">Ready to enter your corner?</div>
-            <input id="emailInput" type="email" placeholder="you@email.com" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-base sm:text-sm" />
-            <button id="magicLinkBtn" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-r from-[#f4a37a] to-[#f7c59f] font-extrabold text-white wobbly shadow-sm">Send Magic Link</button>
-            <div id="loginMsg" class="text-center text-xs text-black/50 min-h-[1.5em]"></div>
-        </div>
-        <div id="onboardNav" class="mt-6 flex items-center justify-between">
-            <div id="onboardDots" class="flex items-center gap-2"></div>
-            <div class="flex items-center gap-2">
-                <button id="onboardBack" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm opacity-50" disabled>Back</button>
-                <button id="onboardNext" class="wobbly px-4 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-sm font-extrabold text-white">Next</button>
+            
+            <!-- Skip Link -->
+            <div class="mt-4 text-center">
+                 <button id="skipOnboarding" class="text-[10px] font-bold text-black/40 hover:text-black/70 transition-colors cursor-pointer">Already have an account? Log In</button>
             </div>
+            
+            <div class="mt-2 text-[9px] text-center text-black/20 font-bold uppercase tracking-widest">CozyGram Cloud</div>
         </div>
-        <div class="mt-4 text-[10px] text-center text-black/40">CozyGram Cloud • Creativity over Popularity</div>
+
     </div>
-  </div>
+</div>
 
   <div id="app" class="mx-auto w-full max-w-md lg:max-w-none min-h-screen flex flex-col">
     <!-- HEADER -->
@@ -518,28 +553,84 @@
         <div id="userModalBody"></div>
       </div>
   </div>
-  <div id="newThreadModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">New Note</h3><button onclick="$('#newThreadModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
-        <div id="userList" class="space-y-2"></div>
-      </div>
-  </div>
-  <div id="accountModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Account</h3><button onclick="$('#accountModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
-        <div id="accountBody" class="space-y-2"></div>
-      </div>
-  </div>
-  <div id="safetyModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="flex items-center justify-between mb-4"><h3 class="font-[Fraunces] text-lg">Safety & comfort</h3><button onclick="$('#safetyModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Done</button></div>
-        <div class="space-y-3 text-sm">
-          <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3"><div><div class="font-extrabold">Kindness reminders</div><div class="text-xs text-black/60">Gentle prompts enabled.</div></div><button id="kindToggle2" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-xs font-bold">On</button></div>
-          <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3"><div><div class="font-extrabold">Hide numbers</div><div class="text-xs text-black/60">No public counts.</div></div><button id="numbersToggle" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-xs font-bold">On</button></div>
-          <div class="hand-card bg-white/70 border border-black/10 p-3"><div class="font-extrabold">Cozy guidelines</div><ul class="mt-2 text-xs text-black/65 list-disc pl-5 space-y-1"><li>Assume good intent.</li><li>Use stickers to support, not to score.</li><li>If something feels unsafe, step away.</li></ul></div>
+ <!-- NEW NOTE MODAL (Fixed Layout & Auto-Fit) -->
+<div id="newThreadModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card: Standard width, Flex Column -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <h3 class="font-[Fraunces] text-lg">New Note</h3>
+            <button onclick="$('#newThreadModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
         </div>
-      </div>
-  </div>
+        
+        <!-- 2. BODY (Scrollable List) -->
+        <div id="userList" class="w-full overflow-y-auto overflow-x-hidden p-4 overscroll-contain space-y-2">
+            <!-- Users injected by JS -->
+        </div>
+    </div>
+</div>
+<!-- ACCOUNT MODAL (Fixed Layout) -->
+<div id="accountModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <h3 class="font-[Fraunces] text-lg">Account</h3>
+            <button onclick="$('#accountModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
+        </div>
+
+        <!-- 2. BODY -->
+        <div id="accountBody" class="w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain relative space-y-4">
+            <!-- Content injected by JS -->
+        </div>
+    </div>
+</div>
+<!-- SAFETY MODAL (Fixed Layout) -->
+<div id="safetyModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER -->
+        <div class="flex items-center justify-between p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <h3 class="font-[Fraunces] text-lg">Safety & comfort</h3>
+            <button onclick="$('#safetyModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Done</button>
+        </div>
+
+        <!-- 2. BODY -->
+        <div class="w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain relative space-y-3">
+            
+            <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3">
+                <div>
+                    <div class="font-extrabold text-sm">Kindness reminders</div>
+                    <div class="text-xs text-black/60">Gentle prompts enabled.</div>
+                </div>
+                <button id="kindToggle2" class="wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-white/80 text-xs font-bold transition-colors hover:bg-white">On</button>
+            </div>
+
+            <div class="hand-card bg-white/70 border border-black/10 p-3 flex justify-between items-start gap-3">
+                <div>
+                    <div class="font-extrabold text-sm">Hide numbers</div>
+                    <div class="text-xs text-black/60">No public counts.</div>
+                </div>
+                <button id="numbersToggle" class="wobbly px-3 py-2 rounded-[14px] border border-black/10 bg-white/80 text-xs font-bold transition-colors hover:bg-white">On</button>
+            </div>
+
+            <div class="hand-card bg-white/70 border border-black/10 p-4">
+                <div class="font-extrabold text-sm">Cozy guidelines</div>
+                <ul class="mt-2 text-xs text-black/65 list-disc pl-4 space-y-1 leading-relaxed">
+                    <li>Assume good intent.</li>
+                    <li>Use stickers to support, not to score.</li>
+                    <li>If something feels unsafe, step away.</li>
+                </ul>
+            </div>
+            
+            <!-- Extra space at bottom -->
+            <div class="h-2"></div>
+        </div>
+    </div>
+</div>
 <!-- CLUB BUILDER MODAL (Clean Version) -->
 <!-- CLUB BUILDER MODAL (Clean Version 2.0) -->
 <div id="clubBuilderModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
@@ -573,30 +664,22 @@
     </div>
 </div>
 <!-- SCRAPBOOK MODAL (Responsive: 1 Col Mobile, 2 Cols Desktop) -->
-<div id="scrapbookModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <!-- 
-       UPDATES: 
-       1. Added 'lg:max-w-3xl' -> Makes the card wider on desktop to fit 2 posts side-by-side.
-    -->
-    <div class="w-full max-w-md lg:max-w-7xl hand-card hand-outline paper-noise p-4 pop-in modal-card flex flex-col h-[85vh]" role="dialog">
+<!-- SCRAPBOOK MODAL (Fixed Layout & Auto-Fit) -->
+<div id="scrapbookModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card: Max width increased for desktop grid, Fixed height cap, Internal scroll -->
+    <div class="w-full max-w-md lg:max-w-4xl hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
         
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-4 shrink-0">
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
             <h3 class="font-[Fraunces] text-lg">My Scrapbook</h3>
-            <button onclick="closeScrapbook()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+            <button onclick="closeScrapbook()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
         </div>
         
-        <!-- Scrollable Body -->
-        <!-- 
-           UPDATES:
-           1. Removed 'space-y-4' (Vertical stack).
-           2. Added 'grid grid-cols-1' (Mobile default).
-           3. Added 'lg:grid-cols-2' (Desktop 2 columns).
-           4. Added 'gap-4' (Space between grid items).
-           5. Added 'content-start' (Prevents stretching if few items).
-        -->
-        <div id="scrapbookBody" class="flex-1 overflow-y-auto pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4 content-start">
-            <!-- Posts will be injected here -->
+        <!-- 2. BODY (Scrollable Grid) -->
+        <!-- overflow-x-hidden prevents horizontal scroll. -->
+        <!-- Grid layout: 1 col on mobile, 2 cols on tablet/desktop -->
+        <div id="scrapbookBody" class="w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
+            <!-- Posts injected by JS -->
         </div>
     </div>
 </div>
@@ -647,48 +730,51 @@
 </div>
 <!-- Inside #composeModal .grid -->
 <!-- COMPOSE MODAL (Main Post Creator) -->
-<div id="composeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card flex flex-col h-[92dvh] sm:h-auto overflow-hidden" role="dialog">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-2 shrink-0">
+<!-- COMPOSE MODAL (Fixed Layout & Auto-Fit) -->
+<div id="composeModal" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card: Grows up to 92% screen height -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-[#fffaf1] p-0 pop-in modal-card flex flex-col h-auto max-h-[92dvh] overflow-hidden rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
             <h3 class="font-[Fraunces] text-lg">Make a cozy post</h3>
-            <button id="closeCompose" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button>
+            <button id="closeCompose" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
         </div>
         
-        <!-- Middle Area -->
-        <div class="flex flex-col gap-2 mb-2 flex-1 min-h-0">
+        <!-- 2. BODY (Scrollable) -->
+        <div class="flex-1 w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain relative">
             
-            <!-- 
-               1. Preview Box 
-               Mobile: flex-1 (Fills vertical space)
-               Desktop: sm:aspect-square (Forces it to be a big square again)
-               sm:flex-none (Stops it from trying to stretch on desktop)
-            -->
-            <div id="composePreviewContainer" class="bg-gray-50 rounded-[18px_16px_22px_14px] border border-black/10 flex items-center justify-center w-full flex-1 min-h-0 sm:flex-none sm:aspect-square overflow-hidden relative transition-all duration-300">
-                <div id="composePreview" class="w-full h-full"></div>
-                <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
-            </div>
-    
-            <!-- 2. Controls -->
-            <div class="w-full shrink-0">
-                <div class="hand-card hand-outline bg-white/50 border border-black/10 p-3">
+            <!-- Media Preview Area -->
+            <div class="flex flex-col gap-3 mb-4">
+                <div id="composePreviewContainer" class="bg-gray-50 rounded-[20px] border border-black/10 flex items-center justify-center w-full aspect-square overflow-hidden relative transition-all duration-300 shadow-inner">
+                    <div id="composePreview" class="w-full h-full"></div>
+                    <input type="file" id="mediaInput" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>
+        
+                <!-- Art Controls -->
+                <div class="hand-card bg-white/60 border border-black/5 p-3 rounded-[16px]">
                     <div class="flex justify-between items-center mb-2">
-                        <div class="text-[10px] uppercase font-bold opacity-50">Cozy Art</div>
-                        <button onclick="openArtModal()" class="wobbly px-2 py-1 rounded-[8px] bg-white border border-black/10 text-[10px] font-bold">Open</button>
+                        <div class="text-[10px] uppercase font-bold opacity-50 tracking-wider">Cozy Art</div>
+                        <button onclick="openArtModal()" class="wobbly px-3 py-1 rounded-[10px] bg-white border border-black/10 text-[10px] font-bold shadow-sm">Open Library</button>
                     </div>
-                    <div id="artPreviewRow" class="flex gap-2 overflow-hidden"></div>
+                    <div id="artPreviewRow" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
                 </div>
             </div>
-        </div>
     
-        <!-- Caption Input -->
-        <textarea id="composeCaption" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-20 shrink-0 text-base sm:text-sm" placeholder="What made today soft?"></textarea>
+            <!-- Caption Input -->
+            <textarea id="composeCaption" class="w-full px-4 py-4 rounded-[18px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] h-32 text-base shadow-sm resize-none" placeholder="What made today soft?"></textarea>
+            
+            <!-- Tags -->
+            <div id="composeTags" class="flex gap-2 mt-3 flex-wrap empty:hidden"></div>
+            
+            <!-- Spacer for bottom button visibility -->
+            <div class="h-4"></div>
+        </div>
         
-        <!-- Tags -->
-        <div id="composeTags" class="flex gap-2 mt-1 mb-1 shrink-0 empty:hidden"></div>
-        
-        <!-- Button -->
-        <button id="postNowBtn" class="w-full mt-1 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shrink-0">Post to Cloud</button>
+        <!-- 3. FOOTER (Fixed Post Button) -->
+        <div class="p-4 border-t border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <button id="postNowBtn" class="w-full py-3 rounded-[18px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shadow-md active:scale-95 transition-transform text-sm">Post to Cloud</button>
+        </div>
     </div>
 </div>
 <!-- CREATE JOURNAL MODAL (Updated Layout) -->
@@ -753,12 +839,26 @@
 
     </div> <!-- Closing Card Container -->
 </div> <!-- Closing Modal Wrapper -->
-  <div id="roomModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-      <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg" id="roomTitle">Your Room</h3><button onclick="$('#roomModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
-        <div id="roomBody" class="space-y-4"></div>
-      </div>
-  </div>
+<!-- ROOM MODAL (Fixed Layout: Shelf, Plant, Drawer, Mood) -->
+<!-- ROOM MODAL (Auto-Fit Height: Shelf, Plant, Drawer, Mood) -->
+<div id="roomModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card: Grows with content, but stops at 85% screen height -->
+    <div class="w-full max-w-lg hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[85dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <h3 class="font-[Fraunces] text-lg" id="roomTitle">Your Room</h3>
+            <button onclick="$('#roomModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
+        </div>
+
+        <!-- 2. BODY (Scrollable if needed) -->
+        <!-- overflow-y-auto enables scroll ONLY when content exceeds max-height -->
+        <div id="roomBody" class="w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain relative space-y-4">
+            <!-- Content injected by JS -->
+        </div>
+
+    </div>
+</div>
   <!-- ART SELECTION MODAL -->
 <div id="artModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
     <div class="w-full max-w-md h-[80vh] hand-card hand-outline paper-noise bg-white flex flex-col pop-in shadow-2xl">
@@ -791,50 +891,106 @@
         <button onclick="$('#postOptionsModal').classList.add('hidden')" class="w-full py-3 rounded-[18px_16px_22px_14px] border border-black/10 text-black/50 wobbly">Cancel</button>
     </div>
   </div>
-  <div id="editProfileModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-0 sm:p-4" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-3">
+<!-- EDIT PROFILE MODAL (Auto-Fit Height) -->
+<!-- EDIT PROFILE MODAL (Auto-Fit Height) -->
+<!-- EDIT PROFILE MODAL (Strict Auto-Fit: No Scroll unless necessary) -->
+<div id="editProfileModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- 
+       RULES: 
+       1. h-auto: Height is determined by content.
+       2. max-h-[90dvh]: Hard limit at 90% screen height.
+       3. flex-col: Stacks Header, Body, Footer.
+    -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-0 pop-in modal-card flex flex-col h-auto max-h-[90dvh] overflow-hidden rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
             <h3 class="font-[Fraunces] text-lg">Edit Corner</h3>
-            <button onclick="$('#editProfileModal').classList.add('hidden')" class="text-sm">Cancel</button>
+            <button onclick="$('#editProfileModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Cancel</button>
         </div>
         
-        <!-- NEW: Avatar Picker Inside Modal -->
-        <div class="flex justify-center mb-4">
-            <div class="relative group cursor-pointer wobbly" onclick="document.getElementById('avatarFileInput').click()">
-                <div id="editProfileAvatarPreview" class="w-20 h-20 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100">
-                    <!-- Avatar injected via JS -->
+        <!-- 2. BODY (Scrolls ONLY if max-height is hit) -->
+        <!-- Removed 'h-20' spacer. Removed 'flex-1' to prevent forced expansion. -->
+        <div class="w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain relative">
+            
+            <!-- Avatar Picker -->
+            <div class="flex justify-center mb-6">
+                <div class="relative group cursor-pointer wobbly" onclick="document.getElementById('avatarFileInput').click()">
+                    <div id="editProfileAvatarPreview" class="w-24 h-24 rounded-[24px_20px_26px_18px] border border-black/10 overflow-hidden bg-gray-100 shadow-sm">
+                        <!-- Avatar injected via JS -->
+                    </div>
+                    <div class="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[24px_20px_26px_18px] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Change</span>
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 bg-white border border-black/10 rounded-full p-1.5 shadow-sm pointer-events-none">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
                 </div>
-                <div class="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[24px_20px_26px_18px] opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span class="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Change</span>
+            </div>
+
+            <!-- Inputs -->
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-1 block">Display Name</label>
+                    <input id="setupName" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-base" placeholder="Name" />
                 </div>
-                <div class="absolute -bottom-1 -right-1 bg-white border border-black/10 rounded-full p-1 shadow-sm pointer-events-none">
-                    <svg class="w-3 h-3" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-1 block">Pronouns</label>
+                    <input id="setupPronouns" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#f4a37a] text-base" placeholder="Pronouns" />
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-1 block">Bio</label>
+                    <textarea id="setupBio" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/80 h-28 text-base focus:outline-none focus:ring-2 focus:ring-[#f4a37a] resize-none" placeholder="Bio..."></textarea>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-2 block">Mood Lighting</label>
+                    <div class="flex flex-wrap gap-2">
+                      <button class="setupMood wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold flex-1 min-w-[70px]" data-m="sunset">Sunset</button>
+                      <button class="setupMood wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold flex-1 min-w-[70px]" data-m="sage">Sage</button>
+                      <button class="setupMood wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold flex-1 min-w-[70px]" data-m="berry">Berry</button>
+                      <button class="setupMood wobbly px-4 py-2 rounded-[14px] border border-black/10 bg-white/70 text-xs font-extrabold flex-1 min-w-[70px]" data-m="clay">Clay</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <input id="setupName" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-base sm:text-sm " placeholder="Name" />
-        <input id="setupPronouns" class="w-full mb-2 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 text-base sm:text-sm " placeholder="Pronouns" />
-        <textarea id="setupBio" class="w-full mb-3 px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 h-24 text-base sm:text-sm " placeholder="Bio..."></textarea>
-        
-        <div class="mt-2 text-xs font-bold opacity-50">Mood Lighting</div>
-        <div class="flex gap-2 mb-4 mt-1">
-          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="sunset">Sunset</button>
-          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="sage">Sage</button>
-          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="berry">Berry</button>
-          <button class="setupMood wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold" data-m="clay">Clay</button>
+        <!-- 3. FOOTER (Fixed Save Button) -->
+        <div class="p-4 border-t border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <button id="saveProfileSetup" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly shadow-md active:scale-95 transition-transform">Save Changes</button>
         </div>
-        <button id="saveProfileSetup" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Save</button>
+
     </div>
-  </div>
-  <div id="commentsModal" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">Supportive Notes</h3><button onclick="$('#commentsModal').classList.add('hidden')" class="text-sm font-bold opacity-50">Close</button></div>
-        <div id="commentsList" class="space-y-2 mb-4 text-sm text-black/70"></div>
-        <textarea id="commentInput" class="w-full p-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white focus:outline-none h-20 text-base sm:text-lg" placeholder="Leave a kind note..."></textarea>
-        <button id="sendCommentBtn" class="w-full mt-2 py-2 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-bold wobbly">Send</button>
+</div>
+<!-- SUPPORTIVE NOTES MODAL (Fixed Layout) -->
+<div id="commentsModal" class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-[#fffaf1] p-0 pop-in modal-card flex flex-col h-[70dvh] overflow-hidden rounded-[26px] shadow-2xl relative" role="dialog">
+        
+        <!-- 1. HEADER (Fixed) -->
+        <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+            <h3 class="font-[Fraunces] text-lg">Supportive Notes</h3>
+            <button onclick="$('#commentsModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
+        </div>
+        
+        <!-- 2. BODY (Scrollable List) -->
+        <!-- 'flex-1' ensures it takes all available space between header and footer -->
+        <div id="commentsList" class="flex-1 w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain space-y-3">
+            <!-- Comments injected by JS -->
+        </div>
+
+        <!-- 3. FOOTER (Fixed Input) -->
+        <div class="p-4 border-t border-black/5 bg-white/60 backdrop-blur-md shrink-0 z-20">
+            <div class="flex gap-2">
+                <textarea id="commentInput" class="flex-1 px-4 py-3 rounded-[16px] border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-[#f4a37a] h-12 min-h-[48px] max-h-24 text-sm shadow-inner resize-none pt-3" placeholder="Leave a kind note..."></textarea>
+                <button id="sendCommentBtn" class="px-5 py-2 rounded-[16px] bg-[#f4a37a] text-white font-bold wobbly shadow-md h-12 self-end text-sm">Send</button>
+            </div>
+        </div>
+
     </div>
-  </div>
+</div>
   <div id="textModal" class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
           <div class="flex items-start justify-between gap-3 mb-3"><div><div id="textModalTitle" class="font-[Fraunces] text-lg">Write</div><div id="textModalSubtitle" class="text-xs text-black/60">Gentle + short is perfect.</div></div><button onclick="closeTextModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
@@ -849,21 +1005,29 @@
    <!-- Hidden File Input for Avatars -->
  <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
  <!-- SINGLE POST SPOTLIGHT MODAL -->
- <div id="spotlightModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>    
-    <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
-      <!-- Header -->
-      <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
-          <h3 class="font-[Fraunces] text-lg">The Post</h3>
-          <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+<!-- SINGLE POST SPOTLIGHT MODAL (Fixed Layout) -->
+<!-- SINGLE POST SPOTLIGHT MODAL (Fixed Layout + No Horizontal Scroll) -->
+<div id="spotlightModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>    
+    <!-- Card Container -->
+    <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-[85dvh] lg:h-[90dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+      
+      <!-- 1. HEADER -->
+      <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+          <h3 class="font-[Fraunces] text-lg">Shared Moment</h3>
+          <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
       </div>
-      <!-- Content Container -->
-      <div id="spotlightBody" class="p-4 overflow-y-auto">
+
+      <!-- 2. CONTENT BODY -->
+      <!-- ADDED: overflow-x-hidden to kill horizontal scroll -->
+      <div id="spotlightBody" class="flex-1 w-full overflow-y-auto overflow-x-hidden p-0 overscroll-contain relative">
           <!-- Post gets injected here -->
       </div>
-      <!-- Footer -->
-      <div class="p-4 border-t border-black/5 bg-white/50 text-center">
-          <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly">Go to Feed</button>
+
+      <!-- 3. FOOTER -->
+      <div class="p-4 border-t border-black/5 bg-white/50 text-center shrink-0 z-20">
+          <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly shadow-md hover:opacity-90 active:scale-95 transition-all">Go to Feed</button>
       </div>
+
     </div>
 </div>
 
@@ -3077,23 +3241,11 @@ async function openSpotlight(postId) {
     console.log("🔦 openSpotlight started for:", postId);
     if (!postId) return console.error("No ID passed");
     
-    // 1. AUTO-REPAIR: If modal is missing, create it
+    // 1. AUTO-REPAIR (Keep existing safety check)
     if (!document.getElementById('spotlightModal')) {
-        console.warn("⚠️ Modal missing from HTML. Injecting it now...");
-        const modalHTML = `
-        <div id="spotlightModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4 modal-safe" data-overlay>
-            <div class="w-full max-w-md lg:max-w-2xl hand-card hand-outline paper-noise p-0 pop-in modal-card flex flex-col max-h-[90vh]" role="dialog">
-                <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md sticky top-0 z-10">
-                    <h3 class="font-[Fraunces] text-lg">Shared Moment</h3>
-                    <button onclick="closeSpotlight()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
-                </div>
-                <div id="spotlightBody" class="p-4 overflow-y-auto"></div>
-                <div class="p-4 border-t border-black/5 bg-white/50 text-center">
-                    <button onclick="closeSpotlight()" class="w-full py-3 rounded-[18px_16px_22px_14px] bg-[#f4a37a] text-white font-extrabold wobbly">Go to Feed</button>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        // ... (This part handles missing HTML, rarely needed now) ...
+        toast("System error: Reload page.");
+        return;
     }
 
     toast("Loading post...");
@@ -3124,19 +3276,28 @@ async function openSpotlight(postId) {
         const body = document.getElementById('spotlightBody');
 
         if(modal && body) {
+            // Inject the post HTML
             body.innerHTML = getPostHTML(post);
             
-            // Clean up internal styles to fit the modal
+            // --- STYLE ADJUSTMENTS FOR MODAL VIEW ---
             const card = body.querySelector('article');
             if (card) {
-                card.classList.remove('mb-4', 'hand-card', 'hand-outline', 'paper-noise');
-                card.classList.add('w-full', 'bg-transparent');
-                const innerViewBtn = card.querySelector('button[onclick^="window.openSpotlight"]');
-                if(innerViewBtn) innerViewBtn.remove();
+                // Remove the "Card" look from the post itself, since the Modal IS the card now
+                card.classList.remove('mb-4', 'hand-card', 'hand-outline', 'paper-noise', 'pop-in');
+                
+                // Remove shadows and borders to make it blend into the scrollable area
+                card.classList.add('w-full', 'bg-transparent', 'border-0', 'shadow-none');
+                
+                // Add padding inside the content (since we removed it from the container)
+                card.classList.add('p-5');
+
+                // Remove the "..." menu inside spotlight (optional, keeps it clean)
+                // const optionsBtn = card.querySelector('button[onclick^="openOptions"]');
+                // if(optionsBtn) optionsBtn.style.display = 'none'; 
             }
 
-            // Force visibility logic
-            modal.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: [80] !important;';
+            // Force visibility logic (Ensure Z-Index is correct)
+            modal.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 80 !important;';
             modal.classList.remove('hidden'); 
             
             console.log("✨ Modal Injected & Opened");
