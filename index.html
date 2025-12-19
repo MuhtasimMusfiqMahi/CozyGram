@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -3116,7 +3116,8 @@ function closeScrapbook() {
 window.openScrapbookModal = openScrapbookModal;
 window.closeScrapbook = closeScrapbook;
     // UPDATED RENDER STORIES TO USE DB
-    function renderStories() {
+// UPDATED RENDER STORIES (New Leather Journal Avatar)
+function renderStories() {
         // --- 1. RENDER "YOUR JOURNALS" (Only Mine) ---
         const myContainer = document.getElementById('myJournalsContainer');
         const myStories = state.stories.filter(s => s.author_id === state.user.id);
@@ -3185,32 +3186,45 @@ window.closeScrapbook = closeScrapbook;
 
         // --- 3. RENDER PUBLIC JOURNALS (Exclude Mine) ---
         const listDiv = document.getElementById('storiesList');
-        
-        // FILTER: Only show stories where author_id is NOT me
         const otherStories = state.stories.filter(s => s.author_id !== state.user.id);
+        
+        // NEW JOURNAL AVATAR IMAGE
+        const journalCoverImg = "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/Journal%20Avatar/71HqcNo4npL._AC_UF1000,1000_QL80_.jpg";
 
         if (otherStories.length === 0) {
             listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No new journals from neighbors.</div>`;
         } else {
             listDiv.innerHTML = otherStories.map((s) => {
-                // Find original index to ensure correct data opening
                 const realIdx = state.stories.indexOf(s);
-                
-                const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
                 const ts = s.created_at || Date.now();
                 const timeStr = timeAgo(new Date(ts));
                 
                 return `
-                <button class="w-full wobbly text-left" onclick="openStory(${realIdx})">
+                <button class="w-full wobbly text-left mb-2" onclick="openStory(${realIdx})">
                     <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
+                        
+                        <!-- Journal Cover Thumbnail -->
+                        <div class="w-11 h-14 rounded-[4px_8px_8px_4px] border border-black/10 overflow-hidden shrink-0 relative shadow-sm">
+                            <img src="${journalCoverImg}" class="w-full h-full object-cover" alt="Cover">
+                            <!-- Binding Spine Effect -->
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/20 to-transparent"></div>
+                        </div>
+                        
+                        <!-- Text Details -->
                         <div class="flex-1 min-w-0">
-                            <div class="font-extrabold truncate">${html(s.user)}'s pages</div>
-                            <div class="text-xs text-black/55">
-                                <span class="live-time" data-ts="${ts}">${timeStr}</span> • ${s.pages.length} pages
+                            <div class="font-extrabold text-sm text-black/90 truncate leading-tight">
+                                ${html(s.title)}
+                            </div>
+                            
+                            <div class="text-xs text-black/50 flex items-center gap-1.5 mt-1">
+                                <span class="font-bold text-black/60">${html(s.user)}</span>
+                                <span class="opacity-30">•</span>
+                                <span class="live-time font-medium" data-ts="${ts}">${timeStr}</span>
                             </div>
                         </div>
-                        <div class="text-xs text-black/50">open →</div>
+                        
+                        <!-- Open Indicator -->
+                        <div class="text-black/20 transform rotate-180 text-lg">←</div>
                     </div>
                 </button>
             `}).join('');
