@@ -3090,7 +3090,6 @@ async function deleteThread(targetId, event) {
         // --- 1. TOGGLE LOGIC (Clicking same user closes chat) ---
         if (state.activeThreadId === targetId) {
             state.activeThreadId = null; 
-            // Close mobile view too
             closeChat();
             
             // Reset UI
@@ -3104,9 +3103,7 @@ async function deleteThread(targetId, event) {
         // --- 2. OPEN LOGIC ---
         state.activeThreadId = targetId;
         
-        // SHOW MOBILE CARD (The Fix)
-        // 'hidden' is removed, so it appears on mobile. 
-        // On desktop, 'lg:flex' keeps it visible anyway.
+        // SHOW MOBILE CARD
         document.getElementById('chatViewContainer').classList.remove('hidden');
 
         // Mark Read
@@ -3126,10 +3123,11 @@ async function deleteThread(targetId, event) {
         let thread = state.threads.find(t => t.id === targetId);
         let user = state.allUsers.find(u => u.id === targetId);
         
-        // HEADER UPDATE (With Close Button)
+        // HEADER UPDATE (Removed the "Close" text button)
         if(user) {
             $('#chatHeader').innerHTML = `
             <div class="flex items-center gap-3">
+                <!-- Back Arrow Button -->
                 <button onclick="closeChat()" class="lg:hidden w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
@@ -3140,11 +3138,7 @@ async function deleteThread(targetId, event) {
                 <div class="font-extrabold text-sm text-white drop-shadow-md">
                     ${html(user.username)}
                 </div>
-            </div>
-            
-            <!-- Close Text (Optional Extra) -->
-            <button onclick="closeChat()" class="lg:hidden px-3 py-1.5 rounded-[12px] bg-white/20 border border-white/10 text-white text-[10px] font-bold backdrop-blur-md">Close</button>
-            `;
+            </div>`;
         }
 
         // Messages
