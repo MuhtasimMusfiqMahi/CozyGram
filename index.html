@@ -10,8 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <!-- PWA MANIFEST LINK -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Nunito:wght@400;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">  <!-- PWA MANIFEST LINK -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="mobile-web-app-capable" content="yes" />6
 
@@ -234,6 +233,31 @@
       }
       .desktop-two-col { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
     }
+
+    /* NEW: Vintage Rose Journal Theme */
+/* NEW: Vintage Rose Journal Theme */
+/* NEW: Vintage Rose Journal Theme */
+.journal-vintage-bg {
+      background-color: #e6d2b5; 
+      
+      /* 
+         👇 IMPORTANT: PASTE YOUR SUPABASE IMAGE LINK BELOW 👇 
+         I have put a stable vintage paper link here for now.
+         Change this URL to the one you uploaded to Supabase!
+      */
+      background-image: url('https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/Journal%20wallpaper/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvcm01MDQtYmctMDRkLWwxMnY3eWI4LmpwZw.webp'); 
+      
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #4a3b2a; /* Dark Brown Ink */
+    }
+    
+    /* Placeholder looks like faint pencil */
+    .journal-vintage-bg::placeholder {
+      color: rgba(74, 59, 42, 0.5);
+      font-style: italic;
+    }
     
     
     ::-webkit-scrollbar { width: 10px; }
@@ -385,18 +409,30 @@
         <div class="p-6 text-center animate-pulse text-black/50 font-[Fraunces]">Connecting to the clouds...</div>
     </div>
 </section>
+<!-- JOURNAL SECTION -->
+<section id="view-stories" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="hand-card hand-outline paper-noise p-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+            <h2 class="font-[Fraunces] text-lg">Journal</h2>
+            <p class="text-sm text-black/70 mt-1">Flip through pages. Respond with a sticker.</p>
+        </div>
+        <button onclick="openStoryComposeModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New Journal</button>
+      </div>
+    </div>
 
-      <!-- STORIES -->
-      <section id="view-stories" class="hidden space-y-4">
-          <div class="hand-card hand-outline paper-noise p-4">
-            <div class="flex items-start justify-between gap-3">
-              <div><h2 class="font-[Fraunces] text-lg">Stories, but as journal pages</h2><p class="text-sm text-black/70 mt-1">Flip through pages. Respond with a sticker.</p></div>
-              <button onclick="openStoryComposeModal()" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-xs font-extrabold">New page</button>
-            </div>
-          </div>
-          <div id="clubsContainer" class="hand-card hand-outline bg-white/70 border border-black/10 p-4"></div>
-          <div id="storiesList" class="space-y-3"></div>
-      </section>
+    <!-- NEW: Your Journals Box -->
+    <div id="myJournalsContainer" class="hand-card hand-outline bg-white/70 border border-black/10 p-4">
+        <!-- Content injected by JS -->
+    </div>
+
+    <!-- Clubs Box -->
+    <div id="clubsContainer" class="hand-card hand-outline bg-white/70 border border-black/10 p-4"></div>
+    
+    <!-- Public Stories List -->
+    <div id="storiesList" class="space-y-3"></div>
+</section>
       
 <!-- MESSAGES -->
 <section id="view-messages" class="hidden space-y-4">
@@ -622,14 +658,68 @@
         <button id="postNowBtn" class="w-full mt-1 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shrink-0">Post to Cloud</button>
     </div>
 </div>
-  <div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-3"><h3 class="font-[Fraunces] text-lg">New Page</h3><button onclick="$('#storyComposeModal').classList.add('hidden')" class="wobbly px-3 py-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/70 text-sm">Close</button></div>
-        <input id="storyHeading" class="w-full px-4 py-3 mb-2 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-base sm:text-sm" placeholder="Title (e.g. Morning thoughts)" />
-        <textarea id="storyText" class="w-full px-4 py-3 rounded-[18px_16px_22px_14px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 h-32 text-sm font-serif leading-relaxed" placeholder="Dear journal..."></textarea>
-        <button onclick="saveStoryPage()" class="w-full mt-3 py-3 rounded-[18px_16px_22px_14px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly">Publish Page</button>
-    </div>
-  </div>
+<!-- CREATE JOURNAL MODAL (Updated Layout) -->
+<!-- CREATE JOURNAL MODAL (Multi-Page Support) -->
+<!-- CREATE JOURNAL MODAL (Multi-Page Support) -->
+<div id="storyComposeModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
+    <div class="w-full max-w-md hand-card hand-outline paper-noise bg-white p-5 pop-in modal-card flex flex-col" role="dialog">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-[Fraunces] text-lg">New Journal</h3>
+            <button onclick="closeStoryModal()" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
+        </div>
+
+        <!-- 1. Journal Name Box -->
+        <div class="mb-3">
+            <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-1 block">Journal Name</label>
+            <input id="journalNameInput" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-sm font-bold text-black/80 placeholder:font-normal" placeholder="e.g. My Daily Thoughts" />
+        </div>
+
+        <!-- 2. Page Title Box -->
+        <div class="mb-3">
+            <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-1 block">Page Title</label>
+            <input id="storyHeading" class="w-full px-4 py-3 rounded-[16px] border border-black/10 bg-white/80 focus:outline-none focus:ring-2 focus:ring-black/10 text-sm" placeholder="e.g. Morning Reflection" />
+        </div>
+
+        <!-- 3. Description Box -->
+        <div class="mb-4 flex-1">
+            <label class="text-[10px] font-bold text-black/40 uppercase tracking-widest ml-1 mb-1 block">Description</label>
+            <textarea id="storyText" class="journal-vintage-bg w-full px-6 py-6 rounded-[16px] border border-black/10 focus:outline-none focus:ring-2 focus:ring-[#8b5e3c] h-64 text-lg font-serif leading-relaxed resize-none shadow-inner" placeholder="Write your heart out..."></textarea>
+        </div> <!-- Closing Description Box -->
+
+        <!-- 4. Actions Area -->
+        <div class="mt-auto space-y-3">
+            
+            <!-- Row: Counter & Add Page -->
+            <div class="flex justify-between items-center">
+                <div id="pageCountDisplay" class="text-xs font-bold text-black/40 pl-2">Page 1 (New)</div>
+                <button onclick="addPageToDraft()" class="px-5 py-2.5 rounded-[14px] bg-white border border-black/10 text-xs font-extrabold wobbly hover:bg-[#fbf5ea] transition-colors">
+                    + Add Page
+                </button>
+            </div>
+
+            <!-- NEW: Page Navigation Arrows (Centered) -->
+            <div class="flex items-center justify-center gap-6 py-1">
+                <button onclick="navDraft(-1)" class="w-10 h-10 rounded-full bg-white border border-black/10 flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-transform wobbly">
+                    <svg class="w-4 h-4 text-black/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                
+                <span id="navLabel" class="text-[10px] font-bold uppercase tracking-widest text-black/30 w-16 text-center">New</span>
+                
+                <button onclick="navDraft(1)" class="w-10 h-10 rounded-full bg-white border border-black/10 flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-transform wobbly">
+                    <svg class="w-4 h-4 text-black/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
+
+            <!-- Centered Publish Button -->
+            <button onclick="publishJournal()" class="w-full py-3 rounded-[16px] bg-gradient-to-b from-[#86a68b] to-[#6f9b7a] text-white font-extrabold wobbly shadow-md active:scale-95 transition-transform text-sm">
+                Publish Journal
+            </button>
+        </div> <!-- Closing Actions Area -->
+
+    </div> <!-- Closing Card Container -->
+</div> <!-- Closing Modal Wrapper -->
   <div id="roomModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
       <div class="w-full max-w-lg hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
         <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg" id="roomTitle">Your Room</h3><button onclick="$('#roomModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
@@ -927,7 +1017,7 @@ function artSVG(seed=1, palette='sunset'){
 
     const state = { 
         user: null, profile: null, posts: [], savedPostIds: [], stories: [],clubs: [], 
-        allUsers: [], notifications: [], threads: [],clubBuilder: { selected: [] },
+        allUsers: [], notifications: [], threads: [],clubBuilder: { selected: [] }, journalDraft: { name: '', pages: [], currentIndex: 0 }, 
         compose: { 
             frame: 'wavy', 
             vibe: 'sunset', 
@@ -1227,7 +1317,7 @@ function getSketchBackground(seed) {
         </div>`;
 
       if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
-      if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Pages');
+      if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Journal');
       if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
       if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
       if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
@@ -2530,10 +2620,46 @@ window.openScrapbookModal = openScrapbookModal;
 window.closeScrapbook = closeScrapbook;
     // UPDATED RENDER STORIES TO USE DB
     function renderStories() {
-// 1. Render Clubs
-const container = document.getElementById('clubsContainer');
-        
-        // Generate HTML for Real Clubs
+        // --- 1. RENDER "YOUR JOURNALS" (Only Mine) ---
+        const myContainer = document.getElementById('myJournalsContainer');
+        const myStories = state.stories.filter(s => s.author_id === state.user.id);
+
+        if (myStories.length > 0) {
+            myContainer.innerHTML = `
+                <div class="text-sm font-extrabold mb-3">Your Journals</div>
+                <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                    ${myStories.map(s => {
+                        const realIdx = state.stories.indexOf(s);
+                        return `
+                        <button onclick="openStory(${realIdx})" 
+                                class="min-w-[120px] w-[120px] aspect-[3/4] rounded-[20px] journal-vintage-bg border border-black/10 flex flex-col p-4 wobbly text-left relative group hover:-translate-y-1 transition-transform shadow-none"> 
+                            
+                            <div class="flex-1 overflow-hidden">
+                                <div class="font-[Fraunces] text-sm leading-tight line-clamp-3 text-[#2b2b2b] font-bold drop-shadow-sm">${html(s.title)}</div>
+                            </div>
+                            
+                            <div class="text-[10px] text-[#4a3b2a] opacity-60 mt-2 font-bold">${s.time}</div>
+                            
+                            <!-- Decorative Tape -->
+                            <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-6 torn-tape opacity-80 shadow-sm rotate-1"></div>
+                        </button>`;
+                    }).join('')}
+                </div>
+            `;
+            myContainer.classList.remove('hidden');
+        } else {
+            // Empty State for Me
+            myContainer.innerHTML = `
+                <div class="text-sm font-extrabold mb-3">Your Journals</div>
+                <div class="p-6 text-center border-2 border-dashed border-black/5 rounded-[18px] bg-white/30">
+                    <div class="text-xs text-black/40 font-bold">Write your first page.</div>
+                </div>
+            `;
+            myContainer.classList.remove('hidden');
+        }
+
+        // --- 2. RENDER CLUBS ---
+        const clubsContainer = document.getElementById('clubsContainer');
         const realClubsHtml = state.clubs.map(c => `
             <button class="hand-card paper-noise border border-black/10 p-3 text-left wobbly group" onclick="toast('Entering ${html(c.name)}...')">
                 <div class="flex justify-between items-start">
@@ -2544,17 +2670,15 @@ const container = document.getElementById('clubsContainer');
             </button>
         `).join('');
 
-        container.innerHTML = `
+        clubsContainer.innerHTML = `
             <div class="flex items-center justify-between mb-3">
                 <div class="text-sm font-extrabold">Cozy Clubs</div>
                 <button onclick="openClubBuilder()" class="wobbly px-3 py-1.5 rounded-[12px] bg-gradient-to-b from-[#f7c59f] to-[#f4a37a] text-white text-[10px] font-bold shadow-sm border border-black/5 hover:opacity-90 transition-opacity">
                     + New Club
                 </button>
             </div>
-            
             <div class="grid grid-cols-2 gap-3">
                 ${realClubsHtml}
-                <!-- If no clubs, show a tiny hint box taking up one slot -->
                 ${state.clubs.length === 0 ? `
                 <div class="col-span-2 p-4 text-center border-2 border-dashed border-black/5 rounded-[18px] bg-white/30">
                     <div class="text-xs text-black/40 font-bold">No clubs yet.<br>Start one above?</div>
@@ -2562,19 +2686,25 @@ const container = document.getElementById('clubsContainer');
             </div>
         `;
 
-        // 2. Render Stories List (Unchanged)
+        // --- 3. RENDER PUBLIC JOURNALS (Exclude Mine) ---
         const listDiv = document.getElementById('storiesList');
-        if (state.stories.length === 0) {
-            listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No journal pages found.<br>Be the first to write one?</div>`;
+        
+        // FILTER: Only show stories where author_id is NOT me
+        const otherStories = state.stories.filter(s => s.author_id !== state.user.id);
+
+        if (otherStories.length === 0) {
+            listDiv.innerHTML = `<div class="p-6 text-center opacity-50 text-sm">No new journals from neighbors.</div>`;
         } else {
-            listDiv.innerHTML = state.stories.map((s, idx) => {
+            listDiv.innerHTML = otherStories.map((s) => {
+                // Find original index to ensure correct data opening
+                const realIdx = state.stories.indexOf(s);
+                
                 const u = { username: s.user, seed: s.seed, avatar_url: s.avatar_url };
-                // Using raw timestamp for live update
                 const ts = s.created_at || Date.now();
                 const timeStr = timeAgo(new Date(ts));
                 
                 return `
-                <button class="w-full wobbly text-left" onclick="openStory(${idx})">
+                <button class="w-full wobbly text-left" onclick="openStory(${realIdx})">
                     <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
                         <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white">${avatarHTML(u)}</div>
                         <div class="flex-1 min-w-0">
@@ -2588,10 +2718,6 @@ const container = document.getElementById('clubsContainer');
                 </button>
             `}).join('');
         }
-
-        // 3. Ensure Prompts are Hidden
-        const promptsContainer = document.getElementById('promptsGrid')?.parentElement;
-        if(promptsContainer) promptsContainer.style.display = 'none';
     }
 
     function renderMessages() {
@@ -2644,10 +2770,21 @@ const container = document.getElementById('clubsContainer');
     function renderNewThreadModal() {
         if(!state.user) return;
         const meId = state.user.id;
+        
+        // 1. Filter out the current user
         const list = state.allUsers.filter(u => u.id !== meId);
+        
+        // 2. Render the list
         $('#userList').innerHTML = list.length ? list.map(u => `
-            <button onclick="openThread('${u.id}')" class="w-full text-left p-3 hand-card bg-white/70 wobbly font-bold mb-2 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-[12px] border border-black/10 overflow-hidden bg-white">${avatarSVG(u.seed)}</div><span>${html(u.username)}</span>
+            <button onclick="openThread('${u.id}')" class="w-full text-left p-3 hand-card hand-outline bg-white/70 wobbly font-bold mb-2 flex items-center gap-3 transition-colors hover:bg-white">
+                <!-- THE FIX: Changed avatarSVG to avatarHTML -->
+                <div class="w-10 h-10 rounded-[12px] border border-black/10 overflow-hidden bg-white shrink-0">
+                    ${avatarHTML(u)}
+                </div>
+                <div class="flex-1">
+                    <div class="text-sm font-extrabold text-black/80">${html(u.username)}</div>
+                    <div class="text-[10px] text-black/40 font-medium">Neighbor</div>
+                </div>
             </button>
         `).join('') : '<div class="text-sm opacity-50 p-2">No other users found yet.</div>';
     }
@@ -2667,39 +2804,78 @@ const container = document.getElementById('clubsContainer');
 };
 
 async function deleteThread(targetId, event) {
-        if(event) { event.stopPropagation(); event.preventDefault(); }
+        // 1. Stop click propagation
+        if(event) { 
+            event.stopPropagation(); 
+            event.preventDefault(); 
+        }
 
         toast("Clearing notes...");
 
-        // 1. UI Update
-        state.threads = state.threads.filter(t => t.id !== targetId);
-        if(state.activeThreadId === targetId) {
+        // 2. Optimistic UI Update (Instantly remove from screen)
+        // Note: We filter loosely (!=) to catch both null and 'null' string
+        state.threads = state.threads.filter(t => t.id != targetId);
+        
+        // If this was the open chat, close the viewing area
+        if(state.activeThreadId == targetId) {
             state.activeThreadId = null;
             $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50 text-white/90">Select a note to read</div>`;
             $('#chatMessages').innerHTML = '';
             $('#chatInputArea').classList.add('hidden');
         }
+        
+        // Redraw the list immediately
         renderMessages();
 
-        // 2. Database Delete
+        // 3. Database Operations (Background)
         try {
             const myId = state.user.id;
             
-            // EDGE CASE FIX: If deleting a broken thread (undefined target), delete orphans
-            if (!targetId || targetId === 'undefined') {
-                await sb.from('messages').delete().eq('from_id', myId).is('to_id', null);
-                return;
+            // Check if this is a "Broken" thread (ID is null, undefined, or string "null")
+            const isBrokenId = !targetId || targetId === 'null' || targetId === 'undefined';
+
+            if (isBrokenId) {
+                // STRATEGY A: Clean up Orphans
+                // Delete messages I sent where destination is NULL
+                await sb.from('messages').delete()
+                    .eq('from_id', myId)
+                    .is('to_id', null);
+                
+                // Delete messages sent TO me where sender is NULL (if any)
+                await sb.from('messages').delete()
+                    .eq('to_id', myId)
+                    .is('from_id', null);
+                    
+                console.log("Cleaned up broken threads.");
+                
+            } else {
+                // STRATEGY B: Clean up Valid User
+                
+                // 1. Delete standard conversation (Me <-> Them)
+                const { error } = await sb.from('messages').delete()
+                    .or(`and(from_id.eq.${myId},to_id.eq.${targetId}),and(from_id.eq.${targetId},to_id.eq.${myId})`);
+                
+                if(error) console.error("Standard delete error:", error);
+
+                // 2. Extra Cleanup: Delete Story Replies from THEM that might be missing TO_ID
+                // (This catches the specific 'ghost' replies you mentioned)
+                await sb.from('messages').delete()
+                    .eq('from_id', targetId)
+                    .is('to_id', null);
             }
 
-            const { error } = await sb.from('messages').delete()
-                .or(`and(from_id.eq.${myId},to_id.eq.${targetId}),and(from_id.eq.${targetId},to_id.eq.${myId})`);
-            
-            if (error) throw error;
         } catch(e) {
-            console.error(e);
-            // Don't show error toast to user, just let the UI update stand
+            console.error("Delete exception:", e);
+            // We do NOT show a toast error here because the UI is already fixed/clean 
+            // and we don't want to confuse the user.
         }
     }
+    
+    // Expose to window
+    window.deleteThread = deleteThread;
+    
+    // Expose to window
+    window.deleteThread = deleteThread;
     window.deleteThread = deleteThread;
     
     window.deleteThread = deleteThread;
@@ -3981,34 +4157,233 @@ function updateComposeView() {
     function renderStoryModal() {
         const s = state.stories[state.storyIndex];
         if(!s) return;
-        const pageContent = s.pages[state.storyPageIndex];
-        $('#storyAvatar').innerHTML = avatarSVG(s.seed);
-        $('#storyTitle').innerText = `${s.user} • ${s.title}`;
-        $('#storyMeta').innerText = `Page ${state.storyPageIndex + 1} of ${s.pages.length}`;
-        const pageEl = $('#storyPage');
-        pageEl.classList.remove('pageflip'); void pageEl.offsetWidth; pageEl.classList.add('pageflip');
         
-        pageEl.innerHTML = `<div class="text-2xl mb-4 font-bold text-black/20 italic">~ ${state.storyPageIndex + 1} ~</div><div class="text-xl font-medium leading-relaxed">${html(pageContent)}</div><div class="mt-8 text-xs font-bold opacity-30 uppercase tracking-widest text-center">Cozy Journal • ${s.time}</div>`;
+        const pageContent = s.pages[state.storyPageIndex];
+        
+        // 1. Header Info
+        $('#storyAvatar').innerHTML = avatarSVG(s.seed);
+        $('#storyTitle').innerText = `${s.user}`;
+        $('#storyMeta').innerText = s.time; 
+        
+        // 2. Setup the Page Element
+        const pageEl = $('#storyPage');
+        
+        // Reset animation
+        pageEl.classList.remove('pageflip'); 
+        void pageEl.offsetWidth; 
+        pageEl.classList.add('pageflip');
+        
+        // Classes: Fixed Height, Shadow, No Background (Image shows through)
+        pageEl.className = "pageflip relative w-full h-[65vh] mb-4 shadow-md overflow-hidden rounded-[6px] border border-black/10 bg-transparent";
+        
+        // 3. Dynamic Tape Color
+        const tapeColors = ['#f4a37a', '#86a68b', '#dba1a8', '#f7c59f'];
+        const tapeColor = tapeColors[(s.seed || 0) % tapeColors.length];
+
+        // 4. Render
+        pageEl.innerHTML = `
+            <!-- The Background Image (Fixed) -->
+            <div class="absolute inset-0 journal-vintage-bg z-0"></div>
+            
+            <!-- Washi Tape (Fixed) -->
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 torn-tape opacity-90 shadow-sm z-20" 
+                 style="background-color: ${tapeColor}; transform: translateX(-50%) rotate(-1deg);">
+            </div>
+
+            <!-- Content Container (Scrollable) -->
+            <div class="absolute inset-0 z-10 overflow-y-auto p-6 flex flex-col">
+                
+                <!-- Page Stamp -->
+                <div class="self-end mb-4 shrink-0">
+                    <div class="px-3 py-1 bg-[#fbf5ea]/90 text-[#5c4033] text-[10px] font-bold uppercase tracking-widest border border-dashed border-[#5c4033]/30 shadow-sm rounded-[2px] backdrop-blur-sm">
+                        Page ${state.storyPageIndex + 1}
+                    </div>
+                </div>
+
+                <!-- Text Area -->
+                <div class="flex-1 w-full min-w-0 pb-10">
+                    
+                    <!-- Title: Handwritten, Darker, Larger -->
+                    <h3 class="font-['Patrick_Hand'] text-3xl font-bold text-[#1a1a1a] mb-5 leading-tight break-words drop-shadow-sm sticky top-0">
+                        ${html(s.title)}
+                    </h3>
+                    
+                    <!-- Body: Handwritten, Darker, Larger -->
+                    <div class="font-['Patrick_Hand'] text-xl text-[#0f0f0f] leading-relaxed whitespace-pre-wrap break-words w-full">
+                        ${html(pageContent)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Button States
         $('#prevStory').disabled = (state.storyPageIndex === 0);
         $('#prevStory').style.opacity = (state.storyPageIndex === 0) ? '0.5' : '1';
         $('#nextStory').innerText = (state.storyPageIndex === s.pages.length - 1) ? 'Close' : 'Next';
     }
-    
-    function openStoryComposeModal() { $('#storyHeading').value = ''; $('#storyText').value = ''; $('#storyComposeModal').classList.remove('hidden'); }
-    
-    // UPDATED SAVE STORY
-    async function saveStoryPage() {
-        const heading = $('#storyHeading').value.trim(); const text = $('#storyText').value.trim();
-        if (!heading || !text) return toast('Please add a heading and some text.');
-        $('#storyComposeModal').classList.add('hidden');
-        toast('Posting journal page...');
-        try { 
-            await sb.from('stories').insert({ user_id: state.user.id, title: heading, pages: [text] }); 
-            toast('Journal page posted.'); 
-            loadStories(); 
+// --- JOURNAL ENGINE ---
+
+function openStoryComposeModal() { 
+        // Reset Draft State
+        state.journalDraft = { name: '', pages: [], currentIndex: 0 };
+        
+        // Reset Inputs
+        const jName = document.getElementById('journalNameInput');
+        if(jName) { jName.value = ''; jName.disabled = false; jName.classList.remove('opacity-50', 'cursor-not-allowed'); }
+        
+        $('#storyHeading').value = ''; 
+        $('#storyText').value = ''; 
+        
+        updateDraftUI();
+        $('#storyComposeModal').classList.remove('hidden'); 
+    }
+
+    // Helper: Save what is currently in the boxes to memory
+    function saveCurrentPageToMemory() {
+        const title = $('#storyHeading').value.trim(); 
+        const text = $('#storyText').value.trim();
+        
+        // Even if empty, we save it so we don't lose the "slot" if user goes back
+        // Format: **TITLE**\n\nTEXT
+        const combined = `**${title}**\n\n${text}`;
+        
+        // Save to current index
+        state.journalDraft.pages[state.journalDraft.currentIndex] = combined;
+    }
+
+    // Helper: Take data from memory and put it in the boxes
+    function loadPageFromMemory(idx) {
+        const raw = state.journalDraft.pages[idx];
+        if (!raw) {
+            // It's a new blank page
             $('#storyHeading').value = ''; 
             $('#storyText').value = '';
-        } catch(e) { toast('Error posting.'); }
+            return;
+        }
+
+        // Parse: **Title**\n\nText
+        // Simple regex to split the header we created
+        const match = raw.match(/^\*\*(.*?)\*\*\n\n([\s\S]*)$/);
+        if (match) {
+            $('#storyHeading').value = match[1];
+            $('#storyText').value = match[2];
+        } else {
+            // Fallback for older formats
+            $('#storyHeading').value = '';
+            $('#storyText').value = raw;
+        }
+    }
+
+    function updateDraftUI() {
+        const idx = state.journalDraft.currentIndex;
+        const total = state.journalDraft.pages.length;
+        
+        // Label logic
+        // If idx == total, we are on a "New Page" that hasn't been pushed to array yet
+        // Actually, let's treat the array as the source. 
+        // When we "Add Page", we push an empty placeholder if needed.
+        
+        const isNew = idx >= total;
+        const displayNum = idx + 1;
+        
+        $('#pageCountDisplay').innerText = `Page ${displayNum}`;
+        $('#navLabel').innerText = isNew ? "New" : `${displayNum} / ${total}`;
+    }
+
+    function navDraft(dir) {
+        // 1. Save current work before moving
+        saveCurrentPageToMemory();
+        
+        // 2. Calculate new index
+        const newIdx = state.journalDraft.currentIndex + dir;
+        
+        // 3. Bounds Check
+        // Can't go below 0
+        if (newIdx < 0) return toast("This is the start.");
+        
+        // Can't go beyond "New Page" (length)
+        // We allow going to pages.length (which is the blank new page)
+        if (newIdx > state.journalDraft.pages.length) return toast("No more pages.");
+        
+        // 4. Move
+        state.journalDraft.currentIndex = newIdx;
+        loadPageFromMemory(newIdx);
+        updateDraftUI();
+    }
+
+    function addPageToDraft() {
+        const jNameInput = document.getElementById('journalNameInput');
+        const title = $('#storyHeading').value.trim(); 
+        const text = $('#storyText').value.trim();
+        
+        // Validation
+        if (!jNameInput.value.trim()) return toast('Name your journal first.');
+        if (!title && !text) return toast('Write something first.');
+
+        // 1. Lock Journal Name
+        if(state.journalDraft.pages.length === 0) {
+            state.journalDraft.name = jNameInput.value.trim();
+            jNameInput.disabled = true;
+            jNameInput.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // 2. Save current
+        saveCurrentPageToMemory();
+        
+        // 3. Move to new slot (End of array)
+        const nextIdx = state.journalDraft.pages.length; 
+        // If we were editing an old page, jump to end. 
+        // If we were already at end, we just saved it, so now we make a NEW end.
+        
+        state.journalDraft.currentIndex = state.journalDraft.pages.length; // Point to new slot
+        
+        // Clear UI for new entry
+        $('#storyHeading').value = ''; 
+        $('#storyText').value = ''; 
+        $('#storyHeading').focus();
+        
+        updateDraftUI();
+        toast("Page added.");
+    }
+
+    async function publishJournal() {
+        // 1. Save whatever is on screen right now
+        saveCurrentPageToMemory();
+        
+        // 2. Filter out completely empty pages (artifacts)
+        const validPages = state.journalDraft.pages.filter(p => p && p !== `****\n\n`);
+        
+        if (validPages.length === 0) return toast('Journal is empty.');
+        
+        const jName = document.getElementById('journalNameInput').value.trim();
+        if(!jName) return toast('Name your journal.');
+
+        // 3. Send to Cloud
+        $('#storyComposeModal').classList.add('hidden');
+        toast('Binding journal...');
+
+        try { 
+            await sb.from('stories').insert({ 
+                user_id: state.user.id, 
+                title: jName, 
+                pages: validPages 
+            }); 
+            
+            toast('Journal published! 📔'); 
+            loadStories(); 
+            
+        } catch(e) { 
+            console.error(e);
+            toast('Error publishing.'); 
+        }
+    }
+
+    function closeStoryModal() {
+        // Confirmation if they have unsaved pages
+        if(state.journalDraft.pages.length > 0) {
+            if(!confirm("Discard this journal?")) return;
+        }
+        $('#storyComposeModal').classList.add('hidden');
     }
     
     async function createPost() {
