@@ -3805,7 +3805,7 @@ function openOptions(pid, uid) {
     updateComposeView();
 }
     
-    function openAccountModal() {
+function openAccountModal() {
         const p = state.profile || { username: 'Neighbor', seed: 0, pronouns: '', bio: '' };
         
         $('#accountBody').innerHTML = `
@@ -3818,7 +3818,9 @@ function openOptions(pid, uid) {
                     </div>
                     <div class="min-w-0">
                         <!-- Full Name / Username -->
-                        <div class="font-[Fraunces] text-xl truncate leading-tight">${html(p.username)}</div>
+                        <!-- FIX: Changed 'text-xl' to 'text-lg sm:text-xl' for better mobile fit -->
+                        <div class="font-[Fraunces] text-lg sm:text-xl truncate leading-tight">${html(p.username)}</div>
+                        
                         <!-- Pronouns -->
                         <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">
                             ${html(p.pronouns || 'Cozy Neighbor')}
@@ -3826,9 +3828,8 @@ function openOptions(pid, uid) {
                     </div>
                 </div>
                 
-                <!-- Edit Profile Button at the Top (FIXED) -->
-                <!-- We now manually hide the modal and call openEditProfile -->
-                <button id="accountModalEditBtn" class="wobbly px-3 py-2 rounded-[14px_12px_16px_10px] border border-black/10 bg-white/80 text-xs font-extrabold shadow-sm">
+                <!-- Edit Profile Button -->
+                <button id="accountModalEditBtn" class="wobbly px-3 py-2 rounded-[14px_12px_16px_10px] border border-black/10 bg-white/80 text-xs font-extrabold shadow-sm shrink-0">
                     Edit Profile
                 </button>
             </div>
