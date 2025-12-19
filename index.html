@@ -489,31 +489,35 @@
         <!-- Sidebar List -->
         <div id="threadList" class="space-y-2"></div>
         
-        <!-- Chat Box -->
-        <div class="hand-card hand-outline border border-black/10 flex flex-col h-[80vh] lg:h-[600px] relative overflow-hidden p-0"
-             style="
-                background-color: #2b2b35; 
-                background-image: url('https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/Chat%20wallpaper/Minimal%20Floral%20Galaxy%20Design%20Mobile%20Phone%20Wallpaper%20Vector%20Set.jpg'); 
-                background-size: cover; 
-                background-position: center bottom;
-             ">
-             
-            <div class="absolute inset-0 bg-black/30 pointer-events-none z-0"></div>
-  
-            <div id="chatHeader" class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/20 backdrop-blur-md">
-                <div class="font-extrabold text-sm text-white/90 drop-shadow-sm">Select a note to read</div>
-            </div>
-  
-            <div id="chatMessages" class="absolute inset-0 z-10 overflow-y-auto pt-16 pb-20 px-3 space-y-3"></div>
-  
-            <div id="chatInputArea" class="absolute bottom-0 left-0 right-0 z-20 p-3 bg-white/20 backdrop-blur-md border-t border-white/10 hidden">
-                <div class="flex gap-2">
-                    <input id="chatInput" class="flex-1 px-4 py-3 rounded-[16px] border border-white/20 bg-white/80 text-black placeholder:text-black/50 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a37a] shadow-lg" placeholder="Write a gentle note..." />
-                    <button id="chatSendBtn" class="px-4 py-3 bg-[#f4a37a] text-white font-bold rounded-[16px] wobbly text-xs shadow-lg border border-white/20">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Chat Box (Responsive: Hidden Card on Mobile, Visible Column on Desktop) -->
+<div id="chatViewContainer" 
+class="hidden fixed inset-2 z-[100] h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-[26px] shadow-2xl bg-[#2b2b35] border border-white/10 lg:flex lg:relative lg:inset-auto lg:h-[600px] lg:z-0 lg:shadow-none lg:border-black/10 lg:rounded-[26px]"
+style="
+   background-color: #2b2b35; 
+   background-image: url('https://dcarzattebyvkojqflyb.supabase.co/storage/v1/object/public/Chat%20wallpaper/Minimal%20Floral%20Galaxy%20Design%20Mobile%20Phone%20Wallpaper%20Vector%20Set.jpg'); 
+   background-size: cover; 
+   background-position: center bottom;
+">
+
+<!-- Darker Overlay -->
+<div class="absolute inset-0 bg-black/40 pointer-events-none z-0"></div>
+
+<!-- HEADER -->
+<div id="chatHeader" class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between border-b border-white/10 px-4 py-3 bg-black/20 backdrop-blur-md">
+   <div class="font-extrabold text-sm text-white/90 drop-shadow-sm">Select a note to read</div>
+</div>
+
+<!-- MESSAGES AREA -->
+<div id="chatMessages" class="absolute inset-0 z-10 overflow-y-auto pt-16 pb-20 px-3 space-y-3 overscroll-contain"></div>
+
+<!-- INPUT AREA -->
+<div id="chatInputArea" class="absolute bottom-0 left-0 right-0 z-20 p-3 bg-black/20 backdrop-blur-md border-t border-white/10 hidden">
+   <div class="flex gap-2">
+       <input id="chatInput" class="flex-1 px-4 py-3 rounded-[16px] border border-white/20 bg-white/90 text-black placeholder:text-black/50 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a37a] shadow-lg" placeholder="Write a gentle note..." />
+       <button id="chatSendBtn" class="px-4 py-3 bg-[#f4a37a] text-white font-bold rounded-[16px] wobbly text-xs shadow-lg border border-white/20">Send</button>
+   </div>
+</div>
+</div>
 </section>
       
       <!-- NOTIFICATIONS -->
@@ -3064,6 +3068,12 @@ async function deleteThread(targetId, event) {
             // and we don't want to confuse the user.
         }
     }
+
+    function closeChat() {
+        // Hide the mobile card
+        document.getElementById('chatViewContainer').classList.add('hidden');
+        // We don't nullify activeThreadId here so desktop preserves state if resized
+    }
     
     // Expose to window
     window.deleteThread = deleteThread;
@@ -3079,68 +3089,76 @@ async function deleteThread(targetId, event) {
     async function openThread(targetId) {
         // --- 1. TOGGLE LOGIC (Clicking same user closes chat) ---
         if (state.activeThreadId === targetId) {
-            state.activeThreadId = null; // Deselect
+            state.activeThreadId = null; 
+            // Close mobile view too
+            closeChat();
             
-            // Reset UI to "Empty" state
-            $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50">Select a note to read</div>`;
+            // Reset UI
+            $('#chatHeader').innerHTML = `<div class="font-extrabold text-sm opacity-50 text-white/90">Select a note to read</div>`;
             $('#chatMessages').innerHTML = '';
-            $('#chatInputArea').classList.add('hidden'); // Hide input
-            
-            renderMessages(); // Re-render sidebar to remove orange highlight
-            return; // Stop here
+            $('#chatInputArea').classList.add('hidden');
+            renderMessages(); 
+            return; 
         }
 
         // --- 2. OPEN LOGIC ---
         state.activeThreadId = targetId;
         
-        // Mark as READ in State (Instant UI update)
+        // SHOW MOBILE CARD (The Fix)
+        // 'hidden' is removed, so it appears on mobile. 
+        // On desktop, 'lg:flex' keeps it visible anyway.
+        document.getElementById('chatViewContainer').classList.remove('hidden');
+
+        // Mark Read
         const now = Date.now();
         state.lastRead[targetId] = now;
-        
-        // Mark as READ in Cloud (Persist across devices)
-        // We use 'upsert' to either insert a new record or update the existing one
         sb.from('thread_reads').upsert({ 
             user_id: state.user.id, 
             other_user_id: targetId, 
             last_read_at: new Date().toISOString() 
-        }).then(() => {}); // Fire and forget (don't await, keep UI snappy)
+        }).then(() => {});
 
-        renderMessages(); // Refresh sidebar to remove red dot
+        renderMessages(); 
 
         const container = $('#chatMessages');
         container.innerHTML = ''; 
 
-        // Find Data
         let thread = state.threads.find(t => t.id === targetId);
         let user = state.allUsers.find(u => u.id === targetId);
         
-        // Header
-// NEW
-if(user) {
-    $('#chatHeader').innerHTML = `
-    <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-[12px] border border-white/30 overflow-hidden bg-white/90 shadow-sm">
-            ${avatarHTML(user)}
-        </div>
-        <div class="font-extrabold text-sm text-white drop-shadow-md">
-            ${html(user.username)}
-        </div>
-    </div>`;
-}
+        // HEADER UPDATE (With Close Button)
+        if(user) {
+            $('#chatHeader').innerHTML = `
+            <div class="flex items-center gap-3">
+                <button onclick="closeChat()" class="lg:hidden w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <div class="w-9 h-9 rounded-[12px] border border-white/30 overflow-hidden bg-white/90 shadow-sm">
+                    ${avatarHTML(user)}
+                </div>
+                <div class="font-extrabold text-sm text-white drop-shadow-md">
+                    ${html(user.username)}
+                </div>
+            </div>
+            
+            <!-- Close Text (Optional Extra) -->
+            <button onclick="closeChat()" class="lg:hidden px-3 py-1.5 rounded-[12px] bg-white/20 border border-white/10 text-white text-[10px] font-bold backdrop-blur-md">Close</button>
+            `;
+        }
 
         // Messages
         if(thread && thread.messages.length > 0) {
             renderChatMessages(thread);
         } else {
-            container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic">This paper is blank.<br>Write a gentle note.</div>`;
+            container.innerHTML = `<div class="flex h-full items-center justify-center opacity-40 text-xs italic text-white/80">This paper is blank.<br>Write a gentle note.</div>`;
         }
 
-        // Reveal
+        // Reveal Input
         $('#chatInputArea').classList.remove('hidden');
         $('#newThreadModal').classList.add('hidden');
         container.scrollTop = container.scrollHeight;
     }
-
     function renderChatMessages(thread) {
     const container = $('#chatMessages');
     container.innerHTML = (thread.messages || []).map(m => {
