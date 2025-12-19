@@ -1504,7 +1504,6 @@ function getSketchBackground(seed) {
     function svgIcon(kind, active=false, badge=false){
       const tint = active ? 'rgba(244,163,122,.85)' : 'rgba(43,43,53,.68)';
       const fill = active ? 'rgba(247,197,159,.45)' : 'rgba(134,166,139,.18)';
-      // The Red Dot logic
       const badgeHtml = badge ? `<div class="absolute -top-1 -right-1 badge-dot"></div>` : '';
       
       const wrap = (inner, label) => `
@@ -1516,7 +1515,10 @@ function getSketchBackground(seed) {
 
       if(kind==='feed') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="14" y="16" width="36" height="32" rx="10" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 38l7-8 7 8 6-6 6 6" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="26" r="3" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Feed');
       if(kind==='stories') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M20 14h22l6 6v30a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M42 14v8h8" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 30h20M22 38h16" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Journal');
-      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M16 24h32a6 6 0 0 1 6 6v18a6 6 0 0 1-6-6H16a6 6 0 0 1-6-6V30a6 6 0 0 1 6-6Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M12 30l20 14 20-14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M24 22l4-10h8l4 10" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Notes');
+      
+      // FIX: New clean Envelope Icon for Notes
+      if(kind==='messages') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><rect x="8" y="18" width="48" height="32" rx="8" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M8 22l24 16 24-16" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`, 'Notes');
+      
       if(kind==='notifs') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M24 10h16l4 8v28a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V18l4-8Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M24 18h16" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M32 26c4 4 4 10 0 14" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M30 27c-2 2-2 10 0 12" fill="none" stroke="${tint}" stroke-width="2.2" opacity=".9"/></svg>`, 'Lantern');
       if(kind==='profile') return wrap(`<svg class="w-7 h-7" viewBox="0 0 64 64"><path d="M14 24c8-10 28-10 36 0v26a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24Z" fill="${fill}" stroke="${tint}" stroke-width="2.2"/><path d="M22 30c3-3 7-5 10-5s7 2 10 5" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 45c4-5 16-5 20 0" fill="none" stroke="${tint}" stroke-width="2.2"/><path d="M22 18l4-8h12l4 8" fill="none" stroke="${tint}" stroke-width="2.2"/></svg>`, 'Corner');
       return '';
