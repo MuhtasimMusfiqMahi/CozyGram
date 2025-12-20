@@ -1958,6 +1958,7 @@ async function renderUserResults() {
         
         showView('feed');
         initRealtime();
+        startGlobalPoller();
 
         // 2. BACKGROUND: Load secondary data silently
         // We REMOVED loadUsers() entirely. It's too heavy.
@@ -2055,17 +2056,24 @@ async function renderUserResults() {
         } catch(e) {}
     }
 
+    let realtimeChannel = null;
+    let chatPoller = null;
+
     async function initRealtime() { 
-        try { await sb.removeAllChannels(); } catch (e) {}
+        // 1. Cleanup existing connections
+        if (realtimeChannel) {
+            await sb.removeChannel(realtimeChannel);
+            realtimeChannel = null;
+        }
 
-        // 1. Force a fresh channel name to break any stuck connections
-        const channel = sb.channel('cozy-chat-v4');
+        // 2. Define the channel
+        realtimeChannel = sb.channel('cozy-live-v1');
 
-        channel
-            // --- 1. NEW POSTS ---
+        realtimeChannel
+            // --- 1. NEW POSTS (Feed) ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async (payload) => {
                 if (payload.new.user_id === state.user.id) return;
-
+                // Fetch full details (profile, stickers) for the new post
                 const { data } = await sb.from('posts')
                     .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
                     .eq('id', payload.new.id)
@@ -2073,7 +2081,6 @@ async function renderUserResults() {
                 
                 if (data) {
                     state.posts.unshift(data);
-                    // Only render if we are on the feed
                     if(state.tab === 'feed') renderPosts();
                     toast('New cozy post just appeared!');
                 }
@@ -2084,172 +2091,264 @@ async function renderUserResults() {
                 if (payload.new.user_id === state.user.id) return;
                 const pid = payload.new.post_id;
                 const type = payload.new.sticker_type;
-                const postEl = document.getElementById(`post-${pid}`);
                 
+                // Visual Update
+                const postEl = document.getElementById(`post-${pid}`);
                 if(postEl) {
                     const btn = postEl.querySelector(`button[data-type="${type}"]`);
                     if(btn) {
-                        // Animation
+                        const span = btn.querySelector('span:last-child');
+                        if(span) span.innerText = parseInt(span.innerText || '0') + 1;
+                        
+                        // Floating Animation
                         const fly = document.createElement('div'); fly.className = 'sticker-fly';
-                        fly.innerHTML = STICKER_SVGS[type];
+                        fly.innerHTML = STICKER_SVGS[type] || '✨';
                         const rect = btn.getBoundingClientRect();
                         fly.style.left = (rect.left + window.scrollX) + 'px';
                         fly.style.top = (rect.top + window.scrollY) + 'px';
                         document.body.appendChild(fly);
                         setTimeout(() => fly.remove(), 1000);
-                        
-                        // Count update
-                        const span = btn.querySelector('span:last-child');
-                        if(span) span.innerText = parseInt(span.innerText || '0') + 1;
                     }
                 }
             })
             
             // --- 3. NEW COMMENTS ---
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, (payload) => {
                 if (payload.new.user_id === state.user.id) return;
-                // ... (Existing comment logic is fine, keeping it minimal for brevity) ...
-                if(state.comments.postId === payload.new.post_id) renderCommentsModal();
+                // If viewing this post's comments, refresh
+                if(state.comments.postId === payload.new.post_id) {
+                     // We fetch the new comment details to render it nicely
+                     sb.from('comments').select('*, profiles(username)').eq('id', payload.new.id).single()
+                       .then(({data}) => {
+                           if(data) {
+                               const p = state.posts.find(x => x.id === state.comments.postId);
+                               if(p) { 
+                                   if(!p.comments) p.comments = [];
+                                   p.comments.push(data);
+                               }
+                               renderCommentsModal();
+                           }
+                       });
+                }
             })
 
             // --- 4. NEW STORIES ---
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, async (payload) => {
-                 if (payload.new.user_id === state.user.id) return;
-                 // Re-load stories to get the fresh list with profiles
-                 loadStories();
-                 toast("New journal published.");
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, () => {
+                 loadStories(); // Reload the shelf
             })
 
             // --- 5. NOTIFICATIONS ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
                 if (payload.new.user_id !== state.user.id) return;
-                
-                // Add to top
                 state.notifications.unshift(payload.new);
-                
-                // Update Icon
                 const nav = document.getElementById('nav-notifs');
                 if (nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', true);
-                
                 toast("Lantern: " + (payload.new.content || "New glow"));
                 if (state.tab === 'notifs') renderNotifs();
             })
 
-            // --- 6. MESSAGES (THE FIX) ---
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+// --- 6. MESSAGES (INSTANT GLOBAL FIX) ---
+.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
                 const newMsg = payload.new;
                 if (!newMsg) return;
 
                 const myId = state.user.id;
                 
-                // FILTER: Only care if I am the sender OR receiver
+                // Filter: Must be involved
                 if (newMsg.to_id !== myId && newMsg.from_id !== myId) return;
 
-                // Determine who the "Other" person is
                 const isIncoming = (newMsg.to_id === myId);
                 const partnerId = isIncoming ? newMsg.from_id : newMsg.to_id;
-                
-                // Debug Log
-                console.log(`📩 Message ${isIncoming ? 'Received' : 'Sent (Sync)'}:`, newMsg.content);
 
+                console.log("⚡ Instant Message:", newMsg.content);
+
+                // A. UPDATE STATE MEMORY
                 let thread = state.threads.find(t => t.id === partnerId);
-                let partnerName = "Neighbor";
-
-                // A. If Thread Exists -> Update it
+                
                 if (thread) {
-                    partnerName = thread.user;
-                    thread.messages.push({ 
-                        from: isIncoming ? 'them' : 'me', 
-                        text: newMsg.content 
-                    });
-                    thread.last = newMsg.content;
-                    thread.timestamp = new Date(newMsg.created_at).getTime();
+                    // Update existing thread
+                    // Check for duplicates to be safe
+                    const isDup = thread.messages.some(m => m.text === newMsg.content && Math.abs(m.timestamp - new Date(newMsg.created_at).getTime()) < 1000);
                     
-                    // Sort sidebar
-                    state.threads.sort((a, b) => b.timestamp - a.timestamp);
-                } 
-                // B. If Thread Missing -> Fetch Profile & Create it
-                else {
+                    if (!isDup) {
+                        thread.messages.push({ from: isIncoming ? 'them' : 'me', text: newMsg.content });
+                        thread.last = newMsg.content;
+                        thread.timestamp = new Date(newMsg.created_at).getTime();
+                    }
+                } else {
+                    // New Thread (First message) - Fetch Profile immediately
                     const { data: p } = await sb.from('profiles').select('username, avatar_url, seed').eq('id', partnerId).single();
                     if (p) {
-                        partnerName = p.username;
-                        thread = { 
-                            id: partnerId, 
-                            user: p.username, 
-                            seed: p.seed, 
-                            avatar_url: p.avatar_url, 
-                            last: newMsg.content, 
-                            timestamp: new Date(newMsg.created_at).getTime(), 
+                        state.threads.unshift({ 
+                            id: partnerId, user: p.username, seed: p.seed, avatar_url: p.avatar_url, 
+                            last: newMsg.content, timestamp: new Date(newMsg.created_at).getTime(), 
                             messages: [{ from: isIncoming ? 'them' : 'me', text: newMsg.content }] 
-                        };
-                        state.threads.unshift(thread);
+                        });
                     }
                 }
 
-                // C. UPDATE UI: Sidebar
-                renderMessages();
+                // B. RE-SORT THREADS (Newest on top)
+                state.threads.sort((a, b) => b.timestamp - a.timestamp);
 
-                // D. UPDATE UI: Chat Window (If open)
-                if (state.activeThreadId === partnerId) {
-                    // Mark read if it's incoming
-                    if(isIncoming) {
-                        state.lastRead[partnerId] = Date.now();
-                        sb.from('thread_reads').upsert({ user_id: myId, other_user_id: partnerId, last_read_at: new Date().toISOString() }).then(()=>{});
+                // C. HIGHLIGHT LOGIC
+                // Only mark as "read" if the chat window is actually OPEN for this person
+                if (state.activeThreadId === partnerId && !document.getElementById('chatViewContainer').classList.contains('hidden')) {
+                    if (isIncoming) {
+                         // We are looking at it right now, mark read
+                         state.lastRead[partnerId] = Date.now();
+                         sb.from('thread_reads').upsert({ user_id: myId, other_user_id: partnerId, last_read_at: new Date().toISOString() }).then(()=>{});
                     }
-
-                    const container = document.getElementById('chatMessages');
-                    if (container) {
-                        // Check if this specific message is already in DOM (prevent duplicates from Optimistic UI)
-                        // We use a simple check on the text content for now
-                        const lastBubble = container.lastElementChild;
-                        if (lastBubble && lastBubble.innerText.includes(newMsg.content) && !isIncoming) {
-                            // It's likely our own optimistic bubble, ignore.
-                        } else {
-                            if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
-                            
-                            // Different styles for Me vs Them
-                            const align = isIncoming ? 'justify-start' : 'justify-end';
-                            const bg = isIncoming ? 'bg-white/90' : 'bg-gradient-to-b from-[#86a68b]/40 to-white/90';
-                            
-                            container.insertAdjacentHTML('beforeend', `
-                            <div class="flex ${align} pop-in mb-2">
-                                <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${bg} shadow-sm">
-                                    <div class="text-sm font-bold text-black leading-snug">${html(newMsg.content)}</div>
-                                </div>
-                            </div>`);
-                            
-                            setTimeout(() => { container.scrollTop = container.scrollHeight; }, 10);
-                        }
+                    // Append bubble to open chat
+                    renderChatBubble(newMsg, isIncoming);
+                } else {
+                    // Chat is CLOSED or we are elsewhere. 
+                    // DO NOT update lastRead. This ensures the "Unread Dot" appears in the list.
+                    if (isIncoming) {
+                        toast(`New note from ${thread ? thread.user : 'Neighbor'}`);
+                        // Update Bottom Nav Badge
+                        const nav = document.getElementById('nav-messages');
+                        if(nav) nav.innerHTML = svgIcon('messages', state.tab === 'messages', true);
                     }
-                } else if (isIncoming) {
-                    // Notification if chat not open
-                    toast(`Note from ${partnerName}`);
-                    const nav = document.getElementById('nav-messages');
-                    if(nav) nav.innerHTML = svgIcon('messages', state.tab === 'messages', true);
                 }
+
+                // D. ALWAYS UPDATE SIDEBAR LIST
+                renderMessages(); 
             })
             
-            // --- 7. CLUB CHAT ---
+            // --- 7. CLUB MESSAGES ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'club_messages' }, async (payload) => {
-                if (payload.new.user_id === state.user.id) return; // Ignore my own
-
-                if (state.activeClubId && payload.new.club_id === state.activeClubId) {
+                 if (payload.new.user_id === state.user.id) return; 
+                 if (state.activeClubId && payload.new.club_id === state.activeClubId) {
                     const { data: user } = await sb.from('profiles').select('username, avatar_url, seed').eq('id', payload.new.user_id).single();
-                    
-                    const newMsg = {
-                        ...payload.new,
-                        profiles: user || { username: 'Neighbor', seed: 1 }
-                    };
-                    
-                    if(!state.clubMessages) state.clubMessages = [];
-                    state.clubMessages.push(newMsg);
+                    state.clubMessages.push({ ...payload.new, profiles: user || { username: 'Neighbor' } });
                     renderClubMessages();
-                }
+                 }
             })
             
             .subscribe((status) => {
-                if (status === 'SUBSCRIBED') console.log("🔥 Connected: " + status);
+                if (status === 'SUBSCRIBED') console.log("✅ Cozy Cloud Connected");
+                else if (status === 'CLOSED') console.log("❌ Disconnected");
             });
+    }
+
+    function renderChatBubble(msg, isIncoming) {
+        const container = document.getElementById('chatMessages');
+        if (!container) return;
+        
+        // Remove empty placeholder
+        if(container.innerText.includes("This paper is blank")) container.innerHTML = '';
+
+        const align = isIncoming ? 'justify-start' : 'justify-end';
+        const bg = isIncoming ? 'bg-white/90' : 'bg-gradient-to-b from-[#86a68b]/40 to-white/90';
+        
+        container.insertAdjacentHTML('beforeend', `
+            <div class="flex ${align} pop-in mb-2">
+                <div class="max-w-[85%] hand-card hand-outline border border-black/10 px-3 py-2 ${bg} shadow-sm">
+                    <div class="text-sm font-bold text-black leading-snug">${html(msg.content)}</div>
+                </div>
+            </div>`
+        );
+        container.scrollTop = container.scrollHeight;
+    }
+
+    let globalPollTimer;
+
+    function startGlobalPoller() {
+        if(globalPollTimer) clearInterval(globalPollTimer);
+        
+        // Check every 3 seconds (Fast!)
+        globalPollTimer = setInterval(async () => {
+            if(!state.user) return;
+
+            // 1. Get the timestamp of the newest message we currently have in memory
+            let latestTime = 0;
+            state.threads.forEach(t => {
+                if(t.timestamp > latestTime) latestTime = t.timestamp;
+            });
+            
+            // Convert to ISO string for Supabase query
+            const isoTime = new Date(latestTime + 1).toISOString(); // +1ms to avoid dupes
+
+            // 2. Ask database: "Any messages for me newer than X?"
+            const { data } = await sb.from('messages')
+                .select('*, profiles!from_id(username, avatar_url, seed)')
+                .or(`to_id.eq.${state.user.id},from_id.eq.${state.user.id}`)
+                .gt('created_at', isoTime)
+                .order('created_at', { ascending: true });
+
+            // 3. Process new messages found by poll
+            if(data && data.length > 0) {
+                console.log(`Sync found ${data.length} missed messages.`);
+                let needsRender = false;
+
+                for (const msg of data) {
+                    const isIncoming = (msg.to_id === state.user.id);
+                    const partnerId = isIncoming ? msg.from_id : msg.to_id;
+                    
+                    let thread = state.threads.find(t => t.id === partnerId);
+                    
+                    if (thread) {
+                        const exists = thread.messages.some(m => m.text === msg.content);
+                        if (!exists) {
+                            thread.messages.push({ from: isIncoming ? 'them' : 'me', text: msg.content });
+                            thread.last = msg.content;
+                            thread.timestamp = new Date(msg.created_at).getTime();
+                            needsRender = true;
+                        }
+                    } else {
+                        // It's a brand new thread found by sync
+                         // We need to fetch basic profile info if not included
+                         const p = msg.profiles || { username: 'Neighbor', seed: 1 };
+                         state.threads.push({
+                             id: partnerId, user: p.username, seed: p.seed, avatar_url: p.avatar_url,
+                             last: msg.content, timestamp: new Date(msg.created_at).getTime(),
+                             messages: [{ from: isIncoming ? 'them' : 'me', text: msg.content }]
+                         });
+                         needsRender = true;
+                    }
+                    
+                    // If chat open, render bubble
+                    if (state.activeThreadId === partnerId && !document.getElementById('chatViewContainer').classList.contains('hidden')) {
+                         renderChatBubble(msg, isIncoming);
+                    }
+                }
+
+                if (needsRender) {
+                    state.threads.sort((a, b) => b.timestamp - a.timestamp);
+                    renderMessages();
+                    // Update badge
+                    const nav = document.getElementById('nav-messages');
+                    if(nav) nav.innerHTML = svgIcon('messages', state.tab === 'messages', true);
+                }
+            }
+        }, 3000); // 3000ms = 3 seconds
+    }
+
+    // --- NEW: BACKUP POLL (Guarantees messages appear even if Realtime drops) ---
+    function startChatPoller(partnerId) {
+        if(chatPoller) clearInterval(chatPoller);
+        
+        chatPoller = setInterval(async () => {
+            if(!partnerId || state.activeThreadId !== partnerId) {
+                clearInterval(chatPoller);
+                return;
+            }
+
+            // Check for messages newer than what we have
+            const thread = state.threads.find(t => t.id === partnerId);
+            const lastTime = thread ? thread.timestamp : 0;
+            const limitTime = new Date(lastTime).toISOString();
+
+            const { data } = await sb.from('messages')
+                .select('*')
+                .or(`and(from_id.eq.${partnerId},to_id.eq.${state.user.id}),and(from_id.eq.${state.user.id},to_id.eq.${partnerId})`)
+                .gt('created_at', limitTime);
+
+            if(data && data.length > 0) {
+                console.log("Re-syncing chat...", data.length);
+                loadThreads(); // Heavy but safe sync
+            }
+        }, 4000); // Check every 4 seconds while chat is open
     }
 
  // --- RICH DOODLE ASSETS (Updated with Whales, Houses, Gameboys, etc.) ---
@@ -3437,6 +3536,7 @@ async function deleteThread(targetId, event) {
     function closeChat() {
         // Hide the mobile card
         document.getElementById('chatViewContainer').classList.add('hidden');
+        if(chatPoller) clearInterval(chatPoller);
         // We don't nullify activeThreadId here so desktop preserves state if resized
     }
     
@@ -3517,6 +3617,7 @@ async function deleteThread(targetId, event) {
         $('#chatInputArea').classList.remove('hidden');
         $('#newThreadModal').classList.add('hidden');
         container.scrollTop = container.scrollHeight;
+        startChatPoller(targetId);
     }
     function renderChatMessages(thread) {
     const container = $('#chatMessages');
