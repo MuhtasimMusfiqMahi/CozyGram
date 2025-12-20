@@ -1959,6 +1959,7 @@ async function renderUserResults() {
         showView('feed');
         initRealtime();
         startGlobalPoller();
+        startGlobalPostPoller();
 
         // 2. BACKGROUND: Load secondary data silently
         // We REMOVED loadUsers() entirely. It's too heavy.
@@ -2071,18 +2072,30 @@ async function renderUserResults() {
 
         realtimeChannel
             // --- 1. NEW POSTS (Feed) ---
+// --- 1. NEW POSTS (Feed) ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async (payload) => {
+                // Ignore my own posts
                 if (payload.new.user_id === state.user.id) return;
-                // Fetch full details (profile, stickers) for the new post
+
+                // The new post arrived! Fetch its full data (with username, avatar, etc.)
                 const { data } = await sb.from('posts')
                     .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
                     .eq('id', payload.new.id)
                     .single();
                 
                 if (data) {
+                    console.log("⚡ Realtime Post Received:", data.caption);
+                    
+                    // Add the new post to the top of our local list
                     state.posts.unshift(data);
-                    if(state.tab === 'feed') renderPosts();
-                    toast('New cozy post just appeared!');
+                    
+                    // If we are currently looking at the feed, redraw it
+                    if(state.tab === 'feed') {
+                        renderPosts();
+                    }
+                    
+                    // Show a gentle notification
+                    toast('A new cozy post just appeared!');
                 }
             })
 
@@ -2322,6 +2335,46 @@ async function renderUserResults() {
                 }
             }
         }, 3000); // 3000ms = 3 seconds
+    }
+
+    let globalPostPoller;
+
+    function startGlobalPostPoller() {
+        if(globalPostPoller) clearInterval(globalPostPoller);
+
+        // Check for new posts every 15 seconds
+        globalPostPoller = setInterval(async () => {
+            if(!state.user || state.posts.length === 0) return;
+
+            // 1. Find the timestamp of the newest post we have
+            const latestPostTimestamp = state.posts[0].created_at;
+            
+            // 2. Ask Supabase: "Are there any posts newer than the one I have?"
+            const { data: newPosts, error } = await sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .gt('created_at', latestPostTimestamp)
+                .order('created_at', { ascending: false }); // Get newest first
+
+            if (error) {
+                console.error("Post Poll Error:", error);
+                return;
+            }
+
+            // 3. If new posts were found, add them to our feed
+            if (newPosts && newPosts.length > 0) {
+                console.log(`Sync found ${newPosts.length} new posts.`);
+                
+                // Add the new posts to the top of the existing ones
+                state.posts = [...newPosts, ...state.posts];
+                
+                // If we are on the feed tab, refresh the view
+                if(state.tab === 'feed') {
+                    renderPosts();
+                }
+
+                toast(`${newPosts.length} new post(s) appeared!`);
+            }
+        }, 15000); // 15000ms = 15 seconds
     }
 
     // --- NEW: BACKUP POLL (Guarantees messages appear even if Realtime drops) ---
