@@ -549,12 +549,30 @@ style="
   </div>
 
   <!-- ALL MODALS -->
-  <div id="userModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] hidden p-0 sm:p-4 modal-safe" data-overlay>
-      <div class="w-full max-w-md hand-card hand-outline paper-noise p-4 pop-in modal-card" role="dialog">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-[Fraunces] text-lg">Cozy Corner</h3><button onclick="$('#userModal').classList.add('hidden')" class="text-xs font-bold opacity-50">Close</button></div>
-        <div id="userModalBody"></div>
+<!-- USER MODAL (Fixed Layout & Auto-Fit) -->
+<div id="userModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
+    <!-- Card Container: 
+         - w-full max-w-md: Standard width
+         - h-auto: Height determined by content
+         - max-h-[90dvh]: Hard limit at 90% screen height
+         - flex flex-col: Stacks Header & Body
+         - overflow-hidden: Prevents the card itself from scrolling
+    -->
+    <div class="w-full max-w-md hand-card hand-outline paper-noise p-0 pop-in flex flex-col h-auto max-h-[90dvh] overflow-hidden bg-[#fffaf1] rounded-[26px] shadow-2xl relative" role="dialog">
+      
+      <!-- 1. HEADER (Fixed at top, never scrolls) -->
+      <div class="flex justify-between items-center p-5 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0 z-20">
+          <h3 class="font-[Fraunces] text-lg">Cozy Corner</h3>
+          <button onclick="$('#userModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold hover:bg-white transition-colors">Close</button>
       </div>
-  </div>
+
+      <!-- 2. BODY (Scrolls vertically ONLY if content overflows) -->
+      <div id="userModalBody" class="w-full overflow-y-auto overflow-x-hidden p-5 overscroll-contain relative">
+          <!-- Content injected by JS -->
+      </div>
+
+    </div>
+</div>
  <!-- NEW NOTE MODAL (Fixed Layout & Auto-Fit) -->
 <div id="newThreadModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4 modal-safe" data-overlay>
     <!-- Card: Standard width, Flex Column -->
@@ -2241,7 +2259,120 @@ async function renderUserResults() {
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') console.log("✅ Cozy Cloud Connected");
                 else if (status === 'CLOSED') console.log("❌ Disconnected");
-            });
+            })
+
+// --- 8. PROFILE UPDATES (INSTANT AVATAR SWAP) ---
+// --- 8. PROFILE UPDATES (INSTANT AVATAR, NAME & BIO SWAP) ---
+.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+                const updatedUser = payload.new;
+                const newAvatar = updatedUser.avatar_url || DEFAULT_AVATAR;
+                const newBio = updatedUser.bio || '';
+                const newName = updatedUser.username || 'Neighbor';
+                
+                console.log("👤 Profile Updated:", newName);
+
+                // --- A. FEED SURGICAL SWAP (Instant Visuals) ---
+                state.posts.forEach(p => {
+                    if (p.user_id === updatedUser.id) {
+                        // 1. Update State Memory
+                        if (!p.profiles) p.profiles = {};
+                        p.profiles.avatar_url = newAvatar;
+                        p.profiles.username = newName;
+
+                        // 2. Direct DOM Update (No flicker)
+                        const postEl = document.getElementById(`post-${p.id}`);
+                        if (postEl) {
+                            // Update Avatar
+                            const img = postEl.querySelector('button[onclick^="openUserModal"] img');
+                            if (img) img.src = newAvatar;
+                            
+                            // Update Name
+                            const nameEl = postEl.querySelector('.font-extrabold');
+                            if (nameEl) nameEl.innerText = newName;
+                        }
+                    }
+                });
+
+                // --- B. UPDATE GLOBAL USER CACHE ---
+                // This ensures if you open the modal later, it has fresh data
+                const cachedUser = state.allUsers.find(u => u.id === updatedUser.id);
+                if (cachedUser) {
+                    cachedUser.username = newName;
+                    cachedUser.avatar_url = newAvatar;
+                    cachedUser.bio = newBio;
+                    cachedUser.mood = updatedUser.mood;
+                }
+
+                // --- C. SIDEBAR & STORIES MEMORY ---
+                // Threads
+                const thread = state.threads.find(t => t.id === updatedUser.id);
+                if (thread) {
+                    thread.avatar_url = newAvatar;
+                    thread.user = newName;
+                }
+                // Stories
+                state.stories.forEach(s => {
+                    if (s.author_id === updatedUser.id) {
+                        s.avatar_url = newAvatar;
+                        s.user = newName;
+                    }
+                });
+                // Club Messages
+                if (state.clubMessages) {
+                    state.clubMessages.forEach(m => {
+                        if (m.user_id === updatedUser.id) {
+                             if (!m.profiles) m.profiles = {};
+                             m.profiles.avatar_url = newAvatar;
+                             m.profiles.username = newName;
+                        }
+                    });
+                }
+
+                // --- D. CHAT HEADER SURGICAL SWAP ---
+                if (state.activeThreadId === updatedUser.id) {
+                     const headerAvatar = document.querySelector('#chatHeader img');
+                     const headerName = document.querySelector('#chatHeader .font-extrabold');
+                     if(headerAvatar) headerAvatar.src = newAvatar;
+                     if(headerName) headerName.innerText = newName;
+                }
+
+                // --- E. USER MODAL SURGICAL SWAP (Bio & Avatar) ---
+                const userModal = document.getElementById('userModal');
+                // Check if modal is actually visible
+                if (userModal && !userModal.classList.contains('hidden')) {
+                    // Check if this modal belongs to the user who updated (by checking name or avatar)
+                    // We look for the main username text inside the modal
+                    const modalNameEl = userModal.querySelector('.font-\\[Fraunces\\]');
+                    
+                    // If the modal is currently showing the user who updated...
+                    if (modalNameEl && (modalNameEl.innerText === state.allUsers.find(u=>u.id===updatedUser.id)?.username || modalNameEl.innerText === updatedUser.username)) {
+                        
+                        // 1. Update Text/Avatar in Modal
+                        modalNameEl.innerText = newName;
+                        const modalImg = userModal.querySelector('img');
+                        if(modalImg) modalImg.src = newAvatar;
+
+                        // 2. Update Bio & Toggle Visibility
+                        const bioEl = document.getElementById('userModalBio');
+                        if (bioEl) {
+                            bioEl.innerText = newBio;
+                            if (newBio && newBio.trim().length > 0) {
+                                bioEl.classList.remove('hidden');
+                                bioEl.classList.add('block');
+                            } else {
+                                bioEl.classList.add('hidden');
+                                bioEl.classList.remove('block');
+                            }
+                        }
+                    }
+                }
+
+                // --- F. BACKGROUND RE-RENDERS ---
+                // Keep lists consistent in case of sorting changes
+                if (state.tab === 'messages') renderMessages();
+                if (state.tab === 'stories') renderStories();
+                if (state.activeClubId) renderClubMessages();
+            })
     }
 
     function renderChatBubble(msg, isIncoming) {
@@ -2861,7 +2992,7 @@ function shuffleFeed() {
     }
 
     async function openUserModal(targetId) {
-        // 1. If I clicked myself, just go to the Profile tab
+        // 1. Self-click check
         if (targetId === state.user.id) {
             showView('profile');
             return;
@@ -2874,11 +3005,10 @@ function shuffleFeed() {
         modal.classList.remove('hidden');
         body.innerHTML = `<div class="p-8 text-center text-black/40 animate-pulse">Knocking...</div>`;
 
-        // 3. Find User Data
-        // Try local memory first
+        // 3. Find User Data (Memory First)
         let user = state.allUsers.find(u => u.id === targetId);
         
-        // If not in memory, fetch from cloud
+        // Fetch if missing
         if (!user) {
             try {
                 const { data } = await sb.from('profiles').select('*').eq('id', targetId).single();
@@ -2891,10 +3021,10 @@ function shuffleFeed() {
             return;
         }
 
-        // 4. Get their recent posts (from your local feed cache)
+        // 4. Get recent posts
         const recentPosts = state.posts.filter(p => p.user_id === targetId).slice(0, 6);
 
-        // 5. Determine Mood Color (Fallback to white if none)
+        // 5. Mood Background
         const moodMap = {
             sunset: 'linear-gradient(135deg, #fff5ea 0%, #fbf5ea 100%)',
             sage:   'linear-gradient(135deg, #f6fff8 0%, #fbf5ea 100%)',
@@ -2903,40 +3033,44 @@ function shuffleFeed() {
         };
         const moodBg = moodMap[user.mood || 'sunset'];
 
-        // 6. Render the Profile Card
+// ... (keep previous lines) ...
+
+        // 6. Render Body Content
+        const hasBio = user.bio && user.bio.trim().length > 0;
+
         body.innerHTML = `
-            <div class="relative rounded-[22px] border border-black/10 overflow-hidden p-4 mb-4 shadow-sm" style="background: ${moodBg}">
+            <!-- Profile Card -->
+            <div class="relative rounded-[22px] border border-black/10 overflow-hidden p-5 mb-4 shadow-sm shrink-0" style="background: ${moodBg}">
                 <div class="flex items-center gap-4">
                     <div class="w-16 h-16 rounded-[20px] border border-black/10 overflow-hidden bg-white shadow-sm shrink-0">
                         ${avatarHTML(user)}
                     </div>
-                    <div class="min-w-0">
-                        <div class="font-[Fraunces] text-xl leading-tight truncate">${html(user.username)}</div>
+                    <div class="min-w-0 flex-1">
+                        <div class="font-[Fraunces] text-xl leading-tight truncate font-bold text-[#2b2b35]">${html(user.username)}</div>
                         <div class="text-xs text-black/50 font-bold uppercase tracking-wider mt-1">${html(user.pronouns || 'Neighbor')}</div>
                     </div>
                 </div>
-                <div class="mt-3 text-sm text-black/80 leading-relaxed">
-                    ${html(user.bio || 'Just visiting.')}
+                
+                <!-- BIO SECTION (Hidden if empty, but ready for updates) -->
+                <div id="userModalBio" class="${hasBio ? 'block' : 'hidden'} mt-4 text-sm text-black/80 leading-relaxed transition-all duration-300">
+                    ${html(user.bio || '')}
                 </div>
                 
-<!-- Action Buttons -->
-<div class="mt-4 flex gap-2">
-    <!-- NEW BUTTON using startChat -->
-    <button onclick="startChat('${user.id}')" class="flex-1 py-3 rounded-[14px] bg-[#2b2b35] text-white text-xs font-bold wobbly shadow-md">
-        Send a Note
-    </button>
-                    <!-- Pass null as postId to indicate this is a User Action only -->
-                    <button onclick="openOptions(null, '${user.id}');" class="px-4 py-3 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold wobbly">
+                <div class="mt-5 flex gap-2">
+                    <button onclick="startChat('${user.id}')" class="flex-1 py-3 rounded-[14px] bg-[#2b2b35] text-white text-xs font-bold wobbly shadow-md hover:bg-black transition-colors">
+                        Send a Note
+                    </button>
+                    <button onclick="openOptions(null, '${user.id}');" class="px-4 py-3 rounded-[14px] bg-white/50 border border-black/10 text-xs font-bold wobbly hover:bg-white transition-colors">
                         •••
                     </button>
                 </div>
             </div>
 
-            <!-- Mini Scrapbook -->
-            <div class="flex items-center justify-between px-1 mb-2">
+            <!-- ... (keep the gallery section below) ... -->
+            <!-- Mini Gallery Header -->
+            <div class="flex items-center justify-between px-1 mb-3 shrink-0">
                 <div class="text-xs font-bold text-black/40 uppercase tracking-widest">Recent Shares</div>
             </div>
-            
             ${recentPosts.length > 0 ? `
                 <div class="grid grid-cols-3 gap-2 pb-2">
                     ${recentPosts.map(p => `
@@ -2946,6 +3080,8 @@ function shuffleFeed() {
                     `).join('')}
                 </div>
             ` : `<div class="p-6 text-center text-sm text-black/40 italic bg-black/5 rounded-[18px]">Quiet so far.</div>`}
+            
+            <div class="h-4"></div>
         `;
     }
 
