@@ -888,10 +888,11 @@ style="
 
     </div>
 </div>
-  <!-- ART SELECTION MODAL -->
-<div id="artModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
-    <div class="w-full max-w-md h-[80vh] hand-card hand-outline paper-noise bg-white flex flex-col pop-in shadow-2xl">
-        <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md">
+<!-- ART SELECTION MODAL -->
+<div id="artModal" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden p-4" data-overlay>
+    <!-- Added 'overflow-hidden' here to round the top corners -->
+    <div class="w-full max-w-md h-[80vh] hand-card hand-outline paper-noise bg-white flex flex-col pop-in shadow-2xl overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b border-black/5 bg-white/50 backdrop-blur-md shrink-0">
             <h3 class="font-[Fraunces] text-lg">Art Collection</h3>
             <button onclick="$('#artModal').classList.add('hidden')" class="wobbly px-3 py-1.5 rounded-[12px] border border-black/10 bg-white/70 text-xs font-bold">Close</button>
         </div>
@@ -3763,18 +3764,27 @@ function renderArtMiniPreview() {
         
         $('#postOptionsModal').classList.add('hidden');
 
+        // 1. Update State
         if (isSaved) {
             state.savedPostIds = state.savedPostIds.filter(id => id !== pid);
             toast('Removed from Drawer.');
+            // DB Call
             await sb.from('saved_posts').delete().eq('post_id', pid).eq('user_id', state.user.id);
         } else {
             state.savedPostIds.push(pid);
             toast('Saved to Drawer.');
+            // DB Call
             await sb.from('saved_posts').insert({ user_id: state.user.id, post_id: pid });
         }
         
-        renderPosts();
-        renderProfile();
+        // 2. Update Views
+        renderPosts();   // Update Feed
+        renderProfile(); // Update Profile Counters
+        
+        // FIX: If Scrapbook is open, refresh it so the 'saved' badge updates instantly
+        if(!document.getElementById('scrapbookModal').classList.contains('hidden')) {
+            openScrapbookModal();
+        }
     }
     
     async function toggleMuteUser() {
@@ -3792,7 +3802,13 @@ function renderArtMiniPreview() {
             toast('User muted.');
             await sb.from('mutes').insert({ user_id: state.user.id, muted_user_id: uid });
         }
+        
         renderPosts();
+        
+        // FIX: If Scrapbook is open, refresh it
+        if(!document.getElementById('scrapbookModal').classList.contains('hidden')) {
+            openScrapbookModal();
+        }
     }
     
     function muteUser() { toggleMuteUser(); }
@@ -3804,6 +3820,7 @@ function renderArtMiniPreview() {
         
         $('#postOptionsModal').classList.add('hidden');
         
+        // 1. Update State
         if(isHidden) {
             state.hiddenPosts = state.hiddenPosts.filter(id => id !== pid);
             toast('Post unhidden.');
@@ -3813,7 +3830,14 @@ function renderArtMiniPreview() {
             toast('Post hidden.');
             await sb.from('hidden_posts').insert({ user_id: state.user.id, post_id: pid });
         }
+
+        // 2. Update Views
         renderPosts();
+        
+        // FIX: If Scrapbook is open, refresh it (post will disappear from view if hidden)
+        if(!document.getElementById('scrapbookModal').classList.contains('hidden')) {
+            openScrapbookModal();
+        }
     }
 
     async function deletePost() {
@@ -3823,30 +3847,36 @@ function renderArtMiniPreview() {
         // 1. Close Options Modal Immediately
         document.getElementById('postOptionsModal').classList.add('hidden');
 
-        // 2. Visual Feedback: Fade out and remove from DOM
-        const el = document.getElementById(`post-${pid}`);
-        if(el) {
+        // 2. INSTANT UI UPDATE: Remove ALL instances of this post
+        // We use querySelectorAll to catch the post in the Feed AND the Scrapbook
+        const allInstances = document.querySelectorAll(`[id="post-${pid}"]`);
+        
+        allInstances.forEach(el => {
             el.style.transition = "all 0.3s ease";
             el.style.opacity = "0";
             el.style.transform = "scale(0.9)";
             setTimeout(() => el.remove(), 300);
-        }
+        });
 
-        // 3. Update Local State (Remove from memory)
+        // 3. Remove from Profile Mini-Gallery as well
+        const thumbs = document.querySelectorAll(`.myPostThumb[data-postid="${pid}"]`);
+        thumbs.forEach(t => t.remove());
+
+        // 4. Update Memory
         state.posts = state.posts.filter(p => p.id !== pid);
-        
+        state.savedPostIds = state.savedPostIds.filter(id => id !== pid); // Also remove from drawer memory
+
         toast("Deleting post...");
 
+        // 5. Delete from Supabase (Background)
         try {
-            // 4. Delete from Supabase
             const { error } = await sb.from('posts').delete().eq('id', pid);
             if(error) throw error;
             toast("Post deleted.");
         } catch(e) {
             console.error(e);
             toast("Error deleting. Refreshing...");
-            // If error, reload feed to bring it back
-            loadFeed();
+            loadFeed(); // Reload if sync failed
         }
     }
     
@@ -5423,21 +5453,92 @@ safeWire('#numbersToggle', () => {
         if(avatarInput) avatarInput.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            
+            // 1. Immediate Preview in the Edit Modal
             const tempUrl = URL.createObjectURL(file);
             const preview = $('#editProfileAvatarPreview');
             if(preview) preview.innerHTML = `<img src="${tempUrl}" class="w-full h-full object-cover">`;
+            
             toast('Compressing & Uploading...');
+            
             try {
+                // 2. Compress & Upload
                 const compressed = await compressImageToBlob(file, 600, 0.8);
                 const name = `avatars/${state.user.id}/${Date.now()}.jpg`;
+                
                 const { error } = await sb.storage.from('cozy-media').upload(name, compressed);
                 if (error) throw error;
+                
                 const { data } = sb.storage.from('cozy-media').getPublicUrl(name);
-                await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', state.user.id);
-                state.profile.avatar_url = data.publicUrl;
-                renderProfile();
+                const newUrl = data.publicUrl;
+                const myId = state.user.id;
+
+                // 3. UPDATE DATABASE
+                await sb.from('profiles').update({ avatar_url: newUrl }).eq('id', myId);
+                
+                // 4. UPDATE ALL LOCAL STATE (The Universal Fix)
+                
+                // A. Update Self
+                state.profile.avatar_url = newUrl;
+
+                // B. Update Global User List (Used by Search & New Note modal)
+                const meInList = state.allUsers.find(u => u.id === myId);
+                if (meInList) meInList.avatar_url = newUrl;
+
+                // C. Update Feed Posts
+                state.posts.forEach(p => {
+                    if (p.user_id === myId) {
+                        if (!p.profiles) p.profiles = { username: state.profile.username };
+                        p.profiles.avatar_url = newUrl;
+                    }
+                });
+
+                // D. Update Stories / Journals
+                state.stories.forEach(s => {
+                    if (s.author_id === myId) {
+                        s.avatar_url = newUrl;
+                    }
+                });
+
+                // E. Update Club Messages (If currently loaded)
+                if (state.clubMessages) {
+                    state.clubMessages.forEach(m => {
+                        if (m.user_id === myId && m.profiles) {
+                            m.profiles.avatar_url = newUrl;
+                        }
+                    });
+                }
+
+                // 5. RE-RENDER ALL VIEWS
+                renderProfile();   // Update Profile Tab
+                renderPosts();     // Update Feed (IMPORTANT)
+                renderStories();   // Update Journal List
+                renderMessages();  // Update Notes List sidebar
+
+                // If inside a Club Chat
+                if (state.activeClubId) {
+                    renderClubMessages();
+                    loadClubMembers(state.activeClubId); // Refresh member drawer
+                }
+
+                // If inside a specific Note Thread
+                if (state.activeThreadId) {
+                    // Update header if chatting with self (rare but possible)
+                    if(state.activeThreadId === myId) {
+                        const t = state.threads.find(x => x.id === myId);
+                        if(t) { t.avatar_url = newUrl; openThread(myId); }
+                    }
+                    // Re-render bubbles
+                    const currentThread = state.threads.find(t => t.id === state.activeThreadId);
+                    if(currentThread) renderChatMessages(currentThread);
+                }
+
                 toast('New avatar set!');
-            } catch (err) { console.error(err); toast('Error updating avatar.'); }
+                
+            } catch (err) { 
+                console.error(err); 
+                toast('Error updating avatar.'); 
+            }
         };
 
         // --- MESSAGING ---
