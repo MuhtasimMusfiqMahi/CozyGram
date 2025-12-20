@@ -1978,6 +1978,7 @@ async function renderUserResults() {
         initRealtime();
         startGlobalPoller();
         startGlobalPostPoller();
+        startGlobalNotificationPoller();
 
         // 2. BACKGROUND: Load secondary data silently
         // We REMOVED loadUsers() entirely. It's too heavy.
@@ -2168,14 +2169,26 @@ async function renderUserResults() {
                  loadStories(); // Reload the shelf
             })
 
-            // --- 5. NOTIFICATIONS ---
+// --- 5. NOTIFICATIONS (INSTANT) ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
+                // Only care if it is for me
                 if (payload.new.user_id !== state.user.id) return;
+                
+                console.log("🔔 New Notification:", payload.new.content);
+                
+                // 1. Update State (Add to top)
                 state.notifications.unshift(payload.new);
+                
+                // 2. Update Badge (Visual)
                 const nav = document.getElementById('nav-notifs');
+                // Pass 'true' to force the red dot
                 if (nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', true);
-                toast("Lantern: " + (payload.new.content || "New glow"));
+                
+                // 3. Render List (Only if we are currently looking at the tab)
                 if (state.tab === 'notifs') renderNotifs();
+                
+                // 4. Show Toast
+                toast("Lantern: " + (payload.new.content || "New glow"));
             })
 
 // --- 6. MESSAGES (INSTANT GLOBAL FIX) ---
@@ -2506,6 +2519,46 @@ async function renderUserResults() {
                 toast(`${newPosts.length} new post(s) appeared!`);
             }
         }, 15000); // 15000ms = 15 seconds
+    }
+
+    let globalNotifPoller;
+
+    function startGlobalNotificationPoller() {
+        if(globalNotifPoller) clearInterval(globalNotifPoller);
+
+        // Check every 10 seconds
+        globalNotifPoller = setInterval(async () => {
+            if(!state.user) return;
+
+            // 1. Find timestamp of the newest notification we currently have
+            // If list is empty, fetch everything since 1970 (all)
+            const latest = state.notifications.length > 0 ? state.notifications[0].created_at : new Date(0).toISOString();
+
+            // 2. Ask Supabase for anything newer
+            const { data } = await sb.from('notifications')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .gt('created_at', latest)
+                .order('created_at', { ascending: false }); // Newest first
+
+            // 3. Update if found
+            if(data && data.length > 0) {
+                console.log(`Sync found ${data.length} missed notifications.`);
+                
+                // Add new items to the top
+                state.notifications = [...data, ...state.notifications];
+                
+                // Update Badge
+                const nav = document.getElementById('nav-notifs');
+                if (nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', true);
+                
+                // Render List
+                if (state.tab === 'notifs') renderNotifs();
+                
+                // Optional: Only toast if it's a significant number to avoid spam
+                if(data.length === 1) toast("New lantern glow.");
+            }
+        }, 10000); // 10000ms = 10 seconds
     }
 
     // --- NEW: BACKUP POLL (Guarantees messages appear even if Realtime drops) ---
