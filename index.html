@@ -4654,14 +4654,37 @@ function openOptions(pid, uid) {
     }
 }
     
-    function openComments(postId) { 
+async function openComments(postId) { 
         state.comments.postId = postId; 
         
-        // FIX: Manually show the modal (openModal helper didn't exist)
         const modal = document.getElementById('commentsModal');
         if(modal) modal.classList.remove('hidden');
         
-        renderCommentsModal(); 
+        // 1. Show a loading message so you know it's checking the cloud
+        const listDiv = document.getElementById('commentsList');
+        if(listDiv) listDiv.innerHTML = `<div class="p-8 text-center text-sm opacity-50 animate-pulse">Checking for new notes...</div>`;
+
+        // 2. Fetch Fresh Comments from the Database
+        try {
+            const { data, error } = await sb.from('comments')
+                .select('id, user_id, text, profiles(username)')
+                .eq('post_id', postId)
+                .order('created_at', { ascending: true });
+
+            if (data) {
+                // 3. Update the Local Memory (State) with the new data
+                const post = state.posts.find(p => p.id === postId);
+                if (post) {
+                    post.comments = data; // Sync local post with cloud data
+                }
+                // 4. Render the fresh list
+                renderCommentsModal();
+            }
+        } catch(e) {
+            console.error("Error loading notes:", e);
+            // If error, just show what we have in memory
+            renderCommentsModal(); 
+        }
     }
     
     function openEditProfile() { 
