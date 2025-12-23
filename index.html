@@ -5256,7 +5256,7 @@ function updateComposeView() {
                     await sb.from('messages').insert({ 
                         from_id: state.user.id, 
                         to_id: target, 
-                        content: `Replying to story: ${val}`, 
+                        content: `Replying to journal: ${val}`, 
                         type: 'reply' 
                     }); 
                     toast('Reply sent.'); 
