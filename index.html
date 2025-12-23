@@ -2065,12 +2065,25 @@ async function renderUserResults() {
     }
     
     // NEW: Load Hidden Posts
-    async function loadHiddenPosts() {
+// NEW: Load Hidden Posts (Fixed: Force update on load)
+async function loadHiddenPosts() {
         if(!state.user) return;
         try {
-            const { data } = await sb.from('hidden_posts').select('post_id').eq('user_id', state.user.id);
-            if(data) state.hiddenPosts = data.map(h => h.post_id);
-        } catch(e) { }
+            const { data } = await sb.from('hidden_posts')
+                .select('post_id')
+                .eq('user_id', state.user.id);
+            
+            if(data) {
+                state.hiddenPosts = data.map(h => h.post_id);
+                
+                // CRITICAL FIX: 
+                // As soon as we know what to hide, re-render the feed immediately.
+                // This ensures that even if the feed loaded first, we correct it instantly.
+                renderPosts();
+            }
+        } catch(e) { 
+            console.error("Error loading hidden posts:", e);
+        }
     }
     
     // NEW: Load Shelf
@@ -2934,7 +2947,6 @@ async function renderClubBuilderList(term) {
         
         // 1. Handle "Filtering by User" Banner
         const userBanner = document.getElementById('userFilterBanner');
-        // Only show banner if we are NOT typing in the search bar (e.g. clicked a profile button)
         if (state.filter.search && state.filter.search !== document.getElementById('searchInput').value) {
              if(userBanner) userBanner.classList.remove('hidden');
         } else {
@@ -2945,14 +2957,17 @@ async function renderClubBuilderList(term) {
         const term = state.filter.search.toLowerCase();
         
         const filtered = state.posts.filter(p => {
+            // --- NEW: STRICT HIDING LOGIC ---
+            // If this post ID is in our hidden list, REMOVE IT immediately.
+            if (state.hiddenPosts.includes(p.id)) return false;
+
+            // Existing Filter Logic
             const tags = inferTags(p.caption); 
             
-            // STRICT SEARCH: Only look at the caption
             const matchesSearch = state.filter.search ? (
                 (p.caption || '').toLowerCase().includes(term)
             ) : true;
             
-            // Topic filter
             const matchesTopic = state.filter.topic === 'all' ? true : tags.includes(state.filter.topic);
             
             return matchesSearch && matchesTopic; 
@@ -2960,7 +2975,6 @@ async function renderClubBuilderList(term) {
 
         // 3. Render
         if(filtered.length === 0) { 
-            // If searching, show specific message
             if(state.filter.search) {
                 list.innerHTML = `<div class="p-6 text-center opacity-50 font-[Fraunces]">No captions found with "${state.filter.search}".</div>`; 
             } else {
