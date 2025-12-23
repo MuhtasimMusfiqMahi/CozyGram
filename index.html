@@ -2339,6 +2339,80 @@ async function renderUserResults() {
                      if(headerName) headerName.innerText = updatedUser.username;
                 }
             })
+
+            // --- F. NEW JOURNALS (Realtime) ---
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'stories' }, async (payload) => {
+                const newStory = payload.new;
+                if (!newStory) return;
+
+                // 1. We need the author's name/avatar (The raw event only has user_id)
+                const { data: profile } = await sb.from('profiles')
+                    .select('username, seed, avatar_url')
+                    .eq('id', newStory.user_id)
+                    .single();
+
+                const author = profile || { username: 'Neighbor', seed: 1, avatar_url: null };
+
+                // 2. Format it to match our app's internal format
+                const formattedStory = { 
+                    id: newStory.id, 
+                    author_id: newStory.user_id, 
+                    user: author.username, 
+                    seed: author.seed, 
+                    avatar_url: author.avatar_url,
+                    title: newStory.title || 'Journal Entry', 
+                    created_at: new Date(newStory.created_at).getTime(),
+                    time: 'just now', 
+                    pages: newStory.pages || []
+                };
+
+                // 3. Add to State (Avoid duplicates)
+                if (!state.stories.find(s => s.id === formattedStory.id)) {
+                    state.stories.unshift(formattedStory);
+                }
+
+                // 4. If we are looking at the Journal page, refresh it instantly
+                if (state.tab === 'stories') {
+                    renderStories();
+                }
+
+                // 5. Notify (Only if it's not me)
+                if (newStory.user_id !== state.user.id) {
+                    toast(`New journal from ${author.username} 📔`);
+                }
+            })
+
+            // --- G. DELETED JOURNALS (Realtime Fix) ---
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'stories' }, (payload) => {
+                const deletedId = payload.old.id;
+                
+                // 1. Remove from local memory immediately
+                const initialCount = state.stories.length;
+                state.stories = state.stories.filter(s => s.id !== deletedId);
+
+                // 2. Only re-render if we actually removed something
+                if (state.stories.length !== initialCount) {
+                    console.log("🗑️ Someone deleted journal:", deletedId);
+                    
+                    // Update the list if we are looking at it
+                    if (state.tab === 'stories') {
+                        renderStories();
+                    }
+
+                    // 3. Safety: If I was reading THAT exact story, close the modal
+                    // (To prevent crashing if I try to turn the page)
+                    const modal = document.getElementById('storyModal');
+                    if (modal && !modal.classList.contains('hidden')) {
+                        // We check if the story title currently displayed belongs to the deleted one
+                        // This is a heuristic check since we don't store ID in DOM easily
+                        // A simple reload of the view is safer:
+                        // If the current index is now out of bounds or points to a different story, the user will notice.
+                        // Ideally, we just close it to be safe.
+                         $('#storyModal').classList.add('hidden');
+                         toast("This journal was deleted by the author.");
+                    }
+                }
+            })
             
             .subscribe((status) => {
                 console.log("📡 Cozy Cloud Status:", status);
