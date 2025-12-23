@@ -2173,75 +2173,84 @@ async function renderUserResults() {
         realtimeChannel = sb.channel('cozy-live-v2'); // Changed to v2 to force a fresh connection
 
         realtimeChannel
-            // --- A. INSTANT MESSAGES (The Fix) ---
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+// --- A. INSTANT MESSAGES (STRICT FIX) ---
+.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
                 const newMsg = payload.new;
                 if (!newMsg) return;
 
                 const myId = state.user.id;
                 
-                // Filter: Only care if I am the Sender or Receiver
+                // 1. Filter: Only care if I am the Sender or Receiver
                 if (newMsg.to_id !== myId && newMsg.from_id !== myId) return;
 
                 const isIncoming = (newMsg.to_id === myId);
                 const partnerId = isIncoming ? newMsg.from_id : newMsg.to_id;
 
-                console.log("⚡ Instant Message received:", newMsg.content);
+                // --- 🛑 HARD STOP FOR SELF-MESSAGES 🛑 ---
+                // If I sent this, I already painted it in sendChatMessage().
+                // We strictly IGNORE the "draw" phase to prevent the double bubble.
+                if (!isIncoming) {
+                    console.log("⚡ Ack for my message:", newMsg.content);
+                    
+                    // Just update the timestamp in memory for the sidebar sorting
+                    let t = state.threads.find(x => x.id === partnerId);
+                    if (t) {
+                        t.timestamp = new Date(newMsg.created_at).getTime();
+                        state.threads.sort((a, b) => b.timestamp - a.timestamp);
+                        renderMessages(); // Just re-sort the sidebar
+                    }
+                    return; // EXIT HERE. Do not render chat bubble.
+                }
+                // -------------------------------------------
 
-                // 1. Update State Memory (Crucial for the sidebar list)
+                console.log("⚡ Incoming Message:", newMsg.content);
+
+                // 2. Handle INCOMING messages (From Others) normally
                 let thread = state.threads.find(t => t.id === partnerId);
                 
                 if (thread) {
-                    // Prevent duplicates (Realtime + Poller race condition)
-                    const exists = thread.messages.some(m => m.text === newMsg.content && Math.abs(m.timestamp - new Date(newMsg.created_at).getTime()) < 2000);
+                    // Check duplicate for incoming (rare, but good safety)
+                    const exists = thread.messages.some(m => m.text === newMsg.content && m.from === 'them');
                     if (!exists) {
-                        thread.messages.push({ from: isIncoming ? 'them' : 'me', text: newMsg.content });
+                        thread.messages.push({ from: 'them', text: newMsg.content });
                         thread.last = newMsg.content;
                         thread.timestamp = new Date(newMsg.created_at).getTime();
                     }
                 } else {
-                    // Brand new thread? Fetch profile quickly
+                    // New Thread logic
                     const { data: p } = await sb.from('profiles').select('username, avatar_url, seed').eq('id', partnerId).single();
                     if (p) {
                         state.threads.unshift({ 
                             id: partnerId, user: p.username, seed: p.seed, avatar_url: p.avatar_url, 
                             last: newMsg.content, timestamp: new Date(newMsg.created_at).getTime(), 
-                            messages: [{ from: isIncoming ? 'them' : 'me', text: newMsg.content }] 
+                            messages: [{ from: 'them', text: newMsg.content }] 
                         });
                     }
                 }
 
-                // 2. Re-sort sidebar (Newest top)
+                // 3. Update Sidebar
                 state.threads.sort((a, b) => b.timestamp - a.timestamp);
+                renderMessages(); 
 
-                // 3. IF CHAT IS OPEN: Render Bubble IMMEDIATELY
+                // 4. Render Bubble if Chat is Open
                 if (state.activeThreadId === partnerId) {
-                    // If it's incoming, mark as read immediately
-                    if (isIncoming) {
-                         state.lastRead[partnerId] = Date.now();
-                         localStorage.setItem('cozy_last_read', JSON.stringify(state.lastRead));
-                         // Fire-and-forget DB update
-                         sb.from('thread_reads').upsert({ user_id: myId, other_user_id: partnerId, last_read_at: new Date().toISOString() }).then(()=>{});
-                    }
+                    // Mark read
+                    state.lastRead[partnerId] = Date.now();
+                    localStorage.setItem('cozy_last_read', JSON.stringify(state.lastRead));
+                    sb.from('thread_reads').upsert({ user_id: myId, other_user_id: partnerId, last_read_at: new Date().toISOString() }).then(()=>{});
+
+                    // Render
+                    renderChatBubble(newMsg, true); // true = isIncoming
                     
-                    renderChatBubble(newMsg, isIncoming);
-                    
-                    // Force scroll to bottom
                     const container = document.getElementById('chatMessages');
                     if(container) container.scrollTop = container.scrollHeight;
                 } else {
-                    // Chat closed? Show toast/badge
-                    if (isIncoming) {
-                        toast(`New note from ${thread ? thread.user : 'Neighbor'}`);
-                        // Update badge ONLY if not on messages tab
-                        if(state.tab !== 'messages') {
-                             document.getElementById('nav-messages').innerHTML = svgIcon('messages', false, true);
-                        }
+                    // Toast for incoming
+                    toast(`New note from ${thread ? thread.user : 'Neighbor'}`);
+                    if(state.tab !== 'messages') {
+                        document.getElementById('nav-messages').innerHTML = svgIcon('messages', false, true);
                     }
                 }
-
-                // 4. Always update the sidebar list
-                renderMessages(); 
             })
 
             // --- B. NEW POSTS (Feed) ---
@@ -6106,7 +6115,8 @@ safeWire('#numbersToggle', () => {
         };
 
         // --- MESSAGING ---
-        safeWire('#chatSendBtn', async () => { 
+        // NEW: Function to send a direct chat message
+        async function sendChatMessage() {
             const input = $('#chatInput');
             const txt = input.value.trim(); 
             const targetId = state.activeThreadId;
@@ -6148,7 +6158,32 @@ safeWire('#numbersToggle', () => {
                 console.error(e); 
                 // Ideally we would show a "red retry button" here, but for now the Toast warns the user.
             }
-        });
+        }
+        safeWire('#chatSendBtn', sendChatMessage); // Now the button just calls the new function
+
+        // --- DESKTOP ENTER TO SEND ---
+        const chatInput = $('#chatInput');
+        if (chatInput) {
+            chatInput.onkeydown = (e) => {
+                // Check if it's Enter key, NOT Shift+Enter (for new lines), and on a desktop screen
+                if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 1024) {
+                    e.preventDefault(); // Prevent adding a new line
+                    sendChatMessage();  // Call the new send function for direct messages
+                }
+            };
+        }
+
+        const clubChatInput = $('#clubChatInput');
+        if (clubChatInput) {
+            clubChatInput.onkeydown = (e) => {
+                // Check if it's Enter key, NOT Shift+Enter (for new lines), and on a desktop screen
+                if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 1024) {
+                    e.preventDefault(); // Prevent adding a new line
+                    sendClubMessage();  // Call the existing send function for club messages
+                }
+            };
+        }
+        // --- END DESKTOP ENTER TO SEND ---
 
         safeWire('#sendCommentBtn', async () => { 
             const input = document.getElementById('commentInput');
