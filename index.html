@@ -1320,7 +1320,7 @@ function artSVG(seed=1, palette='sunset'){
     const state = { 
         user: null, profile: null, posts: [], savedPostIds: [], stories: [], clubs: [], 
         allUsers: [], notifications: [], threads: [], clubBuilder: { selected: [] }, 
-        journalDraft: { name: '', pages: [], currentIndex: 0, editingId: null }, 
+        journalDraft: { name: '', pages: [], currentIndex: 0, editingId: null }, latestPostTime: 0,
         compose: { 
             frame: 'wavy', vibe: 'sunset', file: null, mediaKind: null, editingId: null,
             mediaPreviewUrl: null, seed: Math.floor(Math.random()*100), 
@@ -2148,18 +2148,31 @@ async function loadHiddenPosts() {
         $('#editProfileModal').classList.remove('hidden'); 
     }
     async function loadFeed() {
-        // FIX: Added 'id' and 'user_id' to the comments(...) selection
         let { data, error } = await sb.from('posts')
             .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
             .order('created_at', { ascending: false });
             
         if (error) {
-            console.warn("Using fallback feed.");
             const res = await sb.from('posts')
                 .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type)`).order('created_at', { ascending: false });
             data = res.data;
         }
+        
         state.posts = data || [];
+
+        // --- FIX 1: Find the absolute latest time from the initial batch ---
+        if (state.posts.length > 0) {
+            // Don't assume order. Scan them all.
+            const maxTime = state.posts.reduce((max, p) => {
+                const t = new Date(p.created_at).getTime();
+                return t > max ? t : max;
+            }, 0);
+            state.latestPostTime = maxTime;
+        } else {
+            state.latestPostTime = 0;
+        }
+        // ------------------------------------------------------------------
+
         renderPosts();
     }
     async function loadDrawer() {
@@ -2266,16 +2279,28 @@ async function loadHiddenPosts() {
                 }
             })
 
-            // --- B. NEW POSTS (Feed) ---
+// --- B. NEW POSTS (Feed) ---
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async (payload) => {
                 if (payload.new.user_id === state.user.id) return;
+                
+                // 1. Fetch full data
                 const { data } = await sb.from('posts')
                     .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
                     .eq('id', payload.new.id)
                     .single();
                 
                 if (data) {
+                    // 2. Deduplicate Check (Just in case)
+                    if (state.posts.some(p => String(p.id) === String(data.id))) return;
+
                     state.posts.unshift(data);
+                    
+                    // 3. FIX: Update the Time Tracker
+                    const t = new Date(data.created_at).getTime();
+                    if (t > state.latestPostTime) {
+                        state.latestPostTime = t;
+                    }
+
                     if(state.tab === 'feed') renderPosts();
                     toast('A new cozy post just appeared!');
                 }
@@ -2531,44 +2556,53 @@ async function loadHiddenPosts() {
 
     let globalPostPoller;
 
-    function startGlobalPostPoller() {
-        if(globalPostPoller) clearInterval(globalPostPoller);
+function startGlobalPostPoller() {
+    if(globalPostPoller) clearInterval(globalPostPoller);
 
-        // Check for new posts every 15 seconds
-        globalPostPoller = setInterval(async () => {
-            if(!state.user || state.posts.length === 0) return;
+    globalPostPoller = setInterval(async () => {
+        if(!state.user) return;
 
-            // 1. Find the timestamp of the newest post we have
-            const latestPostTimestamp = state.posts[0].created_at;
+        // 1. Use the tracker
+        const isoTime = state.latestPostTime > 0 
+            ? new Date(state.latestPostTime).toISOString() 
+            : new Date(0).toISOString();
+
+        // 2. Fetch potential new posts
+        const { data: newPosts, error } = await sb.from('posts')
+            .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+            .gt('created_at', isoTime)
+            .order('created_at', { ascending: false });
+
+        if (error || !newPosts || newPosts.length === 0) return;
+
+        // --- FIX 3: Bulletproof Deduplication ---
+        // Create a Set of existing IDs for O(1) lookup speed
+        const existingIds = new Set(state.posts.map(p => String(p.id)));
+        
+        const uniquePosts = newPosts.filter(cloudPost => {
+            // If we already have this ID, skip it.
+            return !existingIds.has(String(cloudPost.id));
+        });
+
+        if (uniquePosts.length > 0) {
+            console.log(`Sync found ${uniquePosts.length} NEW unique posts.`);
+
+            // Update the tracker with the newest timestamp from this fresh batch
+            const newestInBatch = new Date(uniquePosts[0].created_at).getTime();
+            if (newestInBatch > state.latestPostTime) {
+                state.latestPostTime = newestInBatch;
+            }
+
+            // Add to Feed
+            state.posts = [...uniquePosts, ...state.posts];
             
-            // 2. Ask Supabase: "Are there any posts newer than the one I have?"
-            const { data: newPosts, error } = await sb.from('posts')
-                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
-                .gt('created_at', latestPostTimestamp)
-                .order('created_at', { ascending: false }); // Get newest first
-
-            if (error) {
-                console.error("Post Poll Error:", error);
-                return;
+            if(state.tab === 'feed') {
+                renderPosts();
             }
-
-            // 3. If new posts were found, add them to our feed
-            if (newPosts && newPosts.length > 0) {
-                console.log(`Sync found ${newPosts.length} new posts.`);
-                
-                // Add the new posts to the top of the existing ones
-                state.posts = [...newPosts, ...state.posts];
-                
-                // If we are on the feed tab, refresh the view
-                if(state.tab === 'feed') {
-                    renderPosts();
-                }
-
-                toast(`${newPosts.length} new post(s) appeared!`);
-            }
-        }, 15000); // 15000ms = 15 seconds
-    }
-
+            toast(`${uniquePosts.length} new post(s) arrived!`);
+        }
+    }, 15000); 
+}
     let globalNotifPoller;
 
     function startGlobalNotificationPoller() {
@@ -5768,6 +5802,13 @@ function deleteCurrentPage() {
 
             // Add to Local State
             state.posts.unshift(resultData);
+
+            // --- FIX 2: Update Tracker Immediately ---
+            const t = new Date(resultData.created_at).getTime();
+            if (t > state.latestPostTime) {
+                state.latestPostTime = t;
+            }
+            // -----------------------------------------
 
             // Update DOM
             const html = getPostHTML(resultData);
