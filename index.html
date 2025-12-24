@@ -1137,7 +1137,7 @@ style="
 </div>
 
   <script>
-    const SUPABASE_URL = 'https://dcarzattebyvkojqflyb.supabase.co';
+const SUPABASE_URL = 'https://dcarzattebyvkojqflyb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYXJ6YXR0ZWJ5dmtvanFmbHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTQxMTUsImV4cCI6MjA4MTEzMDExNX0.zc4LjPWrfS8OkRzN59h9YM8VFQE2JTZiRgWktPFJGHI'; 
     let sb;
     const $ = s => document.querySelector(s);
@@ -1160,18 +1160,19 @@ style="
       return false; 
     }
 
-// --- LIVE TIMER ENGINE ---
-function updateAllTimers() {
-    const now = Date.now();
-    document.querySelectorAll('.live-time').forEach(el => {
-        const ts = parseInt(el.dataset.ts);
-        if (!ts) return;
-        const newText = timeAgo(new Date(ts));
-        if (el.innerText !== newText) {
-            el.innerText = newText; // Update only if changed
-        }
-    });
-}
+    // --- LIVE TIMER ENGINE ---
+    // (Keep your existing timeAgo and updateAllTimers functions here...)
+    function updateAllTimers() {
+        const now = Date.now();
+        document.querySelectorAll('.live-time').forEach(el => {
+            const ts = parseInt(el.dataset.ts);
+            if (!ts) return;
+            const newText = timeAgo(new Date(ts));
+            if (el.innerText !== newText) {
+                el.innerText = newText; 
+            }
+        });
+    }
     function timeAgo(date) {
         const seconds = Math.floor((new Date() - date) / 1000);
         let interval = seconds / 31536000;
@@ -1867,9 +1868,25 @@ const DEFAULT_AVATAR = "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/obje
         if(!state.user) return;
         try {
             const today = new Date().toDateString();
-            const { data } = await sb.from('habits').select('*').eq('user_id', state.user.id).eq('date', today).single();
-            if(data) state.habits[today] = data.data;
-        } catch(e) { }
+            
+            // FIX: Use 'maybeSingle()' instead of 'single()'
+            // This prevents the 406 Error when you haven't tracked habits today yet.
+            const { data, error } = await sb.from('habits')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .eq('date', today)
+                .maybeSingle(); 
+            
+            if (error && error.code !== 'PGRST116') {
+                console.warn("Habit load warning:", error.message);
+            }
+            
+            if (data) {
+                state.habits[today] = data.data;
+            }
+        } catch(e) {
+            console.warn("Habit sync issue (minor).");
+        }
     }
     function loadDailyCheckin() {
         const mood = localStorage.getItem('dailyCheckin');
@@ -1934,129 +1951,145 @@ const DEFAULT_AVATAR = "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/obje
         }
     }
 
-// REPLACED: Dynamic Search (No longer relies on loading all users at start)
-let searchDebounce;
+    const timeout = (ms, promise) => {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                reject(new Error("Request timed out"));
+            }, ms);
+            promise
+                .then(value => { clearTimeout(timer); resolve(value); })
+                .catch(reason => { clearTimeout(timer); reject(reason); });
+        });
+    };
 
-async function renderUserResults() {
-    const list = document.getElementById('feed-container');
-    const term = state.filter.search.toLowerCase().trim();
-    
-    if(term.length < 2) {
-        list.innerHTML = `<div class="p-8 text-center opacity-50 text-sm">Type to search...</div>`;
-        return;
-    }
+    // --- 2. UPDATED INIT ---
+    let loginLock = false;
 
-    list.innerHTML = `<div class="p-8 text-center opacity-50 text-sm animate-pulse">Searching cloud...</div>`;
-
-    // Clear previous timer
-    clearTimeout(searchDebounce);
-
-    // Wait 300ms after typing stops before hitting database
-    searchDebounce = setTimeout(async () => {
-        try {
-            // ILIKE is case-insensitive search in Supabase
-            const { data, error } = await sb.from('profiles')
-                .select('*')
-                .ilike('username', `%${term}%`)
-                .limit(20); // Only get top 20 matches
-
-            if (error) throw error;
-
-            if (!data || data.length === 0) {
-                list.innerHTML = `<div class="p-8 text-center opacity-50 text-sm">No neighbors found named "${term}".</div>`;
-                return;
-            }
-
-            list.innerHTML = data.map(u => `
-                <button onclick="openUserModal('${u.id}')" class="w-full text-left wobbly pop-in mb-3">
-                    <div class="hand-card hand-outline bg-white/70 border border-black/10 p-3 flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">
-                            ${avatarHTML(u)}
-                        </div>
-                        <div>
-                            <div class="font-extrabold text-sm">${html(u.username)}</div>
-                            <div class="text-xs text-black/50 line-clamp-1">${html(u.bio || 'Just a cozy neighbor')}</div>
-                        </div>
-                    </div>
-                </button>
-            `).join('');
-            
-        } catch(e) {
-            console.error(e);
-            list.innerHTML = `<div class="p-8 text-center opacity-50 text-sm">Search error.</div>`;
-        }
-    }, 400); // 400ms delay
-}
-
-    // --- APP LOGIC (UPDATED INIT) ---
     async function init() {
+        console.log("🚀 App Starting...");
+
         try { 
             sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+                auth: { 
+                    persistSession: true, 
+                    autoRefreshToken: true, 
+                    detectSessionInUrl: true,
+                    storage: window.localStorage
+                }
             }); 
-        } catch (e) { return; }
-        
-        sb.auth.onAuthStateChange((event, session) => {
-            if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !state.user) {
-                handleLoginSuccess(session);
-            } else if (event === 'SIGNED_OUT') {
+        } catch (e) { console.error("Init Error:", e); return; }
+
+        sb.auth.onAuthStateChange(async (event, session) => {
+            console.log(`Auth Event: ${event}`);
+
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                if (state.user && session?.user?.id === state.user.id) return;
+                if (session?.user) await handleLoginSuccess(session);
+            } 
+            else if (event === 'SIGNED_OUT') {
                 state.user = null;
-                window.location.href = window.location.pathname;
+                window.location.reload();
             }
         });
 
         loadDailyCheckin();
         wireEvents();
-        
-        // REMOVED: loadStories(), loadHabits(), loadUsers() from here.
-        // We will load them only after login is confirmed.
-        
         updateAllTimers();
         setInterval(updateAllTimers, 60000);
 
-        const { data } = await sb.auth.getSession();
-        if (data?.session) {
-            if (!state.user) handleLoginSuccess(data.session);
-            setTimeout(checkDeepLink, 1000);
-        } else {
-            $('#onboardingModal').classList.remove('hidden');
-            renderOnboarding();
+        // Backup Check
+        setTimeout(async () => {
+            if (!state.user && !loginLock) {
+                const { data } = await sb.auth.getSession();
+                if (!data.session) {
+                    $('#onboardingModal').classList.remove('hidden');
+                    renderOnboarding();
+                }
+            }
+        }, 1000);
+    }
+
+    async function wakeUpDatabase() {
+        console.log("⏰ Checking database pulse...");
+        try {
+            // FIX: Check 'posts'. Increased timeout to 20 seconds (20000ms)
+            const { error } = await timeout(20000, 
+                sb.from('posts').select('id').limit(1)
+            );
+            
+            if (error) {
+                console.warn("⚠️ Database ping failed:", error.message);
+                return false;
+            }
+            console.log("✨ Database is responding!");
+            return true;
+        } catch (e) {
+            console.warn("⚠️ Database timeout/crash detected.");
+            return false;
         }
     }
 
-    async function handleLoginSuccess(session) {
-        state.user = session.user;
-        $('#onboardingModal').classList.add('hidden');
-        if($('#logoutBtn')) $('#logoutBtn').classList.remove('hidden');
-        
-        // 1. CRITICAL: Load Profile & Feed First (The user sees this first)
-        await Promise.all([
-            loadProfile(),
-            loadFeed() // We will optimize this next
-        ]);
-        
-        showView('feed');
-        initRealtime();
-        startGlobalPoller();
-        startGlobalPostPoller();
-        startGlobalNotificationPoller();
-
-        // 2. BACKGROUND: Load secondary data silently
-        // We REMOVED loadUsers() entirely. It's too heavy.
-        Promise.all([
-            loadMutedUsers(),
-            loadHiddenPosts(),
-            loadStories(),
-            loadNotifications(),
-            loadClubs() // Habits and Drawer can wait
-        ]).then(() => {
-            console.log("Background assets loaded.");
-            loadHabits(); // Lowest priority
-            loadDrawer();
-            loadThreads(); // Load chats last
-        });
+    // --- 2. UPDATED LOGIN LOGIC (Circuit Breaker) ---
+// --- 1. CACHE HELPERS (Make it instant) ---
+function saveCache(key, data) {
+        try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
     }
-    
+    function getCache(key) {
+        try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
+    }
+
+    // --- 2. UPDATED LOGIN LOGIC (Cache First, Network Second) ---
+    async function handleLoginSuccess(session) {
+        if (loginLock) return; 
+        loginLock = true;
+
+        console.log("☁️ Logging in as:", session.user.id);
+        state.user = session.user;
+
+        // UNLOCK UI INSTANTLY
+        const onboard = document.getElementById('onboardingModal');
+        if(onboard) onboard.classList.add('hidden');
+        document.getElementById('logoutBtn').classList.remove('hidden');
+        
+        // STEP A: LOAD CACHE IMMEDIATELY (0ms wait)
+        // This shows your avatar and old posts instantly while the cloud wakes up
+        loadProfile(true); // true = use cache
+        loadFeed(true);
+        showView('feed');
+
+        // STEP B: START NETWORK SYNC (Background)
+        // We run this in parallel so it doesn't block the UI
+        setTimeout(async () => {
+            console.log("🔄 Starting cloud sync...");
+            
+            // Fetch fresh data (Force network)
+            // We use Promise.all to fetch both at once for speed
+            await Promise.allSettled([
+                loadProfile(false), 
+                loadFeed(false)
+            ]);
+
+            // Load everything else
+            console.log("⏳ Loading background extras...");
+            await Promise.allSettled([
+                loadMutedUsers(), loadHiddenPosts(), loadStories(), 
+                loadNotifications(), loadClubs(), loadHabits(), 
+                loadDrawer(), loadThreads()
+            ]);
+
+            console.log("✅ Sync Complete.");
+            initRealtime();
+            
+            // Start pollers
+            setTimeout(() => {
+                startGlobalPoller();
+                startGlobalPostPoller();
+                startGlobalNotificationPoller();
+            }, 2000);
+
+            loginLock = false; 
+        }, 100); // Start almost immediately
+    }
     async function loadMutedUsers() {
         if(!state.user) return;
         try {
@@ -2096,37 +2129,54 @@ async function loadHiddenPosts() {
         } catch(e) { }
     }
 
-    async function loadProfile() {
-    if (!state.user) return;
-    let { data, error } = await sb.from('profiles').select('*').eq('id', state.user.id).single();
-    if (error) {
-        // This 'if' block runs for BRAND NEW users
-        console.log("No profile found, creating a new one...");
-        
-        const meta = state.user.user_metadata;
-        const newP = { 
-            id: state.user.id, 
-            // Use Google name if available, otherwise fallback to email part
-            username: meta.full_name || state.user.email.split('@')[0],
-            // Use Google avatar if available
-            avatar_url: meta.avatar_url || null,
-            mood: 'sunset', 
-            seed: Math.floor(Math.random()*50) 
-        };
-        
-        const { data: c } = await sb.from('profiles').insert(newP).select().single();
-        state.profile = c || newP;
-        
-        // Open the edit modal so they can confirm their details
-        setTimeout(openEditProfile, 1000); 
+     // --- 3. UPDATED LOAD PROFILE (Safety Wrapper) ---
+     async function loadProfile(useCache = false) {
+        if (!state.user) return;
+        const cacheKey = `cozy_profile_${state.user.id}`;
 
-    } else { 
-        // Existing user
-        state.profile = data; 
+        // CACHE HIT: Show immediately
+        if (useCache) {
+            const cached = getCache(cacheKey);
+            if (cached) {
+                console.log("📂 Loaded profile from cache");
+                state.profile = cached;
+                applyMood(state.profile.mood || 'sunset');
+                if(state.tab === 'profile') renderProfile();
+                return; 
+            }
+        }
+
+        // NETWORK FETCH (With Retry for Cold DB)
+        try {
+            // Try twice (in case DB is cold)
+            let data = null;
+            let error = null;
+            
+            // Attempt 1
+            ({ data, error } = await timeout(10000, sb.from('profiles').select('*').eq('id', state.user.id).single()));
+            
+            // Attempt 2 (if timeout)
+            if (error) {
+                console.log("⚠️ DB Cold. Retrying profile...");
+                ({ data, error } = await timeout(15000, sb.from('profiles').select('*').eq('id', state.user.id).single()));
+            }
+
+            if (data) {
+                state.profile = data;
+                saveCache(cacheKey, data); // Save for next time!
+                
+                applyMood(state.profile.mood || 'sunset');
+                if(state.tab === 'profile') renderProfile();
+                if(!document.getElementById('accountModal').classList.contains('hidden')) openAccountModal(); 
+            }
+        } catch (e) {
+            console.warn("Profile network load failed:", e.message);
+            // Fallback only if we have NOTHING
+            if (!state.profile) {
+                state.profile = { id: state.user.id, username: 'Neighbor', mood: 'sunset', seed: 1 };
+            }
+        }
     }
-    
-    if(state.profile) applyMood(state.profile.mood || 'sunset');
-}
     async function saveProfile() {
         const selectedMood = $('.setupMood.ring-2')?.dataset.m || state.profile.mood || 'sunset';
         const updates = { username: $('#setupName').value, pronouns: $('#setupPronouns').value, bio: $('#setupBio').value, mood: selectedMood };
@@ -2148,34 +2198,58 @@ async function loadHiddenPosts() {
         });
         $('#editProfileModal').classList.remove('hidden'); 
     }
-    async function loadFeed() {
-        let { data, error } = await sb.from('posts')
-            .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
-            .order('created_at', { ascending: false });
+    // --- 4. UPDATED LOAD FEED (Safety Wrapper) ---
+    async function loadFeed(useCache = false) {
+        const cacheKey = `cozy_feed_${state.user.id}`;
+
+        // CACHE HIT
+        if (useCache) {
+            const cached = getCache(cacheKey);
+            if (cached && Array.isArray(cached)) {
+                console.log(`📂 Loaded ${cached.length} posts from cache`);
+                state.posts = cached;
+                if(state.tab === 'feed') renderPosts();
+                return;
+            }
+        }
+
+        // NETWORK FETCH
+        try {
+            // Try twice
+            let data = null;
+            let error = null;
+
+            ({ data, error } = await timeout(15000, 
+                sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .order('created_at', { ascending: false })
+                .limit(20)
+            ));
+
+            if (error) {
+                console.log("⚠️ DB Cold. Retrying feed...");
+                ({ data, error } = await timeout(20000, 
+                    sb.from('posts')
+                    .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                    .order('created_at', { ascending: false })
+                    .limit(20)
+                ));
+            }
             
-        if (error) {
-            const res = await sb.from('posts')
-                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type)`).order('created_at', { ascending: false });
-            data = res.data;
+            if (data) {
+                state.posts = data;
+                saveCache(cacheKey, data); // Save!
+                
+                if (state.posts.length > 0) {
+                    state.latestPostTime = state.posts.reduce((max, p) => Math.max(max, new Date(p.created_at).getTime()), 0);
+                }
+                if(state.tab === 'feed') renderPosts();
+            }
+        } catch (e) {
+            console.warn("Feed network load failed.");
         }
-        
-        state.posts = data || [];
-
-        // --- FIX 1: Find the absolute latest time from the initial batch ---
-        if (state.posts.length > 0) {
-            // Don't assume order. Scan them all.
-            const maxTime = state.posts.reduce((max, p) => {
-                const t = new Date(p.created_at).getTime();
-                return t > max ? t : max;
-            }, 0);
-            state.latestPostTime = maxTime;
-        } else {
-            state.latestPostTime = 0;
-        }
-        // ------------------------------------------------------------------
-
-        renderPosts();
     }
+
     async function loadDrawer() {
         if(!state.user) return;
         try {
