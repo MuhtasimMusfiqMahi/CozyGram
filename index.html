@@ -1336,7 +1336,7 @@ function artSVG(seed=1, palette='sunset'){
         lastRead: JSON.parse(localStorage.getItem('cozy_last_read') || '{}'),
         
         // This makes sure we remember the timestamp across refreshes
-        lastSeenNotifs: parseInt(localStorage.getItem('cozy_last_seen_notifs') || '0'), 
+        lastSeenNotifs: 0, // Now loaded from Cloud 
         // ----------------------
 
         activePostOption: null, activePostUser: null,
@@ -1665,13 +1665,15 @@ const DEFAULT_AVATAR = "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/obje
         });
     }
 
-    // B. NOTIFICATIONS BADGE (Fixed Logic)
+// B. NOTIFICATIONS BADGE (Cloud Sync)
     if (viewId === 'notifs') {
-        // If we enter the tab, mark the current time as "Last Seen".
-        // This effectively marks ALL current notifications as read instantly.
         const now = Date.now();
         state.lastSeenNotifs = now;
-        localStorage.setItem('cozy_last_seen_notifs', now);
+        
+        // SAVE TO DB (Fire and forget)
+        sb.from('notification_reads')
+          .upsert({ user_id: state.user.id, last_read_at: new Date().toISOString() })
+          .then(() => {}); 
     }
 
     // Only show the dot if:
@@ -1728,43 +1730,42 @@ const DEFAULT_AVATAR = "https://dcarzattebyvkojqflyb.supabase.co/storage/v1/obje
         if (!state.user) return;
         
         try {
-            // Fetch notifications
-            const { data, error } = await sb
+            // 1. Fetch Notifications
+            const { data: notifs } = await sb
                 .from('notifications')
                 .select('*')
                 .eq('user_id', state.user.id)
                 .order('created_at', { ascending: false })
                 .limit(50);
 
-            if (error) throw error;
+            // 2. Fetch "Last Seen" Timestamp from DB
+            const { data: readStatus } = await sb
+                .from('notification_reads')
+                .select('last_read_at')
+                .eq('user_id', state.user.id)
+                .single();
 
-            if (data) {
-                state.notifications = data;
+            if (notifs) state.notifications = notifs;
+            
+            // Set the timestamp (Default to 0 if never read)
+            state.lastSeenNotifs = readStatus ? new Date(readStatus.last_read_at).getTime() : 0;
 
-                // --- LOGIC FIX START ---
-                // Old logic: const hasNotifs = state.notifications.length > 0;
-                // New logic: Check if the NEWEST item is newer than what we last saw.
-                
-                let hasNotifs = false;
-                if (state.notifications.length > 0) {
-                    const newestTime = new Date(state.notifications[0].created_at).getTime();
-                    // If the newest notification is newer than our saved time, SHOW DOT.
-                    if (newestTime > state.lastSeenNotifs) {
-                        hasNotifs = true;
-                    }
+            // 3. Calculate Badge
+            let hasNotifs = false;
+            if (state.notifications.length > 0) {
+                const newestTime = new Date(state.notifications[0].created_at).getTime();
+                if (newestTime > state.lastSeenNotifs) {
+                    hasNotifs = true;
                 }
-                // --- LOGIC FIX END ---
-
-                // Update the icon
-                const nav = document.getElementById('nav-notifs');
-                // Pass 'false' if we are currently looking at the tab, otherwise use the calculation
-                const showDot = (state.tab === 'notifs') ? false : hasNotifs;
-                
-                if(nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', showDot);
-                
-                // If we are on the tab, render the list
-                if(state.tab === 'notifs') renderNotifs();
             }
+
+            // 4. Update Icon
+            const nav = document.getElementById('nav-notifs');
+            const showDot = (state.tab === 'notifs') ? false : hasNotifs;
+            if(nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', showDot);
+            
+            if(state.tab === 'notifs') renderNotifs();
+
         } catch (e) {
             console.error("Lantern Error:", e);
         }
@@ -2450,6 +2451,41 @@ async function loadHiddenPosts() {
                          toast("This journal was deleted by the author.");
                     }
                 }
+            })
+
+            // --- H. SYNC READ RECEIPTS (Notes) ---
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'thread_reads' }, (payload) => {
+                if (payload.new.user_id !== state.user.id) return;
+                
+                // Update local memory
+                state.lastRead[payload.new.other_user_id] = new Date(payload.new.last_read_at).getTime();
+                
+                // Refresh badges immediately
+                renderMessages(); 
+                
+                // Check if we still have ANY unread messages
+                const hasUnread = state.threads.some(t => {
+                    const lastReadTime = state.lastRead[t.id] || 0;
+                    const lastMsg = t.messages[t.messages.length-1];
+                    return lastMsg && lastMsg.from === 'them' && t.timestamp > lastReadTime;
+                });
+                
+                // Update Nav Icon
+                const nav = document.getElementById('nav-messages');
+                if(nav) nav.innerHTML = svgIcon('messages', state.tab === 'messages', state.tab === 'messages' ? false : hasUnread);
+            })
+
+            // --- I. SYNC LANTERN READS (Notifications) ---
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'notification_reads' }, (payload) => {
+                if (payload.new.user_id !== state.user.id) return;
+
+                // Update local memory
+                state.lastSeenNotifs = new Date(payload.new.last_read_at).getTime();
+
+                // Clear the badge immediately on this device
+                const nav = document.getElementById('nav-notifs');
+                // Since we just read it on another device, the dot should go away here too
+                if(nav) nav.innerHTML = svgIcon('notifs', state.tab === 'notifs', false);
             })
             
             .subscribe((status) => {
