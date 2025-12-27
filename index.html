@@ -2129,8 +2129,7 @@ async function loadHiddenPosts() {
         } catch(e) { }
     }
 
-     // --- 3. UPDATED LOAD PROFILE (Safety Wrapper) ---
-// --- UPDATED LOAD PROFILE (Handles New Users Correctly) ---
+// --- UPDATED LOAD PROFILE (Fixes 409 Conflict) ---
 async function loadProfile(useCache = false) {
         if (!state.user) return;
         const cacheKey = `cozy_profile_${state.user.id}`;
@@ -2148,15 +2147,13 @@ async function loadProfile(useCache = false) {
 
         try {
             // 2. NETWORK FETCH
-            // FIX: Use .maybeSingle() instead of .single()
-            // This returns null (instead of 406 error) if the user is new.
             let { data, error } = await timeout(10000, 
                 sb.from('profiles').select('*').eq('id', state.user.id).maybeSingle()
             );
 
-            // If null data and no error, it means NEW USER
+            // If null data, we need to create the profile
             if (!data && !error) {
-                console.log("🆕 New neighbor detected. Creating profile...");
+                console.log("🆕 New/Missing profile detected. Ensuring record...");
                 
                 const meta = state.user.user_metadata || {};
                 const newP = { 
@@ -2167,19 +2164,27 @@ async function loadProfile(useCache = false) {
                     seed: Math.floor(Math.random()*50) 
                 };
 
-                // Create the profile
-                const { data: created, error: insertErr } = await sb.from('profiles').insert(newP).select().maybeSingle();
+                // FIX: Use UPSERT instead of INSERT
+                // This creates the row if missing, or updates it if it exists.
+                // Prevents the 409 Conflict error.
+                const { data: created, error: insertErr } = await sb.from('profiles')
+                    .upsert(newP, { onConflict: 'id' })
+                    .select()
+                    .maybeSingle();
                 
                 if (created) {
                     state.profile = created;
                     saveCache(cacheKey, created);
-                    toast("Welcome to the neighborhood! 🏡");
-                    // Open the setup modal automatically for new users
-                    setTimeout(openEditProfile, 1000); 
+                    
+                    // Only show "Welcome" if it's a truly new account (created just now)
+                    const isBrandNew = new Date(created.created_at).getTime() > Date.now() - 10000;
+                    if (isBrandNew && !useCache) {
+                        toast("Welcome home! 🏡");
+                        setTimeout(openEditProfile, 1000); 
+                    }
                 } else {
-                    // If creation fails (rare), use local fallback
-                    console.warn("Profile creation failed, using temporary.", insertErr);
-                    state.profile = newP; 
+                    console.warn("Profile upsert failed:", insertErr);
+                    state.profile = newP; // Fallback
                 }
             } 
             else if (data) {
@@ -2188,12 +2193,12 @@ async function loadProfile(useCache = false) {
                 saveCache(cacheKey, data);
             }
             else if (error) {
-                throw error; // Real DB error, go to catch
+                throw error; 
             }
 
         } catch (e) {
-            console.warn("Profile load issue:", e.message);
-            // Fallback safety so app doesn't crash
+            console.warn("Profile sync warning:", e.message);
+            // Fallback safety
             if (!state.profile) {
                 state.profile = { 
                     id: state.user.id, 
@@ -2265,7 +2270,7 @@ async function loadProfile(useCache = false) {
                 sb.from('posts')
                 .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
                 .order('created_at', { ascending: false })
-                .limit(20)
+                .limit(50) // Increased to 50
             ));
 
             if (error) {
@@ -2289,6 +2294,46 @@ async function loadProfile(useCache = false) {
             }
         } catch (e) {
             console.warn("Feed network load failed.");
+        }
+    }
+
+    async function loadMorePosts() {
+        const btn = document.getElementById('loadMoreBtn');
+        if(btn) { 
+            btn.innerText = "Digging deeper..."; 
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.disabled = true; 
+        }
+
+        // 1. Get the timestamp of the very last post we currently have
+        const lastPost = state.posts[state.posts.length - 1];
+        if(!lastPost) return; // Should not happen if button is visible
+
+        try {
+            // 2. Fetch posts OLDER than the last one (.lt means Less Than)
+            const { data, error } = await sb.from('posts')
+                .select(`*, profiles(username, seed, pronouns, avatar_url), stickers(sticker_type), comments(id, user_id, text, profiles(username))`)
+                .lt('created_at', lastPost.created_at) 
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            if (data && data.length > 0) {
+                // 3. Append new posts to the bottom of the state
+                state.posts = [...state.posts, ...data];
+                
+                // 4. Re-render (The button will reappear at the bottom)
+                renderPosts();
+            } else {
+                // No more posts found
+                if(btn) {
+                    btn.innerText = "You've reached the beginning of time 🕰️";
+                    btn.classList.add('hidden'); // Optional: hide it or leave the text
+                }
+            }
+        } catch(e) {
+            console.error("Load More Error:", e);
+            if(btn) btn.innerText = "Error loading. Try again.";
+            if(btn) btn.disabled = false;
         }
     }
 
@@ -3143,17 +3188,11 @@ async function renderClubBuilderList(term) {
         const term = state.filter.search.toLowerCase();
         
         const filtered = state.posts.filter(p => {
-            // --- NEW: STRICT HIDING LOGIC ---
-            // If this post ID is in our hidden list, REMOVE IT immediately.
+            // If hidden, skip
             if (state.hiddenPosts.includes(p.id)) return false;
 
-            // Existing Filter Logic
             const tags = inferTags(p.caption); 
-            
-            const matchesSearch = state.filter.search ? (
-                (p.caption || '').toLowerCase().includes(term)
-            ) : true;
-            
+            const matchesSearch = state.filter.search ? ((p.caption || '').toLowerCase().includes(term)) : true;
             const matchesTopic = state.filter.topic === 'all' ? true : tags.includes(state.filter.topic);
             
             return matchesSearch && matchesTopic; 
@@ -3169,11 +3208,73 @@ async function renderClubBuilderList(term) {
             return; 
         }
 
-        const postsHtml = filtered.map(p => getPostHTML(p)).join('');
+        let postsHtml = filtered.map(p => getPostHTML(p)).join('');
+
+        // --- NEW: Add Load More Button at the bottom ---
+        // Only show if we aren't filtering (searching hides the flow usually) 
+        // and we have some posts.
+        if (!state.filter.search && filtered.length >= 20) {
+            postsHtml += `
+                <div class="p-4 flex justify-center pb-8">
+                    <button id="loadMoreBtn" onclick="loadMorePosts()" class="wobbly px-6 py-3 rounded-[18px] bg-white border border-black/10 text-sm font-extrabold text-black/60 hover:bg-[#fffaf1] hover:text-black transition-colors shadow-sm">
+                        Load older posts ↓
+                    </button>
+                </div>
+            `;
+        }
+
         list.innerHTML = postsHtml;
     }
+
+    async function renderUserResults() {
+        const list = document.getElementById('feed-container');
+        if (!list) return;
+
+        // 1. Lazy Load: If we haven't loaded users into memory yet, do it now.
+        if (!state.allUsers || state.allUsers.length === 0) {
+            list.innerHTML = `<div class="p-8 text-center opacity-50 animate-pulse">Loading directory...</div>`;
+            await loadUsers(); 
+        }
+
+        const term = state.filter.search.toLowerCase();
+
+        // 2. Filter the users
+        const filtered = state.allUsers.filter(u => {
+            if (u.id === state.user.id) return false; // Don't show myself
+            const name = (u.username || '').toLowerCase();
+            const bio = (u.bio || '').toLowerCase();
+            return name.includes(term) || bio.includes(term);
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div class="p-6 text-center opacity-50 font-[Fraunces]">No neighbors found with "${state.filter.search}".</div>`;
+            return;
+        }
+
+        // 3. Render HTML (Renamed variable to avoid conflict)
+        const usersMarkup = filtered.map(u => {
+            return `
+            <div class="hand-card hand-outline paper-noise p-4 mb-3 flex items-center justify-between pop-in">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-[18px_16px_22px_14px] border border-black/10 overflow-hidden bg-white shrink-0">
+                        ${avatarHTML(u)}
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-sm">${html(u.username)}</div>
+                        <div class="text-xs text-black/50 line-clamp-1">${html(u.bio || 'Cozy neighbor')}</div>
+                    </div>
+                </div>
+                <button onclick="openUserModal('${u.id}')" class="wobbly px-4 py-2 rounded-[14px] bg-[#2b2b35] text-white text-xs font-bold shadow-sm hover:bg-black transition-colors">
+                    Visit
+                </button>
+            </div>`;
+        }).join('');
+
+        list.innerHTML = usersMarkup;
+    }
+
     // Helper for stickers
-    function stickerBtn(pid, type, svg, count) {
+function stickerBtn(pid, type, svg, count) {
     // Check if numbers should be hidden
     const hideClass = state.hideNumbers ? 'hidden' : '';
     
